@@ -10,196 +10,250 @@ Instanced forests have three tree LODs, their own distance slider, and roots
 attached to the current stitched terrain triangles. Settled views reuse draw plans.
 See [terrain documentation](docs/TERRAIN.md)
 and [the HPLOC / older LOD source review](docs/terrain-source-review.md).
+=======
+Turn a grid of numbers into a 3D shape made of triangles.
 
-**Infinite space demo** (`index.html?demo=space`) streams a 3D field of
-asteroids, floating islands with optional caves, and ringed planets. Choose adaptive
-meshes, nested surface point clouds, or a hybrid; MC33 and Bourke both extract
-the full volumetric shapes. Mesh only is the default, with eight mesh detail levels,
-LOD distance and near-detail controls. Demo links are at the top of each page. Fly in any
-direction, adjust distance up to 32 km, and enable LOD colors or full detail to
-compare. See [space documentation](docs/SPACE.md).
+Think of a stack of graph paper. Each grid point says whether it is inside or
+outside a shape. Marching cubes connects the boundary between the two.
+**Bourke** and **MC33** are two ways to make those connections. You can try both.
 
-Switch between classic [Paul Bourke isosurfaces](https://paulbourke.net/geometry/polygonise/)
-and Marching Cubes 33 on CPU or WebGPU. The sphere demo fits the actual source
-points and reconstructs a tight shell. Algorithm changes reuse the same samples.
+The terrain and space demos also use **LOD**, short for _level of detail_:
+nearby things get more triangles, faraway things get fewer.
 
-MC33's lookup tables and WGSL face/interior ambiguity decisions come from the
-planet cloud shader in `vibe_code_experiments/noiseCompute/tools/clouds`. The
-matching JavaScript decisions come from that project's MC33 demo. The previous
-experimental center-fan method has been replaced by the full MC33 pattern selection.
+## Contents
 
-## Recorded benchmark views
+- [Run it](#1-run-it)
+- [Try the demos](#2-try-the-examples): [Sphere](#sphere-turn-points-into-a-surface) · [Terrain](#terrain-detailed-ground-and-trees) · [Space](#space-asteroids-islands-and-planets)
+- [Movement controls](#moving-around)
+- [What the sliders and performance numbers mean](#which-sliders-should-i-change)
+- [Make a sphere in JavaScript](#3-make-a-sphere-in-javascript)
+- [Use it in another project](#4-use-it-in-another-project)
+- [Deploy to Netlify](#5-put-the-demos-on-netlify)
+- [Checks and further reading](#checks-and-further-reading)
 
-These screenshots are checked into [`docs/benchmarks`](docs/benchmarks) so the
-visual result and the measurements stay with the implementation.
+## 1. Run it
 
-![Current tinybuild terrain with instanced trees and adaptive versus uniform benchmark](docs/benchmarks/terrain-tinybuild-benchmark.jpg)
+Install **Node.js 20 or newer**, download or clone this repo, and open a terminal
+inside its folder. Run:
 
-Captured from the built Netlify folder on 2026-10-09 with trees enabled, a 1280 ×
-720 viewport and the default 1800 m terrain cutoff. The same warm camera draws
-184,928 terrain triangles adaptively versus 1,753,088 at uniform detail (89.5%
-fewer). Mean GPU render time was 0.32 ms versus 0.91 ms; CPU submission was
-0.28 ms versus 0.33 ms. Both modes averaged 16.68 ms including browser scheduling.
-The forest uses 2,093 trees in three draw batches: 138 near, 1,478 mid-distance,
-and 477 far instances. Triangle counts above describe terrain; timings include
-the tree pass. Historical captures remain in `docs/benchmarks/`.
+```sh
+npm install
+npm start
+```
 
-![Current tinybuild infinite space at 32 km with eight mesh LOD levels](docs/benchmarks/space-tinybuild-32km.jpg)
+Open the address printed by the server. Keep that terminal running.
+You should see the sphere demo, with **Sphere**, **Terrain** and **Infinite space**
+buttons at the top. Use those buttons to switch demos.
 
-The space view was captured on 2026-10-09 with render bundles and mesh-only
-rendering at the 32 km limit: a 1092 × 764 CSS viewport with a 1638 × 1146 render
-buffer. The HUD shows 1,943,932 triangles across 7,456 bodies in 69 draws, with
-all eight mesh levels active. The separate 1280 × 720 stress comparison held its
-8,425 visible bodies constant and reduced the five-level baseline from 9,971,348
-to 2,020,660 triangles (79.7% fewer). These are local captures; timings vary with
-browser, viewport, and GPU.
+The sphere works in CPU mode without WebGPU. Terrain, space and GPU extraction
+need a browser with WebGPU enabled, served locally or over HTTPS.
+Use the server above; double-clicking the HTML file will not run the demos correctly.
 
-Space also caches WebGPU render bundles and updates a GPU camera offset between
-visibility cuts. A local 120-frame moving-camera test at 32 km reduced average
-CPU submission from 9.45 to 2.57 ms, with 18 instance/bundle rebuilds instead of
-120. The HUD now separates FPS, frame/GPU time, CPU submission and culling/batch
-peaks; GPU render time excludes browser compositing and scheduling.
-Streaming also prefers coarser resident meshes while requested LODs load,
-avoiding temporary fine-mesh triangle spikes when expanding the view.
+## 2. Try the examples
 
-## Run the demo
+### Sphere: turn points into a surface
 
-Use Node.js 20 or newer. Run `npm install`, then `npm start`, and open the
-address printed by the server. Tinybuild builds and serves the project.
-The single `index.html` selects sphere, terrain or space using `?demo=sphere`,
-`?demo=terrain` or `?demo=space`. Three.js is bundled locally with the demo;
-the library has no Three.js dependency or CDN requirement.
+1. Open **Sphere**. The left panel shows dots; the right shows the triangle surface.
+2. Change **Algorithm** between **Bourke isosurfaces** and **Marching Cubes 33**.
+3. Change **Surface** to **Outer only**, **Inner only**, or **Both**.
+4. Leave **Surface offset** at `0` to keep the outer surface the same size as the dots.
+5. Turn on **Wireframe** to see the individual triangles.
 
-Use **Algorithm**, **Compute**, and **Coordinates** to select the extraction
-method. Choose **Outer only**, **Inner only**, or **Both**, adjust the shell
-thickness or surface offset, and enable wireframe to inspect the result. CPU is the
-default; WebGPU requires a supported browser and a secure context (localhost or
-HTTPS). Unsupported browsers retain CPU mode. Timings include extraction and
-geometry preparation; GPU timings include compilation on the first run and readback.
-`npm run build` creates the library formats and demo bundle in `dist/`, plus
-the deployable `site/index.html` and `site/dist/`. Netlify uses the included
-`netlify.toml`: build command `npm run build`, publish directory `site`.
-Any static HTTPS host can serve the contents of `site/`; localhost also works.
-The older demo URLs redirect to the corresponding view of `index.html`.
+**Shell thickness** controls how far inside the outer surface the inner surface
+sits. **Compute → WebGPU** runs extraction on the graphics card.
+**Coordinates** lets you try a regular box-shaped grid, spherical sampling,
+or the six faces of a cube wrapped around a sphere.
 
-## Reusable extraction API
+This example fits a sphere to sphere-shaped point clouds. It does not reconstruct
+arbitrary objects from scattered points.
 
-The source is plain JavaScript with ESM imports/exports. Tinybuild produces
-`dist/index.esm.js` for ESM in browsers or Node, `dist/index.cjs` for Node
-`require()`, and `dist/index.js` for a regular browser script exposing
-`globalThis.MarchingCubes`. The package's conditional exports select the matching
-format automatically. Build the library alone with `npm run build:library`.
+### Terrain: detailed ground and trees
+
+1. Open **Terrain** and expand **Terrain controls** if they are collapsed.
+2. Leave **Sampling** at **Adaptive LOD** and **Instanced trees** enabled.
+3. Turn on **LOD colors** or **Wireframe** to see detail change with distance.
+4. Enable **Infinite terrain**, then click **Fly through map** to keep generating ground.
+
+To repeat the benchmark pictured below, reload the terrain demo, leave its
+defaults in place, and click **Compare LOD**. Wait for the result panel.
+It compares adaptive detail against full detail at the same camera position,
+with trees enabled. Default terrain distance is `1800 m`; tree distance is `1400 m`.
+
+![Terrain with trees and the adaptive versus full-detail comparison](docs/benchmarks/terrain-tinybuild-benchmark.jpg)
+
+Recorded here: **184,928 terrain triangles instead of 1,753,088**—89.5% fewer—
+with 2,093 trees. Terrain triangle counts exclude trees; render timings include them.
+Your counts and timings can differ with window size and hardware.
+
+### Space: asteroids, islands and planets
+
+1. Open **Infinite space** and expand **Space controls** if needed.
+2. Keep **Display → Mesh only** for solid surfaces at every distance.
+3. Click **Start flythrough**. Drag to look around while you fly.
+4. Turn on **LOD colors** to see the eight mesh detail levels.
+5. For a heavier test, raise **Render distance** from `9 km` to `32 km`.
+
+Use **Floating island**, **Ringed planet** or **Asteroid** to jump near an example.
+**Island caves** adds intentional openings. The point-cloud display modes show
+dots instead of solid triangles, so gaps between dots are expected.
+
+![Space at 32 km with FPS, CPU and GPU readings](docs/benchmarks/space-tinybuild-32km.jpg)
+
+This captured view draws 7,456 bodies with about 1.94 million triangles.
+The separate 32 km stress test compares five versus eight detail levels:
+**9.97 million → 2.02 million triangles** for the same 8,425 bodies.
+See [space measurements](docs/SPACE.md#budgets-and-measurements) for the test conditions.
+
+### Moving around
+
+Click the terrain or space view before using the keyboard.
+
+| Action                          | Control                        |
+| ------------------------------- | ------------------------------ |
+| Look around                     | Hold the mouse button and drag |
+| Move                            | W / A / S / D                  |
+| Go up / down                    | Space / C                      |
+| Move faster                     | Hold Shift                     |
+| Return to the starting position | Reset                          |
+
+### Which sliders should I change?
+
+| Setting                | What it does                                                |
+| ---------------------- | ----------------------------------------------------------- |
+| Render distance        | How far away things may be drawn. Lower it for less work.   |
+| Terrain: Pixel error   | How much simplification to allow. Higher means less detail. |
+| Terrain: Player detail | The area around you that keeps high detail.                 |
+| Terrain: Tree distance | How far away trees may be drawn.                            |
+| Space: Detail spacing  | How much simplification to allow. Higher means less detail. |
+| Space: LOD distance    | Lower values switch to simpler meshes sooner.               |
+| Space: Near detail     | The area around you that keeps the finest meshes.           |
+
+Render distance is a limit, not a promise to fill the entire view. Both demos
+have memory and object limits. Terrain keeps an 8 km window around its generated
+map; infinite mode moves that window as you travel. Space fills a 3D region.
+
+**Reading performance:** FPS means frames per second; higher is smoother.
+Frame time is milliseconds per frame; lower is better (`20 ms ≈ 50 FPS`).
+GPU render time measures only drawing on the graphics card. CPU work, generating
+shapes and browser overhead also affect FPS, so a `3 ms` GPU reading does not
+mean the whole frame took `3 ms`.
+
+## 3. Make a sphere in JavaScript
+
+After the build, run the included example:
+
+```sh
+node examples/sphere.js
+```
+
+It prints triangle counts for both algorithms. Here is the complete example:
 
 ```js
-import { extractCPU, extractGPU, Coordinates } from 'marching-cubes-bourke-mc33';
+import { Coordinates, extractCPU } from "../dist/index.esm.js";
+
 const size = { x: 32, y: 32, z: 32 };
-const field = new Float32Array(size.x * size.y * size.z);
-// Fill field[(z * size.y + y) * size.x + x] with scalar samples.
 
-const positions = extractCPU(field, size, 0.5, 'mc33');
-// In a WebGPU browser with an existing GPUDevice:
-// const positions = await extractGPU(device, field, size, 0.5, 'mc33');
+// At each grid point: negative = inside the sphere, positive = outside.
+const field = Coordinates.sampleField(
+  size,
+  (x, y, z) => Math.hypot(x - 0.5, y - 0.5, z - 0.5) - 0.3,
+);
+
+export function makeSphere(algorithm = "mc33") {
+  // Find the surface where the sampled numbers cross zero.
+  return extractCPU(field, size, 0, algorithm);
+}
+
+for (const algorithm of ["bourke", "mc33"]) {
+  const positions = makeSphere(algorithm);
+  console.log(`${algorithm}: ${positions.length / 9} triangles`);
+}
 ```
 
-For direct browser use, import from `./dist/index.esm.js` in a module script,
-or load `<script src="./dist/index.js"></script>` and call
-`MarchingCubes.extractCPU(...)`. Node CommonJS consumers can use
-`const { extractCPU } = require('marching-cubes-bourke-mc33')`.
+The import path above is for a file in `examples/`. The result is a flat
+`Float32Array`: every three numbers are an `x, y, z` point; every three points
+make a triangle. That is why triangle count is `positions.length / 9`.
+The values in this example occupy a box from `0` to `1` on each axis.
 
-The same entry exports `TerrainRenderer`, `Trees`, `SpaceRenderer`, and the
-`TerrainField`, `TerrainLOD`, `TerrainPLOC`, `TerrainSurface`, `TerrainVegetation`,
-`SpaceWorld`, `SpaceGeometry`, `Fields`, `Coordinates`, `Bourke` and `MC33` helpers.
-Importing the package in Node needs no DOM or WebGPU device; renderers require
-browser canvases and WebGPU when initialized.
+Change `0.3` to change the radius. Increase `32` on all three axes for a finer
+grid and more work. Replace the distance formula to make a different shape.
+Extraction makes the triangle data; your renderer draws it.
 
-GPU programs live in `src/shaders/`, `src/terrain/shaders/` and
-`src/space/shaders/`. They use ordinary imports such as
-`import shader from './shaders/render.wgsl'`; tinybuild's `.wgsl: 'text'` loader
-embeds the shader text. The space worker uses the same `.worker.js` import and
-blob-worker plugin as the cloud project, so all built library formats contain
-their worker code without extra files or caller-relative worker URLs. When
-bundling source in another project, use the WGSL loader and worker plugin from
-`tinybuild.config.js`; the already-built ESM bundle needs neither plugin.
+For the same calculation in a browser, keep the server running and open
+`examples/browser.html` under the server address. It displays the triangle counts.
 
-Both methods return `Float32Array` triangle soup `[x,y,z, x,y,z, ...]`.
-Use `'bourke'` or `'mc33'` for the algorithm. Without a coordinate option, output
-occupies the normalized Cartesian domain `[0,1]^3`. Each algorithm preserves its
-source table's winding convention; the demo renders both sides.
+## 4. Use it in another project
 
-The GPU runner caches pipelines and lookup buffers per device, splits the volume
-into overlapping Z sample bricks, reads back only emitted vertices, and destroys
-temporary buffers after each brick. Capacity accounts for Bourke's maximum 15
-vertices per cell and MC33's maximum 36. Call `await MarchingCubes.disposeGPU(device)`
-when done with the cached GPU resources.
+Build just the reusable library:
 
-## Spherical and cloud coordinates
-
-MC33 extracts on a structured grid; it can use Cartesian cells or cells in a
-coordinate parameterization. Both algorithms support:
-
-| Mode | Grid axes | Options |
-| --- | --- | --- |
-| `cartesian` | x, y, z | Normalized `[0,1]^3` |
-| `spherical` | longitude, latitude, radius | `longitude`, `latitude` in radians; `radius`, `center` |
-| `cube-sphere` | face u, face v, radius | `face` from 0 to 5; `radius`, `center` |
-
-```js
-import { Coordinates, extractCPU } from 'marching-cubes-bourke-mc33';
-const coordinates = {
-  type: 'spherical',
-  longitude: [-Math.PI, Math.PI],
-  latitude: [-Math.PI / 2, Math.PI / 2],
-  radius: [0.1, 0.6],
-  center: [0, 0, 0]
-};
-const field = Coordinates.sampleField(size,
-  (x, y, z) => Math.hypot(x, y, z) - 0.33, coordinates);
-const positions = extractCPU(field, size, 0, 'mc33', { coordinates });
-// extractGPU accepts the same options after the algorithm argument.
+```sh
+npm run build:library
 ```
 
-Spherical defaults are longitude `[-pi,pi]`, latitude `[-pi/2,pi/2]`, radius
-`[0.02,0.7]`, center `[0.5,0.5,0.5]`. `sampleField` duplicates the longitude seam
-for full-circle grids. Latitude poles collapse to single world-space points;
-pole triangles can be degenerate. For uniform angular sampling without pole
-singularities, use the cloud shader's `cube-sphere` mapping and extract all six
-faces, sampling the same world-space field at shared boundaries.
+Copy the file matching your project from `dist/`:
 
-Extraction interpolates in parameter coordinates, then maps the result into
-world coordinates. GPU coordinate mapping currently happens on the CPU after
-readback. Triangles remain flat approximations of the curved domain. The cloud
-shader's code-12 vertex uses the cell center; cloud-specific projection, temporal
-filtering, noise generation, and normal smoothing are not part of this port.
+| Your project                      | File           | How to use it                                                                        |
+| --------------------------------- | -------------- | ------------------------------------------------------------------------------------ |
+| Browser or Node with ES modules   | `index.esm.js` | `import { extractCPU, Coordinates } from "./dist/index.esm.js";`                     |
+| Node with CommonJS                | `index.cjs`    | `const { extractCPU, Coordinates } = require("./dist/index.cjs");`                   |
+| Browser with a regular script tag | `index.js`     | Load `<script src="./dist/index.js"></script>`, then use `MarchingCubes.extractCPU`. |
 
-The demo fits a sphere to the generated point cloud by least squares, samples
-`distance(center, position) - fittedRadius` directly in each coordinate system,
-and caches those grids. Offset 0 puts the outer boundary at the point-cloud radius;
-the inner boundary sits one shell thickness inside it. Each boundary is extracted
-independently, so a thin shell cannot disappear between grid samples. Extracted
-vertices are projected onto their fitted sphere and receive smooth radial normals,
-with inward winding/normals for the inner surface and collapsed pole triangles
-removed. Both panels use identical camera positions and scale.
+Adjust paths to where you copied the file. Each built library file includes its
+shaders and worker code. No Three.js dependency is needed for the library.
 
-This fitting step is specific to spherical point clouds; it is not a general
-point-cloud reconstruction algorithm. The original summed Gaussian utility remains
-available as `Fields.createScalarField`. Reusable extraction APIs still accept
-arbitrary scalar fields without fitting or projection. Comparing algorithms within
-a coordinate mode uses identical samples; switching modes changes the lattice.
+To install it as a local package instead, run `npm pack` in this repo. In your
+other project, run `npm install` followed by the path to the generated `.tgz` file.
+Then import from `"marching-cubes-bourke-mc33"` instead of a file path.
 
-## Verification
+[The API guide](docs/API.md) covers GPU extraction, drawing the result,
+spherical coordinates, shader imports and the other exported helpers.
 
-- `npm test`: mask coverage, ambiguity decisions, shared faces, closed meshes,
-  coordinate mappings/seams, input validation, GPU brick limits, and ESM / Node
-  CommonJS / browser-global package parity. Tests run against the built package.
-- Run `npm run build:checks`, serve the repo, and open `tests/webgpu.html`: 56 CPU/WebGPU geometry and winding
-  comparisons, including all masks, exact crossings, split bricks, spherical
-  mapping, all six cube-sphere faces, and tight inner/outer sphere boundaries.
-- `tests/terrain-webgpu.html`: terrain generation, stitches, caching, infinite
-  travel, instanced tree LODs, and a fixed-view CPU draw-plan comparison.
-- `tests/space-webgpu.html`: actual worker extraction/GPU rendering, all display
-  modes, adaptive/full-detail comparison, vertical/99 km travel, and cache budgets.
-- `tests/space-stress-webgpu.html`: 32 km comparison of five versus eight mesh
-  levels with identical visible bodies and production budgets; stationary batch
-  reuse and all eight drawn LODs.
+## 5. Put the demos on Netlify
 
+<<<<<<< Updated upstream
 See `THIRD_PARTY_NOTICES.md` for source attribution.
+=======
+Run:
+
+```sh
+npm run build
+```
+
+The ready-to-host files are in **`site/`**: one `index.html` and a `dist/` folder.
+Upload that folder to a static HTTPS host, or connect the repo to Netlify with:
+
+| Netlify setting   | Value           |
+| ----------------- | --------------- |
+| Build command     | `npm run build` |
+| Publish directory | `site`          |
+
+The included `netlify.toml` already supplies those settings.
+The three views use `index.html?demo=sphere`, `index.html?demo=terrain` and
+`index.html?demo=space` on whichever host you use.
+
+## Checks and further reading
+
+`npm test` builds the library and runs the CPU and package checks.
+
+For GPU checks, run `npm run build:checks`, then `npm run serve` if the server
+is not already running. Open these paths under its address:
+
+| Page                             | What it checks                                      |
+| -------------------------------- | --------------------------------------------------- |
+| `tests/webgpu.html`              | CPU and GPU extraction agree                        |
+| `tests/terrain-webgpu.html`      | Terrain, seams, trees and travel                    |
+| `tests/space-webgpu.html`        | Space meshes, points, streaming and both algorithms |
+| `tests/space-stress-webgpu.html` | The 32 km comparison and moving-camera performance  |
+
+For source changes, run `npm run build` again and refresh the demo.
+Use `npm run build:checks` again after changing GPU check code.
+
+- [API and shader guide](docs/API.md)
+- [How terrain works](docs/TERRAIN.md)
+- [How space works, including performance measurements](docs/SPACE.md)
+- [Where the terrain LOD ideas came from](docs/terrain-source-review.md)
+- [Credits and third-party notices](THIRD_PARTY_NOTICES.md)
+
+MIT licensed. The [original CodePen](https://codepen.io/mootytootyfrooty/pen/pvJREbv)
+shows an older, classic-only version.
+>>>>>>> Stashed changes

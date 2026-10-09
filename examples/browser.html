@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Marching cubes: a small API example</title>
+  </head>
+  <body>
+    <h1>Make a sphere with JavaScript</h1>
+    <p>This example generates triangle data on the CPU and prints its size.</p>
+    <pre id="result">Loading the built library…</pre>
+    <p>
+      Use the main <a href="../index.html?demo=sphere">sphere demo</a> to see a
+      rendered mesh.
+    </p>
+    <script type="module">
+      import { makeSphere } from "./sphere.js";
+
+      const lines = ["Grid: 32 × 32 × 32", "Sphere radius: 0.3", ""];
+      for (const algorithm of ["bourke", "mc33"]) {
+        const positions = makeSphere(algorithm);
+        lines.push(`${algorithm}: ${positions.length / 9} triangles`);
+      }
+      document.getElementById("result").textContent = lines.join("\n");
+    </script>
+  </body>
+</html>
