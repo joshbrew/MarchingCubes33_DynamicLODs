@@ -202,5 +202,4 @@ a coordinate mode uses identical samples; switching modes changes the lattice.
   levels with identical visible bodies and production budgets; stationary batch
   reuse and all eight drawn LODs.
 
-See `THIRD_PARTY_NOTICES.md` for source attribution. The original classic-only
-[CodePen demo](https://codepen.io/mootytootyfrooty/pen/pvJREbv) remains an older version.
+See `THIRD_PARTY_NOTICES.md` for source attribution.
