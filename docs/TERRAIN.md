@@ -1,6 +1,6 @@
 # Adaptive terrain prototype
 
-Open `terrain.html` with the same `npm start` server as the isosurface demo.
+Run `npm install` and `npm start`, then open `index.html?demo=terrain`.
 The 8,192 × 8,192 m procedural world contains 4,096 tiles of 128 × 128 m.
 Each tile selects 64, 32, 16, 8, 4, or 2 horizontal cells per axis, giving
 2–64 m spacing. No full-resolution world mesh or density volume is allocated.
@@ -173,10 +173,12 @@ the measured timings and their limits.
 
 ## Reuse
 
-Load scripts in the order in `terrain.html`, then:
+Import the renderer from the ESM bundle (or the package entry):
 
 ```js
-const renderer = await new AdaptiveTerrain.Renderer(canvas, {
+import { TerrainRenderer } from 'marching-cubes-bourke-mc33';
+
+const renderer = await new TerrainRenderer(canvas, {
   worldSize: 8192, tileSize: 128, maxDivs: 64,
   memoryMB: 64, buildsPerFrame: 8
 }).initialize();

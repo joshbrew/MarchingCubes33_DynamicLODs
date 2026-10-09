@@ -1,12 +1,4 @@
-// Joshua Brewster (MIT License). See LICENSE and THIRD_PARTY_NOTICES.md.
-(function (root, factory) {
-  const api = factory();
-  if (typeof module === 'object' && module.exports) module.exports = api;
-  else root.MC33Shader = api;
-})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
-  'use strict';
-// Imported verbatim from tools/clouds/shaders/planetCloudSurfaceMC33.wgsl.
-const mc33Core = `struct CubeVals {
+struct CubeVals {
   v0: f32,
   v1: f32,
   v2: f32,
@@ -346,9 +338,3 @@ fn get_face_result(ft: FaceTests, idx: u32) -> i32 {
     default: { return ft.f5; }
   }
 }
-
-
-
-`;
-return { mc33Core };
-});

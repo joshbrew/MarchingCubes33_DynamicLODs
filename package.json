@@ -1,7 +1,44 @@
 {
   "name": "marching-cubes-bourke-mc33",
   "version": "1.0.0",
-  "private": true,
-  "type": "commonjs",
-  "scripts": { "test": "node --test tests/*.test.cjs", "start": "node tools/serve.cjs" }
+  "description": "Bourke and MC33 isosurfaces with WebGPU terrain and volumetric space LOD",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.esm.js",
+  "unpkg": "./dist/index.js",
+  "jsdelivr": "./dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.cjs"
+    },
+    "./browser": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/index.js",
+    "dist/index.esm.js",
+    "dist/index.cjs",
+    "src",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "npm run build && node tools/serve.js",
+    "serve": "node tools/serve.js",
+    "build": "node tools/build.js",
+    "build:library": "node tools/build.js --library",
+    "build:checks": "node tools/build.js --checks",
+    "prepack": "npm run build:library",
+    "test": "npm run build:library && node --test tests/*.test.js"
+  },
+  "devDependencies": {
+    "tinybuild": "^1.0.6",
+    "three": "0.128.0"
+  },
+  "license": "MIT"
 }

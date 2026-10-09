@@ -1,0 +1,7 @@
+node_modules/
+dist/
+site/
+.temp/
+*.tgz
+# Tinybuild creates a fallback icon when serving locally.
+/favicon.ico

@@ -1,36 +1,7 @@
-<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Infinite Space — Volumetric LOD</title>
-<style>
-*{box-sizing:border-box}body{margin:0;background:#050611;color:#eef2ff;font:13px system-ui,sans-serif;overflow:hidden}#space{display:block;width:100vw;height:100vh;touch-action:none;outline:none}
-.panel{position:absolute;z-index:2;border:1px solid #8c9bbb35;background:#080d21e8;border-radius:12px;backdrop-filter:blur(8px)}
-header{left:16px;top:16px;width:330px;padding:16px;max-height:calc(100vh - 285px);overflow:auto}h1{font-size:22px;font-weight:600;margin:0 0 4px;letter-spacing:-.5px}.sub{color:#a5b1d4;margin:0 0 12px;line-height:1.5}summary{cursor:pointer;color:#aecbff;margin:8px 0 12px}.row{margin:9px 0;display:flex;gap:12px;align-items:center;justify-content:space-between}label{display:flex;gap:10px;align-items:center;justify-content:space-between;width:100%}select,button{background:#1b2540;color:inherit;border:1px solid #8c9bbb60;font:inherit;border-radius:5px;padding:6px 8px}button{cursor:pointer}button:hover{background:#2c3c62}input[type=range]{width:145px;accent-color:#94aeef}.checks{display:flex;gap:16px;margin:12px 0}.checks label{width:auto}.buttons{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}#status{color:#b3e7d9;font-size:12px;line-height:1.5;margin:12px 0 0}#status.error{color:#ffb6b6}a{color:#a6c4ff}.links{font-size:11px;margin:12px 0 0;color:#a5b1d4}
-#telemetry{left:16px;bottom:16px;width:330px;padding:13px;display:grid;grid-template-columns:1fr 1fr;gap:11px}.metric strong{display:block;font-size:18px;font-weight:550;font-variant-numeric:tabular-nums}.metric span{font-size:10px;color:#a5b1d4}#histogram{grid-column:1/3;display:flex;gap:3px;height:7px;background:#1c2540}#histogram div{min-width:1px}
-#legend{right:16px;bottom:16px;padding:14px;width:235px;font-size:12px;line-height:1.7;color:#adbfe0}#legend strong{color:#fff;font-weight:500}.swatch{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px}#coords{margin-top:10px;color:#aecbff;font-variant-numeric:tabular-nums}#help{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);font-size:12px;color:#c1cce8;text-align:center;pointer-events:none;text-shadow:0 2px 4px #000}#loading{position:absolute;top:45%;left:50%;transform:translateX(-50%);color:#c1cce8;pointer-events:none}
-@media(max-width:800px),(max-height:650px){header{top:8px;left:8px;width:290px;max-height:calc(100vh - 195px);padding:12px}#telemetry{bottom:8px;left:8px;width:290px;grid-template-columns:repeat(3,1fr);gap:7px;padding:10px}.metric strong{font-size:14px}.metric span{font-size:9px}#histogram{grid-column:1/4}#legend,#help{display:none}}
-.demo-nav{position:sticky;top:0;z-index:5;background:#080d21;display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;font-size:12px}.demo-nav a{display:block;padding:6px 9px;border:1px solid #8298b266;border-radius:5px;text-decoration:none}.demo-nav a[aria-current=page]{background:#8298b233;font-weight:600}.demo-nav a:hover{background:#8298b244}</style></head><body>
-<canvas id="space" tabindex="0" aria-label="Infinite asteroid and floating-world field"></canvas><div id="loading">Building 3D worlds…</div>
-<header class="panel"><nav class="demo-nav" aria-label="Demos"><a href="marchingcubesclassic.html">Sphere</a><a href="terrain.html">Terrain</a><a href="space.html" aria-current="page">Infinite space</a></nav><h1>Infinite space</h1><p class="sub">Asteroids · floating islands · ringed planets<br>Full 3D shapes, meshes and point-cloud LOD</p>
-<details id="controls" open><summary>Space controls</summary>
-<div class="row"><label>Display<select id="mode"><option value="mesh" selected>Mesh only</option><option value="hybrid">Meshes near / points far</option><option value="points">Point cloud only</option></select></label></div>
-<p style="font-size:11px;color:#a5b1d4;margin:4px 0 12px">Mesh only keeps distant bodies solid. Point modes show dots sampled from each surface.</p>
-<div class="row"><label>Algorithm<select id="algorithm"><option value="mc33">MC33</option><option value="bourke">Bourke</option></select></label></div>
-<div class="row"><label for="distance">Render distance <output id="distanceValue">9 km</output></label><input id="distance" type="range" min="2000" max="32000" step="1000" value="9000" aria-label="Space render distance"></div>
-<div class="row"><label for="quality">Detail spacing <output id="qualityValue">3 px</output></label><input id="quality" type="range" min="1" max="8" step=".5" value="3" aria-label="Detail spacing"></div>
-<div class="row"><label for="lodDistance">LOD distance <output id="lodDistanceValue">4000 m</output></label><input id="lodDistance" type="range" min="500" max="16000" step="250" value="4000" aria-label="LOD distance"></div>
-<div class="row"><label for="nearRadius">Near detail <output id="nearRadiusValue">250 m</output></label><input id="nearRadius" type="range" min="0" max="2000" step="50" value="250" aria-label="Near detail radius"></div>
-<div class="row"><label for="pointSize">Point size <output id="pointValue">2 px</output></label><input id="pointSize" type="range" min="1" max="5" step=".25" value="2" aria-label="Point size"></div>
-<div class="row"><label for="speed">Flight speed <output id="speedValue">450 m/s</output></label><input id="speed" type="range" min="100" max="2400" step="50" value="450" aria-label="Flight speed"></div>
-<div class="checks"><label><input id="colors" type="checkbox">LOD colors</label><label><input id="uniform" type="checkbox">Full detail</label></div>
-<div class="checks"><label><input id="caves" type="checkbox">Island caves</label></div>
-<div class="buttons"><button id="fly">Start flythrough</button><button id="reset">Reset</button></div>
-<div class="buttons"><button id="island">Floating island</button><button id="planet">Ringed planet</button><button id="asteroid">Asteroid</button></div>
-</details><p id="status" role="status" aria-live="polite">Preparing space…</p><p class="links">Drag to look · WASD fly · Space up / C down · Shift faster</p></header>
-<div id="telemetry" class="panel" aria-label="Space performance">
-<div class="metric"><strong id="frameTime">—</strong><span>frame / GPU render</span></div><div class="metric"><strong id="triangles">—</strong><span>mesh triangles</span></div>
-<div class="metric"><strong id="points">—</strong><span>3D surface points</span></div><div class="metric"><strong id="objects">—</strong><span>meshes / point clouds</span></div>
-<div class="metric"><strong id="memory">—</strong><span>geometry cache / sectors</span></div><div class="metric"><strong id="draws">—</strong><span>draws / queued shapes</span></div><div class="metric" style="grid-column:1/-1"><strong id="meshLods" style="font-size:13px">—</strong><span>mesh LOD 0 / 1 / 2 / 3 / 4 / 5 / 6 / 7</span></div><div id="histogram" aria-label="Space LOD distribution"></div></div>
-<aside id="legend" class="panel"><strong>Eight mesh detail levels</strong><br><span class="swatch" style="background:#ff4d30"></span>LOD 0 · finest<br><span class="swatch" style="background:#ffa52e"></span>LOD 1 · high<br><span class="swatch" style="background:#ebd948"></span>LOD 2 · medium<br><span class="swatch" style="background:#43b879"></span>LOD 3 · low<br><span class="swatch" style="background:#288fff"></span>LOD 4 · distant<br><span class="swatch" style="background:#36cbd9"></span>LOD 5 · far<br><span class="swatch" style="background:#8276ff"></span>LOD 6 · very far<br><span class="swatch" style="background:#bd70e8"></span>LOD 7 · horizon<br>Point modes add eight density tiers.<br>Enable LOD colors to see transitions.<div id="coords"></div></aside>
-<p id="help">Fly toward a body to watch its detail grow.<br>Independent 3D sectors stream in every direction.</p>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script><script src="src/space/world.js"></script><script src="src/space/renderer.js"></script><script src="src/space/demo.js"></script></body></html>
-
-
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" />
+  <title>Marching Cubes</title
+  ><meta http-equiv="refresh" content="0;url=index.html?demo=space" />
+  <a href="index.html?demo=space">Open the space demo</a>
+</html>

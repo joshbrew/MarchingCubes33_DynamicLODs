@@ -1,0 +1,21 @@
+[build]
+  command = "npm run build"
+  publish = "site"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[[redirects]]
+  from = "/terrain.html"
+  to = "/?demo=terrain"
+  status = 301
+
+[[redirects]]
+  from = "/space.html"
+  to = "/?demo=space"
+  status = 301
+
+[[redirects]]
+  from = "/marchingcubesclassic.html"
+  to = "/?demo=sphere"
+  status = 301

@@ -1,7 +1,7 @@
 # MC33 source and attribution
 
 The MC33 lookup data in `src/mc33Tables.js` and the decision functions in
-`src/mc33Shader.js` were imported from this project's cloud shader work:
+`src/shaders/mc33-core.wgsl` were imported from this project's cloud shader work:
 
 - `vibe_code_experiments/noiseCompute/tools/clouds/mc33Tables.js`
 - `vibe_code_experiments/noiseCompute/tools/clouds/shaders/planetCloudSurfaceMC33.wgsl`

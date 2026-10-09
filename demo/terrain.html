@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Adaptive Terrain — Bourke / MC33</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #16232c;
+        color: #ecf2ed;
+        font:
+          13px system-ui,
+          sans-serif;
+        overflow: hidden;
+      }
+      #terrain {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        touch-action: none;
+      }
+      .panel {
+        position: absolute;
+        z-index: 2;
+        background: rgba(15, 27, 35, 0.88);
+        border: 1px solid #6c858558;
+        border-radius: 10px;
+        backdrop-filter: blur(8px);
+      }
+      header {
+        top: 16px;
+        left: 16px;
+        padding: 16px;
+        width: 350px;
+        max-height: calc(100vh - 320px);
+        overflow: auto;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 5px;
+        letter-spacing: -0.4px;
+      }
+      summary {
+        cursor: pointer;
+        color: #cde1b4;
+        margin: 8px 0;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .sub {
+        color: #b5c7c8;
+        margin: 0 0 14px;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 9px 0;
+        gap: 10px;
+      }
+      label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        width: 100%;
+      }
+      select,
+      button,
+      input[type="number"] {
+        font: inherit;
+        color: inherit;
+        background: #273b47;
+        border: 1px solid #6c858588;
+        border-radius: 5px;
+        padding: 6px 8px;
+      }
+      input[type="range"] {
+        width: 150px;
+        accent-color: #b2d791;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:hover {
+        background: #3d5661;
+      }
+      .checks {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin: 14px 0;
+      }
+      .checks label {
+        width: auto;
+        justify-content: start;
+        gap: 5px;
+      }
+      #status {
+        color: #b8d8ad;
+        min-height: 20px;
+        margin: 10px 0 0;
+      }
+      #status.error {
+        color: #ffb3a5;
+      }
+      #telemetry {
+        left: 16px;
+        bottom: 16px;
+        width: 350px;
+        padding: 14px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .metric strong {
+        display: block;
+        font-size: 19px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+      .metric span {
+        font-size: 11px;
+        color: #abc0c5;
+      }
+      #histogram {
+        grid-column: 1/3;
+        display: flex;
+        gap: 3px;
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+        background: #263744;
+      }
+      #mapPanel {
+        right: 16px;
+        bottom: 16px;
+        padding: 12px;
+      }
+      #map {
+        width: 200px;
+        height: 200px;
+        display: block;
+      }
+      #mapPanel p {
+        font-size: 11px;
+        color: #abc0c5;
+        margin: 8px 0 0;
+      }
+      #help {
+        position: absolute;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #e9f1ef;
+        text-align: center;
+        max-width: 420px;
+        text-shadow: 0 1px 4px #14212b;
+        font-size: 12px;
+        pointer-events: none;
+      }
+      #report {
+        top: 16px;
+        right: 16px;
+        padding: 14px;
+        width: 340px;
+        white-space: pre-wrap;
+        display: none;
+        font: 12px system-ui;
+        line-height: 1.6;
+      }
+      a {
+        color: #cde1b4;
+      }
+      #loading {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        color: #eef6f2;
+        font-size: 18px;
+        pointer-events: none;
+      }
+      @media (max-width: 800px), (max-height: 600px) {
+        header {
+          width: 290px;
+          top: 8px;
+          left: 8px;
+          padding: 12px;
+          max-height: calc(100vh - 205px);
+          overflow: auto;
+        }
+        #telemetry {
+          width: 290px;
+          left: 8px;
+          bottom: 8px;
+          grid-template-columns: repeat(3, 1fr);
+          padding: 10px;
+          gap: 8px;
+        }
+        .metric strong {
+          font-size: 15px;
+        }
+        .metric span {
+          font-size: 10px;
+        }
+        #histogram {
+          grid-column: 1/4;
+        }
+        #mapPanel {
+          display: none;
+        }
+        #help {
+          display: none;
+        }
+        #report {
+          right: 8px;
+          top: auto;
+          bottom: 8px;
+          width: 270px;
+          max-height: calc(100vh - 16px);
+          overflow: auto;
+        }
+      }
+      .demo-nav {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background: #0f1b23;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 14px;
+        font-size: 12px;
+      }
+      .demo-nav a {
+        display: block;
+        padding: 6px 9px;
+        border: 1px solid #8298b266;
+        border-radius: 5px;
+        text-decoration: none;
+      }
+      .demo-nav a[aria-current="page"] {
+        background: #8298b233;
+        font-weight: 600;
+      }
+      .demo-nav a:hover {
+        background: #8298b244;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas
+      id="terrain"
+      aria-label="Adaptive terrain map"
+      tabindex="0"
+    ></canvas>
+    <div id="loading">Preparing terrain…</div>
+    <header class="panel">
+      <nav class="demo-nav" aria-label="Demos">
+        <a href="index.html?demo=sphere">Sphere</a
+        ><a href="index.html?demo=terrain" aria-current="page">Terrain</a
+        ><a href="index.html?demo=space">Infinite space</a>
+      </nav>
+      <h1>Adaptive terrain</h1>
+      <p class="sub" id="worldLabel">8 × 8 km world · samples down to 2 m</p>
+      <details id="terrainControls" open>
+        <summary>Terrain controls</summary>
+        <div class="row">
+          <label
+            >Surface<select id="surface">
+              <option value="mc33">MC33 heightfield</option>
+              <option value="bourke">Bourke heightfield</option>
+            </select></label
+          >
+        </div>
+        <div class="row">
+          <label
+            >Sampling<select id="sampling">
+              <option value="adaptive">Adaptive LOD</option>
+              <option value="uniform">Uniform full detail</option>
+            </select></label
+          >
+        </div>
+        <div class="row">
+          <label for="error"
+            >Pixel error <output id="errorValue">2.5 px</output></label
+          ><input
+            id="error"
+            type="range"
+            min="0.5"
+            max="12"
+            step="0.5"
+            value="2.5"
+            aria-label="Pixel error"
+          />
+        </div>
+        <div class="row">
+          <label for="radius"
+            >Player detail <output id="radiusValue">110 m</output></label
+          ><input
+            id="radius"
+            type="range"
+            min="0"
+            max="350"
+            step="10"
+            value="110"
+            aria-label="Player detail radius"
+          />
+        </div>
+        <div class="row">
+          <label
+            >Field of view<input
+              id="fov"
+              type="number"
+              min="25"
+              max="100"
+              value="60"
+              style="width: 75px"
+          /></label>
+        </div>
+        <div class="row">
+          <label for="distance"
+            >Render distance <output id="distanceValue">1800 m</output></label
+          ><input
+            id="distance"
+            type="range"
+            min="300"
+            max="32000"
+            step="100"
+            value="1800"
+            aria-label="Max render distance"
+          />
+        </div>
+        <div class="checks">
+          <label><input id="infinite" type="checkbox" />Infinite terrain</label
+          ><label><input id="colors" type="checkbox" />LOD colors</label
+          ><label><input id="wire" type="checkbox" />Wireframe</label>
+        </div>
+        <div class="checks">
+          <label
+            ><input id="trees" type="checkbox" checked />Instanced trees</label
+          >
+        </div>
+        <div class="row">
+          <label for="treeDistance"
+            >Tree distance <output id="treeDistanceValue">1400 m</output></label
+          ><input
+            id="treeDistance"
+            type="range"
+            min="200"
+            max="2500"
+            step="100"
+            value="1400"
+            aria-label="Tree render distance"
+          />
+        </div>
+        <div class="row">
+          <button id="tour">Fly through map</button
+          ><button id="benchmark">Compare LOD</button
+          ><button id="reset">Reset</button>
+        </div>
+      </details>
+      <p id="status" role="status" aria-live="polite">
+        Compiling the GPU terrain pipeline…
+      </p>
+      <p style="margin: 10px 0 0; font-size: 11px; color: #abc0c5">
+        Drag to look · WASD · Space up · C down · Shift faster
+      </p>
+    </header>
+    <div id="telemetry" class="panel" aria-label="Terrain performance">
+      <div class="metric">
+        <strong id="frameTime">—</strong><span>frame / GPU render</span>
+      </div>
+      <div class="metric">
+        <strong id="triangleCount">—</strong><span>visible triangles</span>
+      </div>
+      <div class="metric">
+        <strong id="drawCount">—</strong><span>terrain draws / tiles</span>
+      </div>
+      <div class="metric">
+        <strong id="sampleCount">—</strong
+        ><span>active vertices / full detail</span>
+      </div>
+      <div class="metric">
+        <strong id="cacheCount">—</strong
+        ><span>resident tiles / memory cap</span>
+      </div>
+      <div class="metric">
+        <strong id="buildCount">—</strong><span>tile builds / pending</span>
+      </div>
+      <div class="metric">
+        <strong id="treeCount">—</strong><span>trees / vegetation draws</span>
+      </div>
+      <div class="metric">
+        <strong id="treeLods">—</strong
+        ><span>trees: fine / medium / distant</span>
+      </div>
+      <div id="histogram" aria-label="LOD distribution"></div>
+    </div>
+    <aside id="mapPanel" class="panel">
+      <canvas
+        id="map"
+        width="200"
+        height="200"
+        aria-label="Terrain LOD minimap"
+      ></canvas>
+      <p>
+        Detail: red → orange → green → blue → violet<br /><span
+          id="positionLabel"
+        ></span>
+      </p>
+    </aside>
+    <p id="help">
+      WASD move · drag to look · Shift faster · Space up / C down<br />Enable
+      Infinite terrain, then Fly through map for an endless flight.
+    </p>
+    <pre id="report" class="panel" role="status"></pre>
+  </body>
+</html>

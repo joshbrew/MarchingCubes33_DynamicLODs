@@ -1,6 +1,6 @@
 # Infinite volumetric space
 
-Open `space.html` on the same localhost server. **Display** offers connected
+Open `index.html?demo=space` after `npm install` and `npm start`. **Display** offers connected
 meshes everywhere, true 3D surface points everywhere, or meshes nearby and points
 far away. **Mesh only is the default.** Dot silhouettes in point modes are intentional. Mesh only retains a
 closed triangle surface at every distance. Controls match terrain: drag to look,
@@ -47,7 +47,10 @@ Four deterministic field variants per body type share immutable GPU geometry.
 Different centers, radii, rotations and tints are GPU instances; shapes are
 repeated rather than uniquely extracted for every body. Requested large-body
 detail has priority over distant coarse bootstrap work. While workers finish,
-a cached coarse mesh or point sample can temporarily appear.
+a cached coarse mesh or point sample can temporarily appear. Missing mesh LODs
+prefer the nearest available coarser level; a finer fallback is used only when
+no coarser shape is resident. Expanding the view must not temporarily draw the
+finest cached shape for thousands of faraway bodies.
 
 Point clouds use deterministic unique vertices of the finest extracted mesh.
 The 8192/2048/512/128/32/8/2/1 tiers are prefixes of the same surface cloud,
@@ -62,14 +65,21 @@ for small silhouettes. Their sample count accounts for point size. Point-only
 mode permits sparse larger silhouettes for inspecting the cloud. Mesh LODs and
 point density tiers also have dead bands. Transitions are discrete, not morphed.
 
-CPU sector selection runs at up to 10 Hz while the view changes. A stationary
-view reuses its selection, instance batches and uploaded instance data. Movement,
-projection/viewport changes, settings changes and new resident geometry invalidate
-the applicable caches. Conservative sector and body bounds
-are frustum/radial culled before GPU submission. Geometry is grouped by shape,
-LOD and point count for instanced draws. Global CPU positions are doubles and
-GPU centers are camera relative, avoiding growing floating-point position error
-during long flights. Bodies regenerate deterministically on return visits.
+CPU sector selection runs at up to 10 Hz while the view changes, including while
+dragging to look. Both sectors and individual bodies are culled against the full
+camera frustum, including its field of view and aspect ratio, and the radial
+distance cutoff. Conservative bounds keep bodies overlapping the view edge.
+The scan allocates candidate cells only after culling, and LOD constants are shared.
+
+Geometry is grouped by shape, LOD and point count for instanced draws. Visibility
+cuts and new resident geometry rebuild the instance batches and a WebGPU render
+bundle containing the sky and all instanced draw commands. Other frames replay
+that bundle and update only the camera/frame uniforms. Smooth camera translation
+uses a GPU camera offset relative to the last uploaded batch origin, so moving
+between visibility cuts does not regroup or upload thousands of instances.
+Global CPU positions are doubles and GPU coordinates stay relative to a nearby
+origin, avoiding growing floating-point position error during long flights.
+Bodies regenerate deterministically on return visits.
 
 ## Budgets and measurements
 
@@ -83,8 +93,14 @@ frustum up to the requested distance until a budget is reached.
 Workers upload completed geometry once; production frames do not read meshes
 back from the GPU. CPU instance/frame arrays are reused. Optional timestamp
 queries measure the render pass asynchronously every 20 frames; they exclude
-worker extraction, browser compositing and scheduling. Frame time includes
-browser scheduling. No texture or external image asset is used for the bodies.
+CPU visibility selection, bundle preparation, worker extraction, browser
+compositing and scheduling. A low GPU render time alone does not imply a high
+frame rate. The HUD shows FPS explicitly, frame/GPU milliseconds, smoothed CPU
+submission time, and peak culling/batch times from the last HUD interval. CPU
+submission measures the renderer call; it excludes the rest of the demo loop.
+Frame time includes browser scheduling: 20 ms per frame means roughly 50 FPS,
+while 20 FPS means about 50 ms per frame.
+No texture or external image asset is used for the bodies.
 
 The local `tests/space-stress-webgpu.html` run uses the production budgets and
 a 1280 × 720 CSS canvas. At 32 km, the five-level baseline drew 9,971,348
@@ -97,11 +113,25 @@ camera position; they are not a frame-rate guarantee. The test verifies all
 eight drawn levels, stationary cache reuse, movement invalidation, 99 km travel
 and production cache/view budgets with GPU validation enabled.
 
+The 2026-10-09 moving-camera comparison runs 120 frames at simulated 16 ms
+intervals with the same 32 km view and production budgets. CPU submission fell
+from 9.452 ms mean / 26.200 ms peak to 2.566 ms mean / 27.800 ms peak after
+cached render bundles, GPU camera offsets and allocation reductions. Batch
+rebuilds fell from 120 to 18; stationary submission was 0.148 ms. This measures
+CPU work rather than end-to-end FPS, and culling/batch updates still cause spikes.
+The GPU readback check compares a translated cached bundle against freshly
+rebased instances at the same position; mean RGB error was 0.0000 / 255. Moving
+frames without a new visibility cut or completed worker shape must reuse the
+same bundle. These are local diagnostics, not portable performance guarantees.
+
 `tests/space-webgpu.html` checks both extractors, warm cache reuse, vertical
 and 99 km travel, 32 km view distance, return visits and all memory/view budgets.
 It verifies mesh-only/solid-island defaults, the five near mesh levels during
 camera travel, both distance controls, and switching solid/carved island caches.
-CPU tests check deterministic 3D sectors, nested samples, representation
+The GPU check also expands the render distance before the new LODs finish and
+asserts that resident coarse fallbacks are used. CPU tests check frustum culling
+against an exhaustive reference across FOVs, rotation and distant origins,
+deterministic 3D sectors, nested samples, representation
 hysteresis, closed surfaces, and consistent directed island edges in all four
 variants at all eight detail levels for both algorithms, with caves both on and off.
 Additional checks verify closed outward sphere/ring proxy components fitted to
