@@ -1,5 +1,7 @@
 # Marching Cubes — Bourke and MC33
 
+## [Try Me!!](https://marchingcubeswebgpu.netlify.app/)
+
 **Adaptive terrain demo** (`index.html?demo=terrain`) — an 8 × 8 km
 GPU terrain map with player/camera-driven sampling, stitched LODs, a resident
 cache, an optional infinite flythrough, a render-distance slider, and an
