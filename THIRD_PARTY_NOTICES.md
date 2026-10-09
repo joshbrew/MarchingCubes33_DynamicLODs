@@ -14,9 +14,6 @@ The reference lookup table credits MC33_LookUpTable.h: programmed by David Vega
 (dvega@uc.edu.ve) and Javier Abache (jabache@uc.edu.ve), March 2012. Modified by
 David Vega, May/July 2018, April/June 2019, August 2021, February 2026.
 
-The original JavaScript demo carries Joshua Brewster's MIT license notice.
-See `LICENSE` for this repository's license.
-
 The classic lookup table is retained from this repository's Paul Bourke demo.
 Its original reference is <https://paulbourke.net/geometry/polygonise/>.
 
