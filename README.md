@@ -10,7 +10,7 @@ Instanced forests have three tree LODs, their own distance slider, and roots
 attached to the current stitched terrain triangles. Settled views reuse draw plans.
 See [terrain documentation](docs/TERRAIN.md)
 and [the HPLOC / older LOD source review](docs/terrain-source-review.md).
-=======
+
 Turn a grid of numbers into a 3D shape made of triangles.
 
 Think of a stack of graph paper. Each grid point says whether it is inside or
