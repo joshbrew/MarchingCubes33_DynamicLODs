@@ -210,9 +210,6 @@ spherical coordinates, shader imports and the other exported helpers.
 
 ## 5. Put the demos on Netlify
 
-<<<<<<< Updated upstream
-See `THIRD_PARTY_NOTICES.md` for source attribution.
-=======
 Run:
 
 ```sh
@@ -256,4 +253,5 @@ Use `npm run build:checks` again after changing GPU check code.
 
 MIT licensed. The [original CodePen](https://codepen.io/mootytootyfrooty/pen/pvJREbv)
 shows an older, classic-only version.
->>>>>>> Stashed changes
+
+See `THIRD_PARTY_NOTICES.md` for source attribution.
