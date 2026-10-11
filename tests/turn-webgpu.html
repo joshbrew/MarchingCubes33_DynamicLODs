@@ -1,0 +1,24 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Turn streaming checks</title>
+<style>
+  body {
+    background: #101722;
+    color: #def;
+    font: 15px monospace;
+    margin: 24px;
+  }
+  canvas {
+    width: 640px;
+    height: 400px;
+    max-width: 100%;
+  }
+  pre {
+    white-space: pre-wrap;
+  }
+</style>
+<h1>Turn streaming checks</h1>
+<pre id="results">Running…</pre>
+<canvas id="terrain" width="640" height="400"></canvas>
+<canvas id="space" width="640" height="400"></canvas>
+<script type="module" src="../dist/tests/turn-webgpu.js"></script>

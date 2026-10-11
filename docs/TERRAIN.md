@@ -204,6 +204,14 @@ Its heightfield stitch templates cannot be used as general MC33 volume transitio
 
 ## Checks
 
+Nearby terrain now prefetches in every direction, with a radius derived from
+35% of the fixed atlas capacity. Visible coverage is built first, then offscreen
+coverage, then finer samples. Existing samples remain usable during refinement.
+Trees warm two nearby offscreen tiles per frame. A narrow CPU-frustum overlap
+covers small turns, while large turns trigger selection immediately. Cache bounds
+and 2:1 stitching are preserved. The [turn check](../tests/turn-webgpu.html) verifies
+that nearby patches and tree placements were resident before a 180° turn.
+
 - `npm test`: includes the original MC33 checks and terrain hierarchy, LOD,
   analytic-gradient and all-edge seam topology tests.
 - `/tests/terrain-webgpu.html`: compares GPU samples/normals with the CPU field,

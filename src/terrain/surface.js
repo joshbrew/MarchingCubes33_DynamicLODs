@@ -29,7 +29,8 @@ function buildIndices(divs, mask = 0, algorithm = "mc33") {
     throw new Error("Seam mask must be 0..15");
   const row = divs + 1,
     corners = cellCorners(algorithm),
-    indices = [];
+    indices = new Uint32Array(divs * divs * 6);
+  let count = 0;
   function emit(tri) {
     const p = tri.map((i) => [i % row, Math.floor(i / row)]);
     const area =
@@ -38,7 +39,18 @@ function buildIndices(divs, mask = 0, algorithm = "mc33") {
     if (area === 0) return;
     // Positive Y is outward for this signed-heightfield specialization.
     if (area > 0) [tri[1], tri[2]] = [tri[2], tri[1]];
-    indices.push(...tri);
+    indices.set(tri, count);
+    count += 3;
+  }
+  // Interior cells have identical topology. Compute their oriented offsets
+  // once rather than allocating slices/maps/coordinate arrays per triangle.
+  const cell = [];
+  for (let t = 0; t < corners.length; t += 3) {
+    const [a, b, c] = corners.slice(t, t + 3);
+    const area = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+    const p = [a[1] * row + a[0], b[1] * row + b[0], c[1] * row + c[0]];
+    if (area > 0) [p[1], p[2]] = [p[2], p[1]];
+    cell.push(...p);
   }
   // Stitch each affected 2x2 block as a perimeter fan. Omitting the odd edge
   // vertex makes the border identical to its coarse neighbor. This also
@@ -76,16 +88,11 @@ function buildIndices(divs, mask = 0, algorithm = "mc33") {
       } else {
         for (let dz = 0; dz < 2; dz++)
           for (let dx = 0; dx < 2; dx++)
-            for (let t = 0; t < corners.length; t += 3) {
-              emit(
-                corners
-                  .slice(t, t + 3)
-                  .map((p) => (z + dz + p[1]) * row + x + dx + p[0]),
-              );
-            }
+            for (let t = 0; t < cell.length; t++)
+              indices[count++] = (z + dz) * row + x + dx + cell[t];
       }
     }
-  return Uint32Array.from(indices);
+  return indices.slice(0, count);
 }
 function lines(indices) {
   const edges = new Map();

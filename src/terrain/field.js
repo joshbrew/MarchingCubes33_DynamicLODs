@@ -38,6 +38,21 @@ function noise(x, z, seed) {
     ((c - a) * (1 - u) + (d - b) * u) * dv,
   ];
 }
+// Height-only queries (culling, movement, tree placement) do not need gradients
+// or temporary sample arrays. Keep the scalar interpolation identical to noise.
+function noiseValue(x, z, seed) {
+  const ix = Math.floor(x),
+    iz = Math.floor(z),
+    fx = x - ix,
+    fz = z - iz;
+  const u = fx * fx * (3 - 2 * fx),
+    v = fz * fz * (3 - 2 * fz);
+  const a = hash(ix, iz, seed),
+    b = hash(ix + 1, iz, seed),
+    c = hash(ix, iz + 1, seed),
+    d = hash(ix + 1, iz + 1, seed);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
 function heightGradient(x, z, seed = 7) {
   const output = [25, 0, 0];
   for (let i = 0; i < bands.length; i++) {
@@ -62,6 +77,24 @@ function estimatedError(step) {
   // Ridge cusps have first-order error rather than the smooth bands' curvature.
   return error + 100 * Math.min(1, step / 620) * 0.15;
 }
-const height = (x, z, seed = 7) => heightGradient(x, z, seed)[0];
-export { hash, heightGradient, height, estimatedError, bounds, wgsl };
+function height(x, z, seed = 7) {
+  let result = 25;
+  for (let i = 0; i < bands.length; i++) {
+    const [wave, amplitude] = bands[i];
+    result +=
+      noiseValue(x / wave + 13.71, z / wave - 8.29, seed + i * 19) * amplitude;
+  }
+  const r = 1 - Math.abs(noiseValue(x / 620 - 2.7, z / 620 + 4.1, seed + 101));
+  return result + (r * r * 100 - 50);
+}
+export {
+  hash,
+  noise,
+  noiseValue,
+  heightGradient,
+  height,
+  estimatedError,
+  bounds,
+  wgsl,
+};
 export default { hash, heightGradient, height, estimatedError, bounds, wgsl };

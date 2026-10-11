@@ -1,4 +1,6 @@
+import { initializeGPU, disposeGPUContext, renderSize } from "../api/gpu.js";
 import * as World from "./world.js";
+import { guardPlanes, turnedSince } from "../api/visibility.js";
 import workerURL from "./space.worker.js";
 import renderShader from "./shaders/render.wgsl";
 const shader = renderShader;
@@ -13,6 +15,20 @@ class Renderer {
       pointBudget: 600000,
       ...options,
     };
+    if (
+      ![
+        this.options.maxInstances,
+        this.options.maxChunks,
+        this.options.pointBudget,
+        this.options.workers ?? 2,
+      ].every((v) => Number.isSafeInteger(v) && v > 0) ||
+      (this.options.workers ?? 2) > 8 ||
+      !Number.isFinite(this.options.geometryMB) ||
+      this.options.geometryMB <= 0
+    )
+      throw new RangeError(
+        "Use positive integer instance/chunk/point limits, 1–8 workers and positive geometryMB.",
+      );
     this.settings = {
       mode: "mesh",
       quality: 3,
@@ -29,6 +45,7 @@ class Renderer {
     this.inflight = new Set();
     this.failed = new Set();
     this.protected = new Set();
+    this.baselines = new Set();
     this.previous = new Map();
     this.visible = [];
     this.lastSelect = -Infinity;
@@ -48,32 +65,7 @@ class Renderer {
     this.draws = null;
   }
   async initialize() {
-    if (!navigator.gpu)
-      throw new Error(
-        "Space LOD needs WebGPU on localhost in a supported browser",
-      );
-    const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) throw new Error("No WebGPU adapter");
-    this.device = await adapter.requestDevice({
-      requiredFeatures: adapter.features.has("timestamp-query")
-        ? ["timestamp-query"]
-        : [],
-    });
-    const d = this.device;
-    d.addEventListener("uncapturederror", (event) => {
-      this.errors.push(event.error.message);
-      console.error(event.error);
-    });
-    d.lost.then((info) => {
-      if (!this.disposed) this.errors.push(`GPU lost: ${info.message}`);
-    });
-    this.context = this.canvas.getContext("webgpu");
-    this.format = navigator.gpu.getPreferredCanvasFormat();
-    this.context.configure({
-      device: d,
-      format: this.format,
-      alphaMode: "opaque",
-    });
+    const d = await initializeGPU(this);
     this.frameBuffer = d.createBuffer({
       size: 176,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -163,8 +155,12 @@ class Renderer {
         depthCompare: "always",
       },
     });
-    this.workers = Array.from({ length: 2 }, () => {
-      const state = { worker: new Worker(workerURL), busy: false, key: null };
+    this.workers = Array.from({ length: this.options.workers ?? 2 }, () => {
+      const state = {
+        worker: new Worker(this.options.workerURL ?? workerURL),
+        busy: false,
+        key: null,
+      };
       state.worker.onmessage = (event) => this.receive(state, event.data);
       state.worker.onerror = (event) => {
         this.errors.push(event.message);
@@ -195,18 +191,33 @@ class Renderer {
     this.frameData = new Float32Array(44);
     this.frameIndex = 0;
     this.resize();
+    this.prewarm();
+    this.dispatch();
     return this;
   }
   configure(values) {
     Object.assign(this.settings, values);
     this.previous.clear();
     this.queue.clear();
+    this.prewarm();
     this.dirty = true;
   }
+  prewarm() {
+    this.baselines.clear();
+    for (let kind = 0; kind < 3; kind++)
+      for (let variant = 0; variant < 4; variant++) {
+        const body = { kind, variant },
+          coarse = World.meshLevels - 1;
+        this.baselines.add(this.key(body, coarse));
+        this.baselines.add(this.key(body, "fallback-points"));
+        // All bodies share these twelve shapes. Prepare connected fallbacks
+        // before expensive close-up jobs, then medium detail in idle worker time.
+        this.request(body, coarse, 1e9);
+        this.request(body, 4, -100);
+      }
+  }
   resize() {
-    const ratio = Math.min(window.devicePixelRatio || 1, 1.5),
-      width = Math.max(1, Math.round(this.canvas.clientWidth * ratio)),
-      height = Math.max(1, Math.round(this.canvas.clientHeight * ratio));
+    const { ratio, width, height } = renderSize(this.canvas, this.options);
     this.ratio = ratio;
     if (
       this.canvas.width === width &&
@@ -263,6 +274,7 @@ class Renderer {
       for (const [id, g] of this.cache)
         if (
           !this.protected.has(id) &&
+          !(this.options.geometryMB >= 1 && this.baselines.has(id)) &&
           (!victim || g.touched < victim[1].touched)
         )
           victim = [id, g];
@@ -318,7 +330,7 @@ class Renderer {
     const start = performance.now(),
       selection = World.sectors(
         camera.position,
-        planes,
+        guardPlanes(planes, camera.far),
         camera.far,
         this.options.maxChunks,
       ),
@@ -337,7 +349,7 @@ class Renderer {
           distance = Math.hypot(...relative);
         if (
           distance - body.radius > camera.far ||
-          !World.visibleSphere(relative, body.radius, planes)
+          !World.visibleSphere(relative, body.radius + distance * 0.12, planes)
         )
           continue;
         visible.push({
@@ -373,6 +385,10 @@ class Renderer {
     this.stats.instanceLimited = visible.length > this.options.maxInstances;
     this.stats.selectionMs = performance.now() - start;
     this.lastSelect = now;
+    this.selectionPlanes = planes.map((p) => p.slice());
+    // Abandon queued detail for the old view. Running work can finish and cache.
+    this.queue.clear();
+    this.prewarm();
     this.dirty = false;
   }
   viewChanged(camera, planes) {
@@ -407,7 +423,7 @@ class Renderer {
       const { body, lod } = item;
       let representation = lod.representation,
         geometry;
-      this.request(body, coarse, 1000 + lod.pixels);
+      this.request(body, coarse, 1e9 + lod.pixels);
       const key = this.key(
         body,
         representation === "points" ? "points" : lod.level,
@@ -542,6 +558,7 @@ class Renderer {
     this.resize();
     if (
       this.dirty ||
+      turnedSince(planes, this.selectionPlanes) ||
       (now - this.lastSelect >= 100 && this.viewChanged(camera, planes))
     ) {
       this.select(camera, planes, now);
@@ -566,7 +583,7 @@ class Renderer {
     );
     frame.set(camera.right, 28);
     frame.set(camera.up, 32);
-    frame.set(camera.forward, 36);
+    frame.set(camera.skyForward ?? camera.forward, 36);
     // Instance centers stay relative to the last batch origin. Updating this
     // small delta moves the camera smoothly between the 10 Hz visibility cuts,
     // without regrouping and uploading thousands of bodies every flight frame.
@@ -641,8 +658,7 @@ class Renderer {
     this.frameBuffer?.destroy();
     this.instances?.destroy();
     this.depth?.destroy();
-    this.context?.unconfigure();
-    this.device?.destroy();
+    disposeGPUContext(this);
   }
 }
 

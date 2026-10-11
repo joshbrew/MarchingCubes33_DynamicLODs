@@ -1,7 +1,7 @@
 {
   "name": "marching-cubes-bourke-mc33",
   "version": "1.0.0",
-  "description": "Bourke and MC33 isosurfaces with WebGPU terrain and volumetric space LOD",
+  "description": "Bourke and MC33 meshes, fitted sphere shells, WebGPU terrain, trees, infinite space and progressive noise LOD",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.esm.js",
@@ -9,20 +9,65 @@
   "jsdelivr": "./dist/index.js",
   "exports": {
     ".": {
+      "types": "./types/index.d.ts",
       "import": "./dist/index.esm.js",
       "require": "./dist/index.cjs"
     },
-    "./browser": "./dist/index.js",
-    "./package.json": "./package.json"
+    "./browser": {
+      "types": "./types/browser.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json",
+    "./core": {
+      "types": "./types/core.d.ts",
+      "import": "./dist/core.esm.js",
+      "require": "./dist/core.cjs"
+    },
+    "./camera": {
+      "types": "./types/camera.d.ts",
+      "import": "./dist/camera.esm.js",
+      "require": "./dist/camera.cjs"
+    },
+    "./terrain": {
+      "types": "./types/terrain.d.ts",
+      "import": "./dist/terrain.esm.js",
+      "require": "./dist/terrain.cjs"
+    },
+    "./space": {
+      "types": "./types/space.d.ts",
+      "import": "./dist/space.esm.js",
+      "require": "./dist/space.cjs"
+    },
+    "./progressive": {
+      "types": "./types/progressive.d.ts",
+      "import": "./dist/progressive.esm.js",
+      "require": "./dist/progressive.cjs"
+    },
+    "./space.worker": "./dist/space.worker.js",
+    "./src/*": "./src/*"
   },
   "files": [
-    "dist/index.js",
     "dist/index.esm.js",
     "dist/index.cjs",
+    "dist/core.esm.js",
+    "dist/core.cjs",
+    "dist/camera.esm.js",
+    "dist/camera.cjs",
+    "dist/terrain.esm.js",
+    "dist/terrain.cjs",
+    "dist/space.esm.js",
+    "dist/space.cjs",
+    "dist/progressive.esm.js",
+    "dist/progressive.cjs",
+    "dist/index.js",
+    "dist/space.worker.js",
+    "types",
     "src",
+    "examples",
     "LICENSE",
     "THIRD_PARTY_NOTICES.md",
-    "README.md"
+    "README.md",
+    "docs"
   ],
   "engines": {
     "node": ">=20"
@@ -34,11 +79,30 @@
     "build:library": "node tools/build.js --library",
     "build:checks": "node tools/build.js --checks",
     "prepack": "npm run build:library",
-    "test": "npm run build:library && node --test tests/*.test.js"
+    "test": "npm run build:library && node --test tests/*.test.js",
+    "pack:check": "npm run build:library && node tools/check-package.js"
   },
   "devDependencies": {
     "tinybuild": "^1.0.6",
     "three": "0.128.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "types": "./types/index.d.ts",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joshbrew/MarchingCubes33_DynamicLODs.git"
+  },
+  "homepage": "https://marchingcubeswebgpu.netlify.app/",
+  "bugs": {
+    "url": "https://github.com/joshbrew/MarchingCubes33_DynamicLODs/issues"
+  },
+  "keywords": [
+    "marching-cubes",
+    "mc33",
+    "webgpu",
+    "terrain",
+    "lod",
+    "procedural-generation"
+  ]
 }

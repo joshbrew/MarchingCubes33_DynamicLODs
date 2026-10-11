@@ -96,6 +96,57 @@ class Trees {
     });
     return this;
   }
+  tileTrees(tile, now) {
+    const key = `${this.terrain.seed}:${tile.ox}:${tile.oz}`;
+    let cached = this.cache.get(key);
+    if (!cached) {
+      cached = {
+        trees: Vegetation.trees(tile, 32, this.terrain.seed),
+        time: now,
+      };
+      for (const tree of cached.trees)
+        tree.y = Field.height(tree.x, tree.z, this.terrain.seed);
+      this.cache.set(key, cached);
+    }
+    cached.time = now;
+    if (this.cache.size > 512) {
+      let victim;
+      for (const entry of this.cache)
+        if (entry[0] !== key && (!victim || entry[1].time < victim[1].time))
+          victim = entry;
+      if (victim) this.cache.delete(victim[0]);
+    }
+    return cached;
+  }
+  prefetch(camera, now) {
+    const t = this.terrain,
+      far = Math.min(this.distance, camera.far);
+    if (
+      this.warmSelection !== t.selected ||
+      this.warmDistance !== far ||
+      this.warmSeed !== t.seed
+    ) {
+      this.warmSelection = t.selected;
+      this.warmDistance = far;
+      this.warmSeed = t.seed;
+      this.warmTiles = Array.from(t.prefetchIds || [])
+        .map((id) => ({
+          tile: t.tiles[id],
+          distance: LOD.distanceTo(t.tiles[id], camera.position),
+        }))
+        .filter((item) => item.distance <= far)
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 512);
+      this.warmAt = 0;
+    }
+    let built = 0;
+    while (this.warmAt < this.warmTiles.length && built < 2) {
+      const { tile } = this.warmTiles[this.warmAt++];
+      if (this.cache.has(`${t.seed}:${tile.ox}:${tile.oz}`)) continue;
+      this.tileTrees(tile, now);
+      built++;
+    }
+  }
   prepare(camera, planes, now) {
     if (!this.enabled) {
       this.stats = { trees: 0, triangles: 0, draws: 0 };
@@ -103,6 +154,8 @@ class Trees {
       this.lastPlan = null;
       return;
     }
+    // Amortize procedural placement for nearby offscreen tiles over frames.
+    this.prefetch(camera, now);
     const t = this.terrain,
       view = [
         ...camera.position,
@@ -131,14 +184,7 @@ class Trees {
       if (LOD.distanceTo(tile, camera.position) > far) continue;
       const key = `${t.seed}:${tile.ox}:${tile.oz}`;
       keep.add(key);
-      let cached = this.cache.get(key);
-      if (!cached) {
-        cached = { trees: Vegetation.trees(tile, 32, t.seed), time: now };
-        for (const tree of cached.trees)
-          tree.y = Field.height(tree.x, tree.z, t.seed);
-        this.cache.set(key, cached);
-      }
-      cached.time = now;
+      const cached = this.tileTrees(tile, now);
       for (const tree of cached.trees) {
         const center = [tree.x, tree.y + tree.height * 0.5, tree.z],
           distance = Math.hypot(

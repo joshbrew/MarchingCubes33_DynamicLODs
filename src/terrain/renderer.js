@@ -1,8 +1,10 @@
+import { initializeGPU, disposeGPUContext, renderSize } from "../api/gpu.js";
 import * as Field from "./field.js";
 import * as LOD from "./lod.js";
 import * as Surface from "./surface.js";
 import * as PLOC from "./ploc.js";
 import { Trees } from "./trees.js";
+import { guardPlanes, turnedSince } from "../api/visibility.js";
 import renderShader from "./shaders/render.wgsl";
 const shader = Field.wgsl + renderShader;
 
@@ -20,9 +22,27 @@ class Renderer {
     if (
       !Number.isInteger(this.options.maxDivs) ||
       this.options.maxDivs < 4 ||
+      this.options.maxDivs > 128 ||
       this.options.maxDivs & (this.options.maxDivs - 1)
     )
-      throw new Error("Terrain maxDivs must be a power of two of at least 4");
+      throw new Error("Terrain maxDivs must be a power of two from 4 to 128");
+    const { worldSize, tileSize, memoryMB, buildsPerFrame } = this.options;
+    const power = (n) =>
+      Number.isFinite(n) && n >= 1 && Number.isInteger(Math.log2(n));
+    if (
+      !power(worldSize) ||
+      !power(tileSize) ||
+      tileSize > worldSize ||
+      worldSize / tileSize > 512 ||
+      !Number.isFinite(memoryMB) ||
+      memoryMB <= 0 ||
+      !Number.isInteger(buildsPerFrame) ||
+      buildsPerFrame < 1 ||
+      buildsPerFrame > 32
+    )
+      throw new RangeError(
+        "Use power-of-two world/tile sizes (up to 512 tiles per side), positive memoryMB and 1–32 builds per frame.",
+      );
     const map = LOD.makeTiles(this.options.worldSize, this.options.tileSize);
     this.tiles = map.tiles;
     this.side = map.side;
@@ -67,31 +87,7 @@ class Renderer {
     this.frameData = new Float32Array(32);
   }
   async initialize() {
-    if (!navigator.gpu)
-      throw new Error(
-        "This terrain demo requires WebGPU on localhost or HTTPS in a supported browser",
-      );
-    const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) throw new Error("No WebGPU adapter is available");
-    const timestamp = adapter.features.has("timestamp-query");
-    this.device = await adapter.requestDevice({
-      requiredFeatures: timestamp ? ["timestamp-query"] : [],
-    });
-    const device = this.device;
-    device.addEventListener("uncapturederror", (event) => {
-      this.errors.push(event.error.message);
-      console.error(event.error);
-    });
-    device.lost.then((info) => {
-      if (!this.disposed) this.errors.push(`Device lost: ${info.message}`);
-    });
-    this.context = this.canvas.getContext("webgpu");
-    this.format = navigator.gpu.getPreferredCanvasFormat();
-    this.context.configure({
-      device,
-      format: this.format,
-      alphaMode: "opaque",
-    });
+    const device = await initializeGPU(this);
     this.stride = (this.options.maxDivs + 1) ** 2;
     const bytesPerSlot = this.stride * 32;
     const atlasLimit = Math.min(
@@ -218,7 +214,7 @@ class Renderer {
     this.stats.atlasBytes = this.capacity * bytesPerSlot;
     // Timing is asynchronous and sampled, never a render-loop queue wait.
     this.timers = [];
-    if (timestamp)
+    if (device.features.has("timestamp-query"))
       for (let i = 0; i < 3; i++)
         this.timers.push({
           busy: false,
@@ -238,9 +234,7 @@ class Renderer {
     return this;
   }
   resize() {
-    const ratio = Math.min(window.devicePixelRatio || 1, 1.5),
-      w = Math.max(1, Math.round(this.canvas.clientWidth * ratio)),
-      h = Math.max(1, Math.round(this.canvas.clientHeight * ratio));
+    const { width: w, height: h } = renderSize(this.canvas, this.options);
     if (this.canvas.width === w && this.canvas.height === h && this.depth)
       return;
     this.canvas.width = w;
@@ -293,11 +287,15 @@ class Renderer {
   }
   select(camera, planes, now) {
     const start = performance.now();
-    const cull = PLOC.query(this.tree, LOD.relativePlanes(planes, this.origin));
+    const cull = PLOC.query(
+      this.tree,
+      LOD.relativePlanes(guardPlanes(planes, camera.far), this.origin),
+    );
     cull.ids = cull.ids.filter(
       (id) => LOD.distanceTo(this.tiles[id], camera.position) <= camera.far,
     );
-    // Camera/player footprint keeps nearby geometry resident when looking away.
+    // Reserve nearby detail in every direction, within the same atlas budget.
+    // A turn can then reveal ready samples instead of starting from empty slots.
     const keep = new Set(cull.ids);
     const px = Math.floor(
         (camera.player[0] - this.origin[0] + this.options.worldSize / 2) /
@@ -307,10 +305,24 @@ class Renderer {
         (camera.player[2] - this.origin[1] + this.options.worldSize / 2) /
           this.options.tileSize,
       );
-    for (let z = pz - 2; z <= pz + 2; z++)
-      for (let x = px - 2; x <= px + 2; x++)
-        if (x >= 0 && z >= 0 && x < this.side && z < this.side)
+    const radius = Math.min(
+        camera.far,
+        this.options.tileSize * Math.sqrt((this.capacity * 0.35) / Math.PI),
+      ),
+      reach = Math.ceil(radius / this.options.tileSize);
+    this.prefetchIds = new Set();
+    for (let z = pz - reach; z <= pz + reach; z++)
+      for (let x = px - reach; x <= px + reach; x++)
+        if (
+          x >= 0 &&
+          z >= 0 &&
+          x < this.side &&
+          z < this.side &&
+          LOD.distanceTo(this.tiles[z * this.side + x], camera.player) <= radius
+        ) {
           keep.add(z * this.side + x);
+          this.prefetchIds.add(z * this.side + x);
+        }
     let ids = Array.from(keep);
     this.stats.capacityLimited = ids.length > this.capacity;
     if (ids.length > this.capacity)
@@ -335,7 +347,10 @@ class Renderer {
     this.stats.visited = cull.visited;
     this.stats.visible = cull.ids.length;
     this.stats.requested = ids.length;
+    this.stats.prefetchRadius = radius;
+    this.stats.prefetched = selection.levels.size - this.visibleIds.length;
     this.lastSelect = now;
+    this.selectionPlanes = planes.map((p) => p.slice());
     this.needsSelection = false;
     this.drawPlan = null;
   }
@@ -412,8 +427,14 @@ class Renderer {
     updates.sort(
       (a, b) => Number(b.refine) - Number(a.refine) || a.distance - b.distance,
     );
-    const planned = [];
-    for (const request of missing.concat(updates)) {
+    const visible = new Set(this.visibleIds),
+      planned = [],
+      requests = [missing, updates].flatMap((items) =>
+        items
+          .filter((r) => visible.has(r.id))
+          .concat(items.filter((r) => !visible.has(r.id))),
+      );
+    for (const request of requests) {
       if (planned.length >= this.buildBudget) break;
       const entry =
         this.entries.get(request.id) || this.allocate(request.id, keep, now);
@@ -508,6 +529,7 @@ class Renderer {
     this.updateWindow(camera);
     if (
       this.needsSelection ||
+      turnedSince(planes, this.selectionPlanes) ||
       (now - this.lastSelect >= 100 && this.viewChanged(camera, planes))
     ) {
       this.select(camera, planes, now);
@@ -704,8 +726,7 @@ class Renderer {
     ])
       b?.destroy();
     this.depth?.destroy();
-    this.context?.unconfigure();
-    this.device?.destroy();
+    disposeGPUContext(this);
   }
 }
 

@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Drop-in terrain and space</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: #142229;
+      color: #edf3e9;
+      font: 13px system-ui;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100dvh;
+      touch-action: none;
+    }
+    .panel {
+      position: fixed;
+      top: 16px;
+      max-height: calc(100dvh - 32px);
+      overflow: auto;
+      padding: 16px;
+      border-radius: 12px;
+      background: #142229f0;
+      border: 1px solid #9aada755;
+      scrollbar-width: thin;
+    }
+    #controls {
+      left: 16px;
+      width: 360px;
+    }
+    #telemetry {
+      right: 16px;
+      width: 300px;
+    }
+    nav {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    a {
+      color: #d3e6b9;
+    }
+    nav a {
+      padding: 6px 8px;
+      border: 1px solid #9aada755;
+      border-radius: 5px;
+      text-decoration: none;
+    }
+    nav a[aria-current] {
+      background: #b2d79126;
+      border-color: #b2d791;
+    }
+    h1 {
+      font-size: 22px;
+      margin: 12px 0 8px;
+    }
+    h2 {
+      font-size: 16px;
+      margin: 0 0 12px;
+    }
+    p {
+      line-height: 1.5;
+      color: #b7c9c9;
+      margin: 8px 0 12px;
+    }
+    button,
+    select {
+      padding: 7px 9px;
+      border: 1px solid #9aada766;
+      border-radius: 5px;
+      background: #30434a;
+      color: inherit;
+      font: inherit;
+    }
+    button {
+      cursor: pointer;
+    }
+    button:hover {
+      background: #49605c;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+    fieldset {
+      margin: 0;
+      padding: 0;
+      border: 0;
+      min-width: 0;
+    }
+    summary {
+      cursor: pointer;
+      color: #d3e6b9;
+      margin: 14px 0 10px;
+      font-weight: 600;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 12px 0;
+    }
+    .row output {
+      display: block;
+      font-size: 11px;
+      color: #b7c9c9;
+      font-variant-numeric: tabular-nums;
+    }
+    input[type="range"] {
+      width: 135px;
+      accent-color: #c7df90;
+    }
+    input[type="checkbox"] {
+      accent-color: #c7df90;
+    }
+    .check {
+      display: block;
+      margin: 10px 0;
+    }
+    .check input {
+      margin: 0 7px 0 0;
+    }
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin: 12px 0;
+    }
+    #status {
+      display: block;
+      line-height: 1.5;
+      color: #c4dda7;
+      margin: 12px 0 0;
+    }
+    #status.error {
+      color: #ffb3a5;
+    }
+    .metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 12px;
+    }
+    .metric strong {
+      display: block;
+      font-size: 20px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .metric span,
+    .note {
+      font-size: 11px;
+      color: #b7c9c9;
+    }
+    dl {
+      margin: 12px 0;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 7px 10px;
+      font-size: 12px;
+    }
+    dt {
+      color: #b7c9c9;
+    }
+    dd {
+      margin: 0;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    #histogram {
+      display: flex;
+      height: 8px;
+      gap: 2px;
+      background: #30434a;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    #lodCounts {
+      font-size: 11px;
+      color: #b7c9c9;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+    #comparison {
+      display: block;
+      white-space: pre-wrap;
+      font: 12px/1.6 system-ui;
+      color: #d3e6b9;
+      margin: 12px 0 0;
+    }
+    @media (max-width: 760px) {
+      #controls {
+        left: 8px;
+        top: 8px;
+        width: min(340px, calc(100vw - 16px));
+        max-height: calc(58dvh - 16px);
+      }
+      #telemetry {
+        left: 8px;
+        right: auto;
+        top: auto;
+        bottom: 8px;
+        width: min(340px, calc(100vw - 16px));
+        max-height: calc(42dvh - 8px);
+      }
+    }
+  </style>
+  <canvas id="world" tabindex="0" aria-label="Explore the world"></canvas>
+  <section id="controls" class="panel" aria-label="Simulation controls">
+    <nav aria-label="Choose a demo">
+      <a href="?world=terrain">Terrain & trees</a
+      ><a href="?world=progressive">Fine noise tiles</a
+      ><a href="?world=space">Infinite space</a>
+    </nav>
+    <h1 id="title">Loading world…</h1>
+    <p>
+      Drag to look. WASD to move, Space to rise, C to descend. Hold Shift to
+      move faster.
+    </p>
+    <fieldset id="parameters" disabled>
+      <div class="buttons">
+        <button id="fly">Start flythrough</button
+        ><button id="reset">Reset view</button>
+      </div>
+      <div id="presets" class="buttons"></div>
+      <details open>
+        <summary>Simulation parameters</summary>
+        <div id="simulation"></div>
+      </details>
+      <details>
+        <summary>Movement & view</summary>
+        <div id="movement"></div>
+      </details>
+    </fieldset>
+    <output id="status">Preparing the scene…</output>
+  </section>
+  <aside id="telemetry" class="panel" aria-label="Live performance">
+    <h2>Live performance</h2>
+    <div class="metrics">
+      <div class="metric">
+        <strong id="fps">—</strong><span>FPS · higher is smoother</span>
+      </div>
+      <div class="metric">
+        <strong id="frameTime">—</strong><span>Frame avg / p95 · ms</span>
+      </div>
+      <div class="metric">
+        <strong id="cpuTime">—</strong><span>CPU submit · average</span>
+      </div>
+      <div class="metric">
+        <strong id="gpuTime">—</strong><span>GPU draw · latest sample</span>
+      </div>
+      <div class="metric">
+        <strong id="triangles">—</strong><span>Total mesh triangles</span>
+      </div>
+      <div class="metric">
+        <strong id="drawCalls">—</strong
+        ><span>Draw calls · including trees</span>
+      </div>
+    </div>
+    <div class="buttons">
+      <button id="compare" disabled>Compare LOD</button
+      ><button id="save" disabled>Save stats</button>
+    </div>
+    <output id="comparison"></output>
+    <details open>
+      <summary>Memory, streaming & LOD</summary>
+      <dl id="worldStats"></dl>
+      <div id="histogram" aria-label="Drawn LOD distribution"></div>
+      <p id="lodCounts"></p>
+      <p id="coords" class="note"></p>
+    </details>
+    <p class="note">
+      Frame time includes browser scheduling. GPU time measures drawing only.
+      Background tabs throttle FPS; “—” means no measurement yet.
+    </p>
+  </aside>
+  <script type="module" src="./package.js"></script>
+</html>

@@ -23,11 +23,12 @@ nearby things get more triangles, faraway things get fewer.
 ## Contents
 
 - [Run it](#1-run-it)
-- [Try the demos](#2-try-the-examples): [Sphere](#sphere-turn-points-into-a-surface) · [Terrain](#terrain-detailed-ground-and-trees) · [Space](#space-asteroids-islands-and-planets)
+- [Try the demos](#2-try-the-examples): [Sphere](#sphere-turn-points-into-a-surface) · [Terrain](#terrain-detailed-ground-and-trees) · [Space](#space-asteroids-islands-and-planets) · [Noise tiles](#noise-tiles-zoom-from-hills-to-tiny-bumps)
 - [Movement controls](#moving-around)
 - [What the sliders and performance numbers mean](#which-sliders-should-i-change)
 - [Make a sphere in JavaScript](#3-make-a-sphere-in-javascript)
 - [Use it in another project](#4-use-it-in-another-project)
+- [Drop-in package API](docs/PACKAGE.md): worlds, cameras, controls and mesh data
 - [Deploy to Netlify](#5-put-the-demos-on-netlify)
 - [Checks and further reading](#checks-and-further-reading)
 
@@ -42,10 +43,10 @@ npm start
 ```
 
 Open the address printed by the server. Keep that terminal running.
-You should see the sphere demo, with **Sphere**, **Terrain** and **Infinite space**
+You should see the sphere demo, with **Sphere**, **Terrain**, **Infinite space** and **Noise tiles**
 buttons at the top. Use those buttons to switch demos.
 
-The sphere works in CPU mode without WebGPU. Terrain, space and GPU extraction
+The sphere works in CPU mode without WebGPU. Terrain, space, noise tiles and GPU extraction
 need a browser with WebGPU enabled, served locally or over HTTPS.
 Use the server above; double-clicking the HTML file will not run the demos correctly.
 
@@ -104,9 +105,45 @@ The separate 32 km stress test compares five versus eight detail levels:
 **9.97 million → 2.02 million triangles** for the same 8,425 bodies.
 See [space measurements](docs/SPACE.md#budgets-and-measurements) for the test conditions.
 
+### Noise tiles: zoom from hills to tiny bumps
+
+1. Open **Noise tiles** (`index.html?demo=progressive`).
+2. Click **Near the ground**, or drag **Height** down slowly.
+3. Watch **finest visible mesh spacing** shrink to **3.125 cm**. These are real bumps in the mesh.
+4. Turn on **LOD colors** or **Wireframe** to see the smaller patches appearing.
+5. Click **Start flythrough** to generate new ground as you move. Movement slows near the surface.
+
+Think of zooming into a map: generate a smaller, sharper piece where you are
+looking, then recycle pieces you have left behind. The GPU keeps a fixed
+**6.3 MB tile atlas**, instead of one enormous high-resolution world texture.
+Coarse ground stays visible while finer tiles are generated, and tile edges
+are stitched together. Lower **Tile detail** to request more detail; memory
+stays bounded even when you raise **Render distance**.
+
+See [how progressive tiles work and how to reuse them](docs/PROGRESSIVE.md).
+
+![Noise terrain at 6.25 cm mesh spacing with a fixed 6.3 MB tile atlas](docs/benchmarks/progressive-noise-tiles.jpg)
+
+This captured view uses about `4.25 m` height, the default `2 px` detail target
+and `8.192 km` render distance: **226,000 triangles, 6.25 cm finest spacing,
+6.3 MB atlas**. Click **Near the ground** for the closer, 3.125 cm example.
+The atlas stays the same size as you move; counts and timings depend on your
+view and hardware.
+
+Turning the camera reuses the generated tiles and only updates visibility.
+The GPU check sweeps through a full turn to verify that it triggers **zero new
+tile builds**. It also reports CPU time and the peak triangle count, so you can
+repeat the performance check on your hardware.
+
 ### Moving around
 
-Click the terrain or space view before using the keyboard.
+Terrain now prepares nearby ground and tree placements behind you. Space prepares
+shared coarse shapes before close-up detail, so bodies have a connected fallback
+when you turn. Large turns update visibility immediately; small turns reuse a
+slightly wider cached view. The existing memory limits still apply.
+See [the turn check results](docs/benchmarks/turn-streaming-webgpu.txt).
+
+Click the terrain, space or noise tiles view before using the keyboard.
 
 | Action                          | Control                        |
 | ------------------------------- | ------------------------------ |
@@ -118,19 +155,22 @@ Click the terrain or space view before using the keyboard.
 
 ### Which sliders should I change?
 
-| Setting                | What it does                                                |
-| ---------------------- | ----------------------------------------------------------- |
-| Render distance        | How far away things may be drawn. Lower it for less work.   |
-| Terrain: Pixel error   | How much simplification to allow. Higher means less detail. |
-| Terrain: Player detail | The area around you that keeps high detail.                 |
-| Terrain: Tree distance | How far away trees may be drawn.                            |
-| Space: Detail spacing  | How much simplification to allow. Higher means less detail. |
-| Space: LOD distance    | Lower values switch to simpler meshes sooner.               |
-| Space: Near detail     | The area around you that keeps the finest meshes.           |
+| Setting                  | What it does                                                         |
+| ------------------------ | -------------------------------------------------------------------- |
+| Render distance          | How far away things may be drawn. Lower it for less work.            |
+| Terrain: Pixel error     | How much simplification to allow. Higher means less detail.          |
+| Terrain: Player detail   | The area around you that keeps high detail.                          |
+| Terrain: Tree distance   | How far away trees may be drawn.                                     |
+| Space: Detail spacing    | How much simplification to allow. Higher means less detail.          |
+| Space: LOD distance      | Lower values switch to simpler meshes sooner.                        |
+| Space: Near detail       | The area around you that keeps the finest meshes.                    |
+| Noise tiles: Height      | How close you are to the surface; descending requests smaller tiles. |
+| Noise tiles: Tile detail | Allowed surface error in pixels; lower values keep smaller bumps.    |
 
-Render distance is a limit, not a promise to fill the entire view. Both demos
+Render distance is a limit, not a promise to fill the entire view. These demos
 have memory and object limits. Terrain keeps an 8 km window around its generated
 map; infinite mode moves that window as you travel. Space fills a 3D region.
+Noise tiles generate an endless heightfield, with smaller patches near the camera.
 
 **Reading performance:** FPS means frames per second; higher is smoother.
 Frame time is milliseconds per frame; lower is better (`20 ms ≈ 50 FPS`).
@@ -184,7 +224,54 @@ For the same calculation in a browser, keep the server running and open
 
 ## 4. Use it in another project
 
-Build just the reusable library:
+The package can give you **triangle data** to add to your own engine, or a
+**ready-to-draw world** for a canvas. All features are available through ESM,
+Node CommonJS and the regular browser script. There are no runtime dependencies.
+
+To build and test the installable package:
+
+```sh
+npm run pack:check
+```
+
+Install the resulting `marching-cubes-bourke-mc33-1.0.0.tgz` file in your other
+project with `npm install <path-to-the-file>`. Then:
+
+```js
+import {
+  createTerrain,
+  TerrainField,
+} from "marching-cubes-bourke-mc33/terrain";
+
+const world = await createTerrain(canvas, {
+  settings: { infinite: true, trees: { enabled: true } },
+});
+// Inside your existing animation loop:
+world.render({
+  position: [0, TerrainField.height(0, 450) + 140, 450],
+  target: [0, TerrainField.height(0, 0), 0],
+  far: 1800,
+});
+// When removing the world:
+world.dispose();
+```
+
+Use `createSpace` or `createProgressiveTerrain` for the other worlds. Use
+`createSurface` or `createSphere` for positions/normals you draw yourself.
+Optional controls add drag-look, WASD and Space/C movement. Type hints are included.
+The [package guide](docs/PACKAGE.md) explains every setting and import, shared GPU
+devices, camera integration, cleanup and worker hosting. A complete plain-JS
+example lives at **`examples/package.html`**; open it under your server address.
+
+![Standalone package example with terrain and instanced trees](docs/benchmarks/package-api-example.jpg)
+
+This example uses the package factories directly, with simulation sliders,
+movement controls and live FPS, CPU/GPU, triangle, memory and LOD counters.
+Its demo links switch between terrain, fine noise tiles and infinite space.
+Use **Compare LOD** for adaptive versus full detail, or **Save stats** to download
+your current settings and performance readings.
+
+For copying files directly instead of installing a package, build the library:
 
 ```sh
 npm run build:library
@@ -210,9 +297,6 @@ spherical coordinates, shader imports and the other exported helpers.
 
 ## 5. Put the demos on Netlify
 
-<<<<<<< Updated upstream
-See `THIRD_PARTY_NOTICES.md` for source attribution.
-=======
 Run:
 
 ```sh
@@ -228,8 +312,8 @@ Upload that folder to a static HTTPS host, or connect the repo to Netlify with:
 | Publish directory | `site`          |
 
 The included `netlify.toml` already supplies those settings.
-The three views use `index.html?demo=sphere`, `index.html?demo=terrain` and
-`index.html?demo=space` on whichever host you use.
+The four views use `index.html?demo=sphere`, `index.html?demo=terrain`,
+`index.html?demo=space` and `index.html?demo=progressive` on whichever host you use.
 
 ## Checks and further reading
 
@@ -238,22 +322,25 @@ The three views use `index.html?demo=sphere`, `index.html?demo=terrain` and
 For GPU checks, run `npm run build:checks`, then `npm run serve` if the server
 is not already running. Open these paths under its address:
 
-| Page                             | What it checks                                      |
-| -------------------------------- | --------------------------------------------------- |
-| `tests/webgpu.html`              | CPU and GPU extraction agree                        |
-| `tests/terrain-webgpu.html`      | Terrain, seams, trees and travel                    |
-| `tests/space-webgpu.html`        | Space meshes, points, streaming and both algorithms |
-| `tests/space-stress-webgpu.html` | The 32 km comparison and moving-camera performance  |
+| Page                             | What it checks                                                      |
+| -------------------------------- | ------------------------------------------------------------------- |
+| `tests/webgpu.html`              | CPU and GPU extraction agree                                        |
+| `tests/terrain-webgpu.html`      | Terrain, seams, trees and travel                                    |
+| `tests/space-webgpu.html`        | Space meshes, points, streaming and both algorithms                 |
+| `tests/space-stress-webgpu.html` | The 32 km comparison and moving-camera performance                  |
+| `tests/progressive-webgpu.html`  | Fine noise tiles, seamless refinement and bounded memory            |
+| `tests/package-webgpu.html`      | Drop-in worlds, controls, external worker and shared-device cleanup |
 
 For source changes, run `npm run build` again and refresh the demo.
 Use `npm run build:checks` again after changing GPU check code.
 
 - [API and shader guide](docs/API.md)
+- [Drop-in package guide](docs/PACKAGE.md)
 - [How terrain works](docs/TERRAIN.md)
 - [How space works, including performance measurements](docs/SPACE.md)
+- [How progressive noise tiles work](docs/PROGRESSIVE.md)
 - [Where the terrain LOD ideas came from](docs/terrain-source-review.md)
 - [Credits and third-party notices](THIRD_PARTY_NOTICES.md)
 
 MIT licensed. The [original CodePen](https://codepen.io/mootytootyfrooty/pen/pvJREbv)
 shows an older, classic-only version.
->>>>>>> Stashed changes

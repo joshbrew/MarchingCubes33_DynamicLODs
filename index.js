@@ -1,11 +1,16 @@
 import spherePage from "./demo/sphere.html";
 import terrainPage from "./demo/terrain.html";
 import spacePage from "./demo/space.html";
+import progressivePage from "./demo/progressive.html";
 
 const demos = {
   sphere: { page: spherePage, load: () => import("./src/demo.js") },
   terrain: { page: terrainPage, load: () => import("./src/terrain/demo.js") },
   space: { page: spacePage, load: () => import("./src/space/demo.js") },
+  progressive: {
+    page: progressivePage,
+    load: () => import("./src/progressive/demo.js"),
+  },
 };
 const selected = new URLSearchParams(location.search).get("demo") || "sphere";
 const demo = demos[selected] || demos.sphere;

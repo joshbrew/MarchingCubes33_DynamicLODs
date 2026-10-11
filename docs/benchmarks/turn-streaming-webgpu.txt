@@ -1,0 +1,35 @@
+2026-10-10: turn streaming checks, local WebGPU browser
+Source: tests/turn-webgpu.js (npm run build:checks, serve, open tests/turn-webgpu.html)
+
+Terrain: 4096 m window, 128 m tiles, 32 maximum divisions, 8 MiB sample budget,
+1600 m render cutoff, trees enabled to 1200 m, 640 x 400 canvas.
+After warming, reverse direction by 180 degrees within 16 ms.
+28 newly facing patches within 400 m were already resident before the turn;
+tree placements were cached before the turn. Atlas remains capped at 240 patches.
+
+Space: 9000 m render cutoff, mesh-only, 16 MiB geometry budget,
+512 active sectors, 4000 instances, 640 x 400 canvas.
+Wait only for all twelve coarse shapes, then sweep 24 headings in 15 degree steps
+while requested finer meshes are still loading.
+Zero omitted visible bodies; at least 255 drawn per heading.
+Peak submitted triangles: 93,288 (early fallback/refinement stage, not steady detail).
+CPU submit p95: 3.60 ms; maximum: 4.20 ms.
+
+Scripted submissions, NOT frame-rate measurements. Background browser scheduling
+and device/viewport differences affect results. GPU clips the guarded draw set to
+the exact camera. Memory limits and WebGPU validation checks passed.
+
+Also passed: terrain and space full GPU regression suites (both algorithms,
+tree LODs, 32 km distance, long travel, bounded caches, stitching and display modes).
+
+Current 32 km production-budget stress run (1280 x 720 CSS canvas):
+Five-level baseline: 8,818 bodies / 10,373,016 triangles.
+Eight levels: same 8,818 bodies / 2,476,936 triangles / 70 draws (76.1% fewer).
+Drawn level 0–7 populations: 2 / 8 / 22 / 112 / 488 / 1832 / 3400 / 2954.
+Stationary CPU submit mean: 0.145 ms.
+Scripted moving CPU submit mean: 2.656 ms; maximum 26.000 ms;
+18 batch rebuilds across 120 frames. Render bundles reused between cuts.
+Translated-bundle image comparison: 0.0000 mean RGB error out of 255.
+99 km travel and all production budgets passed, without WebGPU validation errors.
+The guarded frustum submits more offscreen triangles than the earlier unguarded
+run recorded in SPACE.md; the GPU clips those triangles to the actual view.

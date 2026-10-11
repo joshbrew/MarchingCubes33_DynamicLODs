@@ -18,6 +18,8 @@ test("ESM, Node CommonJS and plain browser builds expose the same working API", 
   for (const api of [esm, cjs]) {
     assert.equal(typeof api.SpaceRenderer, "function");
     assert.equal(typeof api.TerrainRenderer, "function");
+    assert.equal(typeof api.ProgressiveTerrainRenderer, "function");
+    assert.equal(typeof api.ProgressiveTerrainLOD.select, "function");
     const size = { x: 4, y: 4, z: 4 };
     const field = api.Coordinates.sampleField(size, (x, y, z) => x + y + z - 1);
     for (const algorithm of ["bourke", "mc33"]) {

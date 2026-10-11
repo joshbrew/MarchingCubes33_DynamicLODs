@@ -83,6 +83,15 @@ Bodies regenerate deterministically on return visits.
 
 ## Budgets and measurements
 
+Turning uses a small overlap around the CPU frustum; the GPU clips to the exact
+view. Large turns refresh immediately rather than waiting for the 100 ms update.
+Workers warm all twelve coarse shapes before fine extraction, retain those small
+fallbacks under normal budgets, and prepare medium detail during idle time. Queued
+detail from the previous view is discarded; running jobs finish into the cache.
+The overlap can submit extra triangles outside the screen, so the earlier numbers
+below describe their dated runs. [Current turn checks](benchmarks/turn-streaming-webgpu.txt)
+measure residency and scripted CPU submission separately from FPS.
+
 Defaults cap a visible working set at 2048 sectors and 12,000 bodies, cached
 sectors at 4096, resident geometry at 64 MB, and drawn point samples at 600,000.
 Closest bodies/sectors have priority. The HUD reports budget limits. Maximum

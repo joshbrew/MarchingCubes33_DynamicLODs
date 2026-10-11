@@ -22,3 +22,18 @@ export { Trees } from "./terrain/trees.js";
 export * as SpaceWorld from "./space/world.js";
 export * as SpaceGeometry from "./space/geometry.js";
 export { Renderer as SpaceRenderer } from "./space/renderer.js";
+export * as ProgressiveTerrainField from "./progressive/field.js";
+export * as ProgressiveTerrainLOD from "./progressive/lod.js";
+export { ProgressiveTerrainRenderer } from "./progressive/renderer.js";
+export { createSurface, createSphere } from "./api/surface.js";
+export { createGPUDevice, isWebGPUSupported } from "./api/gpu.js";
+export {
+  createCamera,
+  cameraFromThree,
+  frustumPlanes,
+  relativeCamera,
+} from "./api/camera.js";
+export { attachFlyControls } from "./api/controls.js";
+export { createTerrain } from "./entries/terrain.js";
+export { createSpace } from "./entries/space.js";
+export { createProgressiveTerrain } from "./entries/progressive.js";

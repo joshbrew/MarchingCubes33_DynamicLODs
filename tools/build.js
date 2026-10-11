@@ -5,6 +5,28 @@ import website from "../tinybuild.web.config.js";
 
 await mkdir("dist", { recursive: true });
 await bundle({ ...library.bundler, plugins: [workers()] });
+for (const feature of ["core", "camera", "terrain", "space", "progressive"]) {
+  await bundle({
+    ...library.bundler,
+    entryPoints: [`src/entries/${feature}.js`],
+    outfile: `dist/${feature}`,
+    bundleBrowser: false,
+    plugins: [workers()],
+  });
+}
+// Optional external worker for hosts whose CSP disallows blob workers.
+await bundleESM(
+  {
+    entryPoints: ["src/space/space.worker.js"],
+    outfile: "dist/space.worker.js",
+    bundle: true,
+    defaultConfig: true,
+    loader: shaderLoader,
+    target: "es2022",
+    minify: true,
+  },
+  false,
+);
 
 if (process.argv.includes("--checks")) {
   await bundleESM(
@@ -14,6 +36,9 @@ if (process.argv.includes("--checks")) {
         "tests/terrain-webgpu.js",
         "tests/space-webgpu.js",
         "tests/space-stress-webgpu.js",
+        "tests/progressive-webgpu.js",
+        "tests/package-webgpu.js",
+        "tests/turn-webgpu.js",
       ],
       outdir: "dist/tests",
       bundle: true,
@@ -38,7 +63,14 @@ if (process.argv.includes("--checks")) {
   // Netlify publishes exactly index.html + dist, without source or node_modules.
   await mkdir("site/dist", { recursive: true });
   await copyFile("index.html", "site/index.html");
-  for (const file of ["demo.js", "index.js", "index.esm.js", "index.cjs"]) {
+  for (const file of [
+    "demo.js",
+    "index.js",
+    "space.worker.js",
+    ...["index", "core", "camera", "terrain", "space", "progressive"].flatMap(
+      (name) => [`${name}.esm.js`, `${name}.cjs`],
+    ),
+  ]) {
     await copyFile(`dist/${file}`, `site/dist/${file}`);
   }
   console.log(

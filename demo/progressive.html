@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Progressive noise tiles — centimetres to kilometres</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #829caf;
+        color: #edf3e9;
+        font:
+          13px system-ui,
+          sans-serif;
+      }
+      #terrain {
+        width: 100vw;
+        height: 100vh;
+        display: block;
+        touch-action: none;
+      }
+      .panel {
+        position: absolute;
+        z-index: 2;
+        padding: 16px;
+        background: #142229ed;
+        border: 1px solid #9aada744;
+        border-radius: 12px;
+      }
+      header {
+        top: 16px;
+        left: 16px;
+        width: 330px;
+        max-height: calc(100vh - 270px);
+        overflow: auto;
+      }
+      .demo-nav {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        background: #142229;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 14px;
+      }
+      a {
+        color: #cce2ae;
+        text-decoration: none;
+      }
+      .demo-nav a {
+        border: 1px solid #a9bd9a55;
+        border-radius: 5px;
+        padding: 6px 8px;
+      }
+      .demo-nav a[aria-current] {
+        background: #a9bd9a33;
+      }
+      h1 {
+        font-size: 21px;
+        margin: 0 0 8px;
+        letter-spacing: -0.4px;
+      }
+      p {
+        color: #b7c9c9;
+        line-height: 1.5;
+        margin: 8px 0 12px;
+      }
+      summary {
+        cursor: pointer;
+        color: #d3e6b9;
+        margin: 12px 0;
+      }
+      label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin: 12px 0;
+      }
+      input[type="range"] {
+        width: 145px;
+        accent-color: #c7df90;
+      }
+      button {
+        color: inherit;
+        background: #30434a;
+        border: 1px solid #94a59b66;
+        border-radius: 5px;
+        padding: 8px 10px;
+        font: inherit;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #49605c;
+      }
+      .buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin: 12px 0;
+      }
+      .checks {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .checks label {
+        justify-content: flex-start;
+        gap: 5px;
+        margin: 5px 0;
+      }
+      #status {
+        margin: 12px 0 0;
+        color: #c4dda7;
+        font-size: 12px;
+      }
+      #status.error {
+        color: #ffb3a5;
+      }
+      #telemetry {
+        left: 16px;
+        bottom: 16px;
+        width: 330px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .metric strong {
+        display: block;
+        font-size: 18px;
+        font-variant-numeric: tabular-nums;
+      }
+      .metric span {
+        color: #b6c7c7;
+        font-size: 11px;
+      }
+      #mapPanel {
+        right: 16px;
+        bottom: 16px;
+        width: 230px;
+      }
+      #map {
+        width: 196px;
+        height: 196px;
+        display: block;
+      }
+      #mapPanel p {
+        margin: 8px 0 0;
+        font-size: 11px;
+      }
+      #help {
+        position: absolute;
+        left: 50%;
+        bottom: 24px;
+        transform: translateX(-50%);
+        text-align: center;
+        color: #fff;
+        text-shadow: 0 1px 4px #15262d;
+        pointer-events: none;
+      }
+      #loading {
+        position: absolute;
+        top: 45%;
+        left: 50%;
+        transform: translateX(-50%);
+        color: white;
+        text-shadow: 0 1px 6px black;
+        pointer-events: none;
+      }
+      @media (max-width: 800px), (max-height: 650px) {
+        header {
+          top: 8px;
+          left: 8px;
+          width: 290px;
+          max-height: calc(100vh - 235px);
+          padding: 12px;
+        }
+        #telemetry {
+          left: 8px;
+          bottom: 8px;
+          width: 290px;
+          padding: 12px;
+          gap: 8px;
+        }
+        .metric strong {
+          font-size: 15px;
+        }
+        #mapPanel,
+        #help {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas
+      id="terrain"
+      tabindex="0"
+      aria-label="Progressively generated noise terrain"
+    ></canvas>
+    <div id="loading">Generating the first noise tiles…</div>
+    <header class="panel">
+      <nav class="demo-nav" aria-label="Demos">
+        <a href="index.html?demo=sphere">Sphere</a
+        ><a href="index.html?demo=terrain">Terrain</a>
+        <a href="index.html?demo=space">Infinite space</a
+        ><a href="index.html?demo=progressive" aria-current="page"
+          >Noise tiles</a
+        >
+      </nav>
+      <h1>Progressive noise tiles</h1>
+      <p>
+        Fly down to the ground. Smaller tiles reveal real bumps, down to
+        <b>3.125 cm</b> mesh spacing. Old tiles are recycled.
+      </p>
+      <details id="controls" open>
+        <summary>Explore the surface</summary>
+        <div class="buttons">
+          <button id="sky">From above</button
+          ><button id="land">Near the ground</button
+          ><button id="tour">Start flythrough</button>
+        </div>
+        <label>Height <output id="altitudeLabel">64 m</output></label>
+        <input
+          id="altitude"
+          aria-label="Height above the surface"
+          type="range"
+          min="-2"
+          max="11"
+          step="0.05"
+          value="6"
+          style="width: 100%"
+        />
+        <label>Tile detail <output id="detailLabel">2 px</output></label>
+        <input
+          id="detail"
+          aria-label="Allowed surface error in pixels"
+          type="range"
+          min="0.5"
+          max="8"
+          step="0.25"
+          value="2"
+          style="width: 100%"
+        />
+        <label>Render distance <output id="distanceLabel">2 km</output></label>
+        <input
+          id="distance"
+          aria-label="Render distance"
+          type="range"
+          min="256"
+          max="8192"
+          step="128"
+          value="2048"
+          style="width: 100%"
+        />
+        <div class="checks">
+          <label
+            ><input id="follow" type="checkbox" checked />Follow ground</label
+          >
+          <label><input id="colors" type="checkbox" />LOD colors</label>
+          <label
+            ><input id="borders" type="checkbox" checked />Tile edges</label
+          >
+          <label><input id="wire" type="checkbox" />Wireframe</label>
+        </div>
+        <p>
+          Lower Tile detail for finer sampling. Generation is spread across
+          frames; the coarse surface stays visible while it refines.
+        </p>
+        <button id="reset">Reset view</button>
+      </details>
+      <p id="status">Preparing WebGPU…</p>
+    </header>
+    <aside id="telemetry" class="panel" aria-label="Live performance">
+      <div class="metric">
+        <strong id="fps">—</strong><span>FPS · CPU / GPU draw</span>
+      </div>
+      <div class="metric">
+        <strong id="spacing">—</strong><span>finest visible mesh spacing</span>
+      </div>
+      <div class="metric">
+        <strong id="triangles">—</strong><span>triangles · grouped draws</span>
+      </div>
+      <div class="metric">
+        <strong id="cache">—</strong><span>resident tiles · fixed atlas</span>
+      </div>
+      <div class="metric">
+        <strong id="builds">—</strong><span>new tiles / waiting</span>
+      </div>
+      <div class="metric">
+        <strong id="generation">—</strong
+        ><span>GPU generation · evicted tiles</span>
+      </div>
+    </aside>
+    <aside id="mapPanel" class="panel">
+      <canvas id="map" width="196" height="196"></canvas>
+      <p id="mapLabel">Tile footprint around you</p>
+      <p>
+        One continuous field. Small tiles hold fine detail; large tiles cover
+        the horizon.
+      </p>
+    </aside>
+    <div id="help">
+      Drag to look · WASD to move · Space / C to rise / descend · Shift to speed
+      up<br />Movement slows automatically near the ground.
+    </div>
+  </body>
+</html>

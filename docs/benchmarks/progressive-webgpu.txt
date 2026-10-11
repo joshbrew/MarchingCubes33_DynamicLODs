@@ -1,0 +1,15 @@
+Progressive noise tiles WebGPU check — 2026-10-10
+Camera height input: 900 px; canvas 640 × 400; FOV 60°; range 2048 m; clearance 0.75 m
+Default 2 px error target, 380 cache slots, 33 × 33 samples per tile, 6 builds/frame
+Turn: 120 headings around 360° after settling. Travel: 40 × 2 m steps, 130 ms simulated intervals, awaiting submitted GPU work.
+CPU values measure renderer work, not entire browser frame times or sustained FPS.
+
+PASS GPU compute/render and progressive parent fallback: 102 visible tiles, 3.125 cm spacing
+PASS fine tile readback: height error 0.000111 m, gradient error 0.000001
+PASS 8 GPU mixed-resolution borders match exactly
+PASS stationary view generates no tiles and reuses its render bundle
+PASS 360° turn: no new tiles or selections; CPU p95 0.50 ms / max 0.90 ms; peak 221,568 triangles
+MEASURE travel: CPU p95 7.40 ms / max 8.10 ms; selection max 6.40 ms; cut max 3.40 ms
+PASS negative-coordinate and distant travel, 1614 evictions, deterministic revisit, fixed 6.3 MB atlas
+PASS 8 km range, FOV changes and wireframe pipeline
+PASS WebGPU validation: no errors

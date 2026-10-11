@@ -4,6 +4,9 @@
 
 The [runnable sphere example](../examples/sphere.js) is the starting point.
 This guide adds the details needed to supply your own data or change the source.
+For the convenience API (`createSurface`, `createSphere`, `createTerrain`,
+`createSpace`, `createProgressiveTerrain`), cameras, controls and installation,
+start with the [drop-in package guide](PACKAGE.md).
 
 ## Contents
 
@@ -171,12 +174,20 @@ Import these names from the same library entry:
 | `TerrainRenderer`, `Trees`                                                         | Browser WebGPU terrain and instanced vegetation                           |
 | `TerrainField`, `TerrainLOD`, `TerrainPLOC`, `TerrainSurface`, `TerrainVegetation` | Terrain building blocks                                                   |
 | `SpaceRenderer`, `SpaceWorld`, `SpaceGeometry`                                     | Browser space rendering, object generation and geometry                   |
+| `ProgressiveTerrainRenderer`, `ProgressiveTerrainField`, `ProgressiveTerrainLOD`   | On-demand fine noise tiles with a bounded GPU texture atlas               |
+| `createSurface`, `createSphere`                                                    | Mesh data, fitted sphere shells and normals with an object-options API    |
+| `createTerrain`, `createSpace`, `createProgressiveTerrain`                         | Consistent canvas world lifecycle and settings                            |
+| `createCamera`, `cameraFromThree`, `frustumPlanes`, `relativeCamera`               | Engine-free perspective camera math and camera adapters                   |
+| `attachFlyControls`                                                                | Optional canvas-scoped movement controls                                  |
+| `createGPUDevice`, `isWebGPUSupported`                                             | Device creation and availability checks                                   |
 
 Importing the built library in Node requires no DOM or WebGPU device.
 Initializing a renderer requires a browser canvas and WebGPU. Renderer integration
-is covered in the [terrain guide](TERRAIN.md) and [space guide](SPACE.md), with
+is covered in the [terrain guide](TERRAIN.md), [space guide](SPACE.md) and
+[progressive noise tile guide](PROGRESSIVE.md), with
 complete usage in [`src/terrain/demo.js`](../src/terrain/demo.js) and
-[`src/space/demo.js`](../src/space/demo.js).
+[`src/space/demo.js`](../src/space/demo.js) and
+[`src/progressive/demo.js`](../src/progressive/demo.js).
 
 ## WGSL and worker imports
 
@@ -214,10 +225,11 @@ temporal filtering, noise generation and normal smoothing are separate from
 this general extraction port. Its code-12 vertex uses the cell center;
 space geometry adjusts that interior fan placement for its own fields.
 
-The sphere demo fits the source points, extracts each shell boundary separately
+The sphere demo and `createSphere` fit the source points, extract each shell boundary separately
 and projects the result onto that fitted sphere, with radial normals. The inner
 surface sits one shell thickness inside the outer surface. These fitting and
-projection steps belong to the sphere example, rather than general extraction.
+projection steps are sphere-specific; `createSurface` and the raw extractors
+preserve the general sampled field instead.
 The older Gaussian utility remains available as `Fields.createScalarField`.
 
 The [third-party notices](../THIRD_PARTY_NOTICES.md) contain attribution, including
