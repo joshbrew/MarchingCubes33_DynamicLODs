@@ -344,3 +344,5 @@ Use `npm run build:checks` again after changing GPU check code.
 
 MIT licensed. The [original CodePen](https://codepen.io/mootytootyfrooty/pen/pvJREbv)
 shows an older, classic-only version.
+
+See `THIRD_PARTY_NOTICES.md` for source attribution.
