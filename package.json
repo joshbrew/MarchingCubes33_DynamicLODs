@@ -43,6 +43,11 @@
       "import": "./dist/progressive.esm.js",
       "require": "./dist/progressive.cjs"
     },
+    "./noise": {
+      "types": "./types/noise.d.ts",
+      "import": "./dist/noise.esm.js",
+      "require": "./dist/noise.cjs"
+    },
     "./space.worker": "./dist/space.worker.js",
     "./src/*": "./src/*"
   },
@@ -59,6 +64,8 @@
     "dist/space.cjs",
     "dist/progressive.esm.js",
     "dist/progressive.cjs",
+    "dist/noise.esm.js",
+    "dist/noise.cjs",
     "dist/index.js",
     "dist/space.worker.js",
     "types",

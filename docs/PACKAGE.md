@@ -13,6 +13,8 @@ There are **no runtime dependencies**. Three.js is optional.
 - [Install](#install)
 - [Choose an import](#choose-an-import)
 - [Add a world](#add-a-world)
+- [Draw a planet](#draw-a-planet)
+- [Generate noise](#generate-noise)
 - [Change settings](#change-settings)
 - [Use your camera](#use-your-camera)
 - [Optional movement controls](#optional-movement-controls)
@@ -47,11 +49,12 @@ neighboring folders; adjust the path if necessary. Nothing is published by these
 
 | Import                                   | Includes                                                                |
 | ---------------------------------------- | ----------------------------------------------------------------------- |
-| `marching-cubes-bourke-mc33`             | Everything below                                                        |
+| `marching-cubes-bourke-mc33`             | Everything below, plus the planet renderer and its 3D terrain field     |
 | `marching-cubes-bourke-mc33/core`        | Bourke/MC33 extraction, coordinates, fields, meshes and sphere shells   |
 | `marching-cubes-bourke-mc33/terrain`     | Terrain, stitched LOD, PLOC and instanced trees                         |
 | `marching-cubes-bourke-mc33/space`       | Infinite space, ten mesh LODs, point clouds, geometry and world helpers |
 | `marching-cubes-bourke-mc33/progressive` | Fine noise tiles, bounded cache, field and tile planner                 |
+| `marching-cubes-bourke-mc33/noise`       | Noise Compute for textures and volumes, plus the Planet Studio stack   |
 | `marching-cubes-bourke-mc33/camera`      | Camera math, Three.js adapter and optional fly controls                 |
 
 ```js
@@ -122,6 +125,73 @@ as JSON. Memory/view budgets still apply to full detail. GPU timestamps appear
 as `—` when unavailable; background tabs are labelled instead of reporting them
 as foreground performance. Copy both `examples/package.html` and
 `examples/package.js` when reusing this control panel.
+
+## Draw a planet
+
+Import `createPlanet`, `createCamera`, and `PlanetField` from the main package.
+The planet is centered at the origin, and distances are in meters.
+
+```js
+import { createPlanet, createCamera, PlanetField } from "marching-cubes-bourke-mc33";
+
+const planet = await createPlanet(canvas, { preset: "coral-sea" });
+const { radius } = PlanetField;
+const camera = createCamera({
+  position: [0, 0, radius * 3.15],
+  target: [0, 0, 0],
+  far: radius * 5,
+  aspect: canvas.width / canvas.height,
+  height: canvas.height,
+});
+planet.render(camera);
+```
+
+Update the camera and call `planet.render(camera, now)` in your animation loop.
+To fly close to the ground, use a small near plane and set
+`camera.clearance` to the height above the local surface. Get the local
+elevation with `planet.sampleSurface(unitDirection).height`.
+
+Import `PlanetPresets` for the list of preset IDs and labels. Switch worlds
+with `await planet.configure({ preset: "volcanic" })`. Call
+`planet.configure({ pixelError: 2 })` to request finer patches and
+`planet.dispose()` when you remove the canvas.
+
+Set `studioSeed` on `createPlanet` to reproduce a world. A preset change
+chooses its own default seed. To regenerate terrain while keeping the palette,
+call `await planet.configure({ studioSeed: 20783 })`. Pass the current
+`planet.studioSeed` with a new preset to preview its palette on the same terrain.
+The current `planet.geology` gives the landform style of the baked terrain.
+On wet worlds, `planet.oceanLevel` gives the sea elevation in meters and
+`planet.sampleSurface(direction).depth` gives the water depth at that point.
+
+## Generate noise
+
+With a WebGPU device, bake and sample the same stack Planet Approach uses:
+
+```js
+import {
+  bakeStudioPlanetNoise,
+  sampleStudioPlanetNoise,
+} from "marching-cubes-bourke-mc33/noise";
+
+const map = await bakeStudioPlanetNoise(device, {
+  seed: 123456789,
+  segments: 256,
+  erosion: true,
+  geology: "mesa",
+});
+const noise = sampleStudioPlanetNoise(map, [1, 0, 0]);
+```
+
+The map contains raw noise values and can also be sampled in Node. Use
+`PlanetField.surface(direction, radius, seed, preset, map)` for the
+CPU elevation with fine relief. On a live planet, use `planet.sampleSurface(direction)`.
+
+For custom 2D textures or 3D volumes, use `NoiseComputeBuilder` from the same import.
+Create it with `new NoiseComputeBuilder(device, device.queue)`, call
+`buildPermTable(seed)`, and pass a kernel name such as `computeFBM` in
+`noiseChoices` when calling `computeToTexture` or `computeToTexture3D`.
+Call `dispose()` when you finish with its textures.
 
 ## Change settings
 

@@ -455,9 +455,9 @@ var Vector2 = class {
     this.y += (v.y - this.y) * alpha;
     return this;
   }
-  lerpVectors(v12, v2, alpha) {
-    this.x = v12.x + (v2.x - v12.x) * alpha;
-    this.y = v12.y + (v2.y - v12.y) * alpha;
+  lerpVectors(v1, v2, alpha) {
+    this.x = v1.x + (v2.x - v1.x) * alpha;
+    this.y = v1.y + (v2.y - v1.y) * alpha;
     return this;
   }
   equals(v) {
@@ -1147,17 +1147,17 @@ var Vector4 = class {
   divideScalar(scalar) {
     return this.multiplyScalar(1 / scalar);
   }
-  setAxisAngleFromQuaternion(q2) {
-    this.w = 2 * Math.acos(q2.w);
-    const s = Math.sqrt(1 - q2.w * q2.w);
+  setAxisAngleFromQuaternion(q) {
+    this.w = 2 * Math.acos(q.w);
+    const s = Math.sqrt(1 - q.w * q.w);
     if (s < 1e-4) {
       this.x = 1;
       this.y = 0;
       this.z = 0;
     } else {
-      this.x = q2.x / s;
-      this.y = q2.y / s;
-      this.z = q2.z / s;
+      this.x = q.x / s;
+      this.y = q.y / s;
+      this.z = q.z / s;
     }
     return this;
   }
@@ -1310,11 +1310,11 @@ var Vector4 = class {
     this.w += (v.w - this.w) * alpha;
     return this;
   }
-  lerpVectors(v12, v2, alpha) {
-    this.x = v12.x + (v2.x - v12.x) * alpha;
-    this.y = v12.y + (v2.y - v12.y) * alpha;
-    this.z = v12.z + (v2.z - v12.z) * alpha;
-    this.w = v12.w + (v2.w - v12.w) * alpha;
+  lerpVectors(v1, v2, alpha) {
+    this.x = v1.x + (v2.x - v1.x) * alpha;
+    this.y = v1.y + (v2.y - v1.y) * alpha;
+    this.z = v1.z + (v2.z - v1.z) * alpha;
+    this.w = v1.w + (v2.w - v1.w) * alpha;
     return this;
   }
   equals(v) {
@@ -1433,66 +1433,66 @@ var Quaternion = class {
     this._z = z;
     this._w = w;
   }
-  static slerp(qa, qb, qm, t) {
+  static slerp(qa2, qb, qm, t) {
     console.warn("THREE.Quaternion: Static .slerp() has been deprecated. Use qm.slerpQuaternions( qa, qb, t ) instead.");
-    return qm.slerpQuaternions(qa, qb, t);
+    return qm.slerpQuaternions(qa2, qb, t);
   }
   static slerpFlat(dst, dstOffset, src0, srcOffset0, src1, srcOffset1, t) {
-    let x02 = src0[srcOffset0 + 0], y0 = src0[srcOffset0 + 1], z0 = src0[srcOffset0 + 2], w0 = src0[srcOffset0 + 3];
-    const x12 = src1[srcOffset1 + 0], y12 = src1[srcOffset1 + 1], z12 = src1[srcOffset1 + 2], w12 = src1[srcOffset1 + 3];
+    let x0 = src0[srcOffset0 + 0], y0 = src0[srcOffset0 + 1], z0 = src0[srcOffset0 + 2], w0 = src0[srcOffset0 + 3];
+    const x1 = src1[srcOffset1 + 0], y1 = src1[srcOffset1 + 1], z1 = src1[srcOffset1 + 2], w1 = src1[srcOffset1 + 3];
     if (t === 0) {
-      dst[dstOffset + 0] = x02;
+      dst[dstOffset + 0] = x0;
       dst[dstOffset + 1] = y0;
       dst[dstOffset + 2] = z0;
       dst[dstOffset + 3] = w0;
       return;
     }
     if (t === 1) {
-      dst[dstOffset + 0] = x12;
-      dst[dstOffset + 1] = y12;
-      dst[dstOffset + 2] = z12;
-      dst[dstOffset + 3] = w12;
+      dst[dstOffset + 0] = x1;
+      dst[dstOffset + 1] = y1;
+      dst[dstOffset + 2] = z1;
+      dst[dstOffset + 3] = w1;
       return;
     }
-    if (w0 !== w12 || x02 !== x12 || y0 !== y12 || z0 !== z12) {
+    if (w0 !== w1 || x0 !== x1 || y0 !== y1 || z0 !== z1) {
       let s = 1 - t;
-      const cos = x02 * x12 + y0 * y12 + z0 * z12 + w0 * w12, dir = cos >= 0 ? 1 : -1, sqrSin = 1 - cos * cos;
+      const cos = x0 * x1 + y0 * y1 + z0 * z1 + w0 * w1, dir = cos >= 0 ? 1 : -1, sqrSin = 1 - cos * cos;
       if (sqrSin > Number.EPSILON) {
         const sin = Math.sqrt(sqrSin), len = Math.atan2(sin, cos * dir);
         s = Math.sin(s * len) / sin;
         t = Math.sin(t * len) / sin;
       }
       const tDir = t * dir;
-      x02 = x02 * s + x12 * tDir;
-      y0 = y0 * s + y12 * tDir;
-      z0 = z0 * s + z12 * tDir;
-      w0 = w0 * s + w12 * tDir;
+      x0 = x0 * s + x1 * tDir;
+      y0 = y0 * s + y1 * tDir;
+      z0 = z0 * s + z1 * tDir;
+      w0 = w0 * s + w1 * tDir;
       if (s === 1 - t) {
-        const f = 1 / Math.sqrt(x02 * x02 + y0 * y0 + z0 * z0 + w0 * w0);
-        x02 *= f;
+        const f = 1 / Math.sqrt(x0 * x0 + y0 * y0 + z0 * z0 + w0 * w0);
+        x0 *= f;
         y0 *= f;
         z0 *= f;
         w0 *= f;
       }
     }
-    dst[dstOffset] = x02;
+    dst[dstOffset] = x0;
     dst[dstOffset + 1] = y0;
     dst[dstOffset + 2] = z0;
     dst[dstOffset + 3] = w0;
   }
   static multiplyQuaternionsFlat(dst, dstOffset, src0, srcOffset0, src1, srcOffset1) {
-    const x02 = src0[srcOffset0];
+    const x0 = src0[srcOffset0];
     const y0 = src0[srcOffset0 + 1];
     const z0 = src0[srcOffset0 + 2];
     const w0 = src0[srcOffset0 + 3];
-    const x12 = src1[srcOffset1];
-    const y12 = src1[srcOffset1 + 1];
-    const z12 = src1[srcOffset1 + 2];
-    const w12 = src1[srcOffset1 + 3];
-    dst[dstOffset] = x02 * w12 + w0 * x12 + y0 * z12 - z0 * y12;
-    dst[dstOffset + 1] = y0 * w12 + w0 * y12 + z0 * x12 - x02 * z12;
-    dst[dstOffset + 2] = z0 * w12 + w0 * z12 + x02 * y12 - y0 * x12;
-    dst[dstOffset + 3] = w0 * w12 - x02 * x12 - y0 * y12 - z0 * z12;
+    const x1 = src1[srcOffset1];
+    const y1 = src1[srcOffset1 + 1];
+    const z1 = src1[srcOffset1 + 2];
+    const w1 = src1[srcOffset1 + 3];
+    dst[dstOffset] = x0 * w1 + w0 * x1 + y0 * z1 - z0 * y1;
+    dst[dstOffset + 1] = y0 * w1 + w0 * y1 + z0 * x1 - x0 * z1;
+    dst[dstOffset + 2] = z0 * w1 + w0 * z1 + x0 * y1 - y0 * x1;
+    dst[dstOffset + 3] = w0 * w1 - x0 * x1 - y0 * y1 - z0 * z1;
     return dst;
   }
   get x() {
@@ -1549,48 +1549,48 @@ var Quaternion = class {
     const x = euler._x, y = euler._y, z = euler._z, order = euler._order;
     const cos = Math.cos;
     const sin = Math.sin;
-    const c12 = cos(x / 2);
+    const c1 = cos(x / 2);
     const c2 = cos(y / 2);
     const c3 = cos(z / 2);
-    const s12 = sin(x / 2);
+    const s1 = sin(x / 2);
     const s2 = sin(y / 2);
     const s3 = sin(z / 2);
     switch (order) {
       case "XYZ":
-        this._x = s12 * c2 * c3 + c12 * s2 * s3;
-        this._y = c12 * s2 * c3 - s12 * c2 * s3;
-        this._z = c12 * c2 * s3 + s12 * s2 * c3;
-        this._w = c12 * c2 * c3 - s12 * s2 * s3;
+        this._x = s1 * c2 * c3 + c1 * s2 * s3;
+        this._y = c1 * s2 * c3 - s1 * c2 * s3;
+        this._z = c1 * c2 * s3 + s1 * s2 * c3;
+        this._w = c1 * c2 * c3 - s1 * s2 * s3;
         break;
       case "YXZ":
-        this._x = s12 * c2 * c3 + c12 * s2 * s3;
-        this._y = c12 * s2 * c3 - s12 * c2 * s3;
-        this._z = c12 * c2 * s3 - s12 * s2 * c3;
-        this._w = c12 * c2 * c3 + s12 * s2 * s3;
+        this._x = s1 * c2 * c3 + c1 * s2 * s3;
+        this._y = c1 * s2 * c3 - s1 * c2 * s3;
+        this._z = c1 * c2 * s3 - s1 * s2 * c3;
+        this._w = c1 * c2 * c3 + s1 * s2 * s3;
         break;
       case "ZXY":
-        this._x = s12 * c2 * c3 - c12 * s2 * s3;
-        this._y = c12 * s2 * c3 + s12 * c2 * s3;
-        this._z = c12 * c2 * s3 + s12 * s2 * c3;
-        this._w = c12 * c2 * c3 - s12 * s2 * s3;
+        this._x = s1 * c2 * c3 - c1 * s2 * s3;
+        this._y = c1 * s2 * c3 + s1 * c2 * s3;
+        this._z = c1 * c2 * s3 + s1 * s2 * c3;
+        this._w = c1 * c2 * c3 - s1 * s2 * s3;
         break;
       case "ZYX":
-        this._x = s12 * c2 * c3 - c12 * s2 * s3;
-        this._y = c12 * s2 * c3 + s12 * c2 * s3;
-        this._z = c12 * c2 * s3 - s12 * s2 * c3;
-        this._w = c12 * c2 * c3 + s12 * s2 * s3;
+        this._x = s1 * c2 * c3 - c1 * s2 * s3;
+        this._y = c1 * s2 * c3 + s1 * c2 * s3;
+        this._z = c1 * c2 * s3 - s1 * s2 * c3;
+        this._w = c1 * c2 * c3 + s1 * s2 * s3;
         break;
       case "YZX":
-        this._x = s12 * c2 * c3 + c12 * s2 * s3;
-        this._y = c12 * s2 * c3 + s12 * c2 * s3;
-        this._z = c12 * c2 * s3 - s12 * s2 * c3;
-        this._w = c12 * c2 * c3 - s12 * s2 * s3;
+        this._x = s1 * c2 * c3 + c1 * s2 * s3;
+        this._y = c1 * s2 * c3 + s1 * c2 * s3;
+        this._z = c1 * c2 * s3 - s1 * s2 * c3;
+        this._w = c1 * c2 * c3 - s1 * s2 * s3;
         break;
       case "XZY":
-        this._x = s12 * c2 * c3 - c12 * s2 * s3;
-        this._y = c12 * s2 * c3 - s12 * c2 * s3;
-        this._z = c12 * c2 * s3 + s12 * s2 * c3;
-        this._w = c12 * c2 * c3 + s12 * s2 * s3;
+        this._x = s1 * c2 * c3 - c1 * s2 * s3;
+        this._y = c1 * s2 * c3 - s1 * c2 * s3;
+        this._z = c1 * c2 * s3 + s1 * s2 * c3;
+        this._w = c1 * c2 * c3 + s1 * s2 * s3;
         break;
       default:
         console.warn("THREE.Quaternion: .setFromEuler() encountered an unknown order: " + order);
@@ -1660,14 +1660,14 @@ var Quaternion = class {
     }
     return this.normalize();
   }
-  angleTo(q2) {
-    return 2 * Math.acos(Math.abs(clamp(this.dot(q2), -1, 1)));
+  angleTo(q) {
+    return 2 * Math.acos(Math.abs(clamp(this.dot(q), -1, 1)));
   }
-  rotateTowards(q2, step) {
-    const angle = this.angleTo(q2);
+  rotateTowards(q, step) {
+    const angle = this.angleTo(q);
     if (angle === 0) return this;
     const t = Math.min(1, step / angle);
-    this.slerp(q2, t);
+    this.slerp(q, t);
     return this;
   }
   identity() {
@@ -1709,15 +1709,15 @@ var Quaternion = class {
     this._onChangeCallback();
     return this;
   }
-  multiply(q2, p) {
+  multiply(q, p) {
     if (p !== void 0) {
       console.warn("THREE.Quaternion: .multiply() now only accepts one argument. Use .multiplyQuaternions( a, b ) instead.");
-      return this.multiplyQuaternions(q2, p);
+      return this.multiplyQuaternions(q, p);
     }
-    return this.multiplyQuaternions(this, q2);
+    return this.multiplyQuaternions(this, q);
   }
-  premultiply(q2) {
-    return this.multiplyQuaternions(q2, this);
+  premultiply(q) {
+    return this.multiplyQuaternions(q, this);
   }
   multiplyQuaternions(a, b) {
     const qax = a._x, qay = a._y, qaz = a._z, qaw = a._w;
@@ -1771,8 +1771,8 @@ var Quaternion = class {
     this._onChangeCallback();
     return this;
   }
-  slerpQuaternions(qa, qb, t) {
-    this.copy(qa).slerp(qb, t);
+  slerpQuaternions(qa2, qb, t) {
+    this.copy(qa2).slerp(qb, t);
   }
   equals(quaternion) {
     return quaternion._x === this._x && quaternion._y === this._y && quaternion._z === this._z && quaternion._w === this._w;
@@ -1976,9 +1976,9 @@ var Vector3 = class {
     this.z = (e[2] * x + e[6] * y + e[10] * z + e[14]) * w;
     return this;
   }
-  applyQuaternion(q2) {
+  applyQuaternion(q) {
     const x = this.x, y = this.y, z = this.z;
-    const qx = q2.x, qy = q2.y, qz = q2.z, qw = q2.w;
+    const qx = q.x, qy = q.y, qz = q.z, qw = q.w;
     const ix = qw * x + qy * z - qz * y;
     const iy = qw * y + qz * x - qx * z;
     const iz = qw * z + qx * y - qy * x;
@@ -2094,10 +2094,10 @@ var Vector3 = class {
     this.z += (v.z - this.z) * alpha;
     return this;
   }
-  lerpVectors(v12, v2, alpha) {
-    this.x = v12.x + (v2.x - v12.x) * alpha;
-    this.y = v12.y + (v2.y - v12.y) * alpha;
-    this.z = v12.z + (v2.z - v12.z) * alpha;
+  lerpVectors(v1, v2, alpha) {
+    this.x = v1.x + (v2.x - v1.x) * alpha;
+    this.y = v1.y + (v2.y - v1.y) * alpha;
+    this.z = v1.z + (v2.z - v1.z) * alpha;
     return this;
   }
   cross(v, w) {
@@ -2528,14 +2528,14 @@ var _center = /* @__PURE__ */ new Vector3();
 var _extents = /* @__PURE__ */ new Vector3();
 var _triangleNormal = /* @__PURE__ */ new Vector3();
 var _testAxis = /* @__PURE__ */ new Vector3();
-function satForAxes(axes, v0, v12, v2, extents) {
+function satForAxes(axes, v0, v1, v2, extents) {
   for (let i = 0, j2 = axes.length - 3; i <= j2; i += 3) {
     _testAxis.fromArray(axes, i);
     const r = extents.x * Math.abs(_testAxis.x) + extents.y * Math.abs(_testAxis.y) + extents.z * Math.abs(_testAxis.z);
     const p0 = v0.dot(_testAxis);
-    const p12 = v12.dot(_testAxis);
+    const p1 = v1.dot(_testAxis);
     const p2 = v2.dot(_testAxis);
-    if (Math.max(-Math.max(p0, p12, p2), Math.min(p0, p12, p2)) > r) {
+    if (Math.max(-Math.max(p0, p1, p2), Math.min(p0, p1, p2)) > r) {
       return false;
     }
   }
@@ -2717,63 +2717,63 @@ var Ray = class {
     _vector$a.copy(this.direction).multiplyScalar(directionDistance).add(this.origin);
     return _vector$a.distanceToSquared(point);
   }
-  distanceSqToSegment(v0, v12, optionalPointOnRay, optionalPointOnSegment) {
-    _segCenter.copy(v0).add(v12).multiplyScalar(0.5);
-    _segDir.copy(v12).sub(v0).normalize();
+  distanceSqToSegment(v0, v1, optionalPointOnRay, optionalPointOnSegment) {
+    _segCenter.copy(v0).add(v1).multiplyScalar(0.5);
+    _segDir.copy(v1).sub(v0).normalize();
     _diff.copy(this.origin).sub(_segCenter);
-    const segExtent = v0.distanceTo(v12) * 0.5;
+    const segExtent = v0.distanceTo(v1) * 0.5;
     const a01 = -this.direction.dot(_segDir);
-    const b02 = _diff.dot(this.direction);
-    const b12 = -_diff.dot(_segDir);
+    const b0 = _diff.dot(this.direction);
+    const b1 = -_diff.dot(_segDir);
     const c = _diff.lengthSq();
     const det = Math.abs(1 - a01 * a01);
-    let s0, s12, sqrDist, extDet;
+    let s0, s1, sqrDist, extDet;
     if (det > 0) {
-      s0 = a01 * b12 - b02;
-      s12 = a01 * b02 - b12;
+      s0 = a01 * b1 - b0;
+      s1 = a01 * b0 - b1;
       extDet = segExtent * det;
       if (s0 >= 0) {
-        if (s12 >= -extDet) {
-          if (s12 <= extDet) {
+        if (s1 >= -extDet) {
+          if (s1 <= extDet) {
             const invDet = 1 / det;
             s0 *= invDet;
-            s12 *= invDet;
-            sqrDist = s0 * (s0 + a01 * s12 + 2 * b02) + s12 * (a01 * s0 + s12 + 2 * b12) + c;
+            s1 *= invDet;
+            sqrDist = s0 * (s0 + a01 * s1 + 2 * b0) + s1 * (a01 * s0 + s1 + 2 * b1) + c;
           } else {
-            s12 = segExtent;
-            s0 = Math.max(0, -(a01 * s12 + b02));
-            sqrDist = -s0 * s0 + s12 * (s12 + 2 * b12) + c;
+            s1 = segExtent;
+            s0 = Math.max(0, -(a01 * s1 + b0));
+            sqrDist = -s0 * s0 + s1 * (s1 + 2 * b1) + c;
           }
         } else {
-          s12 = -segExtent;
-          s0 = Math.max(0, -(a01 * s12 + b02));
-          sqrDist = -s0 * s0 + s12 * (s12 + 2 * b12) + c;
+          s1 = -segExtent;
+          s0 = Math.max(0, -(a01 * s1 + b0));
+          sqrDist = -s0 * s0 + s1 * (s1 + 2 * b1) + c;
         }
       } else {
-        if (s12 <= -extDet) {
-          s0 = Math.max(0, -(-a01 * segExtent + b02));
-          s12 = s0 > 0 ? -segExtent : Math.min(Math.max(-segExtent, -b12), segExtent);
-          sqrDist = -s0 * s0 + s12 * (s12 + 2 * b12) + c;
-        } else if (s12 <= extDet) {
+        if (s1 <= -extDet) {
+          s0 = Math.max(0, -(-a01 * segExtent + b0));
+          s1 = s0 > 0 ? -segExtent : Math.min(Math.max(-segExtent, -b1), segExtent);
+          sqrDist = -s0 * s0 + s1 * (s1 + 2 * b1) + c;
+        } else if (s1 <= extDet) {
           s0 = 0;
-          s12 = Math.min(Math.max(-segExtent, -b12), segExtent);
-          sqrDist = s12 * (s12 + 2 * b12) + c;
+          s1 = Math.min(Math.max(-segExtent, -b1), segExtent);
+          sqrDist = s1 * (s1 + 2 * b1) + c;
         } else {
-          s0 = Math.max(0, -(a01 * segExtent + b02));
-          s12 = s0 > 0 ? segExtent : Math.min(Math.max(-segExtent, -b12), segExtent);
-          sqrDist = -s0 * s0 + s12 * (s12 + 2 * b12) + c;
+          s0 = Math.max(0, -(a01 * segExtent + b0));
+          s1 = s0 > 0 ? segExtent : Math.min(Math.max(-segExtent, -b1), segExtent);
+          sqrDist = -s0 * s0 + s1 * (s1 + 2 * b1) + c;
         }
       }
     } else {
-      s12 = a01 > 0 ? -segExtent : segExtent;
-      s0 = Math.max(0, -(a01 * s12 + b02));
-      sqrDist = -s0 * s0 + s12 * (s12 + 2 * b12) + c;
+      s1 = a01 > 0 ? -segExtent : segExtent;
+      s0 = Math.max(0, -(a01 * s1 + b0));
+      sqrDist = -s0 * s0 + s1 * (s1 + 2 * b1) + c;
     }
     if (optionalPointOnRay) {
       optionalPointOnRay.copy(this.direction).multiplyScalar(s0).add(this.origin);
     }
     if (optionalPointOnSegment) {
-      optionalPointOnSegment.copy(_segDir).multiplyScalar(s12).add(_segCenter);
+      optionalPointOnSegment.copy(_segDir).multiplyScalar(s1).add(_segCenter);
     }
     return sqrDist;
   }
@@ -2784,11 +2784,11 @@ var Ray = class {
     const radius2 = sphere.radius * sphere.radius;
     if (d2 > radius2) return null;
     const thc = Math.sqrt(radius2 - d2);
-    const t02 = tca - thc;
-    const t12 = tca + thc;
-    if (t02 < 0 && t12 < 0) return null;
-    if (t02 < 0) return this.at(t12, target);
-    return this.at(t02, target);
+    const t0 = tca - thc;
+    const t1 = tca + thc;
+    if (t0 < 0 && t1 < 0) return null;
+    if (t0 < 0) return this.at(t1, target);
+    return this.at(t0, target);
   }
   intersectsSphere(sphere) {
     return this.distanceSqToPoint(sphere.center) <= sphere.radius * sphere.radius;
@@ -3094,24 +3094,24 @@ var Matrix4 = class _Matrix4 {
       te2[6] = be2 + af * d;
       te2[10] = a * c;
     } else if (euler.order === "YXZ") {
-      const ce2 = c * e, cf = c * f, de2 = d * e, df = d * f;
-      te2[0] = ce2 + df * b;
+      const ce = c * e, cf = c * f, de2 = d * e, df = d * f;
+      te2[0] = ce + df * b;
       te2[4] = de2 * b - cf;
       te2[8] = a * d;
       te2[1] = a * f;
       te2[5] = a * e;
       te2[9] = -b;
       te2[2] = cf * b - de2;
-      te2[6] = df + ce2 * b;
+      te2[6] = df + ce * b;
       te2[10] = a * c;
     } else if (euler.order === "ZXY") {
-      const ce2 = c * e, cf = c * f, de2 = d * e, df = d * f;
-      te2[0] = ce2 - df * b;
+      const ce = c * e, cf = c * f, de2 = d * e, df = d * f;
+      te2[0] = ce - df * b;
       te2[4] = -a * f;
       te2[8] = de2 + cf * b;
       te2[1] = cf + de2 * b;
       te2[5] = a * e;
-      te2[9] = df - ce2 * b;
+      te2[9] = df - ce * b;
       te2[2] = -a * d;
       te2[6] = b;
       te2[10] = a * c;
@@ -3158,8 +3158,8 @@ var Matrix4 = class _Matrix4 {
     te2[15] = 1;
     return this;
   }
-  makeRotationFromQuaternion(q2) {
-    return this.compose(_zero, q2, _one);
+  makeRotationFromQuaternion(q) {
+    return this.compose(_zero, q, _one);
   }
   lookAt(eye, target, up) {
     const te2 = this.elements;
@@ -3780,8 +3780,8 @@ var Euler = class _Euler {
     if (update !== false) this._onChangeCallback();
     return this;
   }
-  setFromQuaternion(q2, order, update) {
-    _matrix$1.makeRotationFromQuaternion(q2);
+  setFromQuaternion(q, order, update) {
+    _matrix$1.makeRotationFromQuaternion(q);
     return this.setFromRotationMatrix(_matrix$1, order, update);
   }
   setFromVector3(v, order) {
@@ -3937,8 +3937,8 @@ var Object3D = class _Object3D extends EventDispatcher {
     this.matrix.premultiply(matrix);
     this.matrix.decompose(this.position, this.quaternion, this.scale);
   }
-  applyQuaternion(q2) {
-    this.quaternion.premultiply(q2);
+  applyQuaternion(q) {
+    this.quaternion.premultiply(q);
     return this;
   }
   setRotationFromAxisAngle(axis, angle) {
@@ -3950,8 +3950,8 @@ var Object3D = class _Object3D extends EventDispatcher {
   setRotationFromMatrix(m) {
     this.quaternion.setFromRotationMatrix(m);
   }
-  setRotationFromQuaternion(q2) {
-    this.quaternion.copy(q2);
+  setRotationFromQuaternion(q) {
+    this.quaternion.copy(q);
   }
   rotateOnAxis(axis, angle) {
     _q1.setFromAxisAngle(axis, angle);
@@ -4509,8 +4509,8 @@ var Triangle = class _Triangle {
     this.getBarycoord(point, a, b, c, _v3$1);
     return _v3$1.x >= 0 && _v3$1.y >= 0 && _v3$1.x + _v3$1.y <= 1;
   }
-  static getUV(point, p12, p2, p3, uv1, uv2, uv3, target) {
-    this.getBarycoord(point, p12, p2, p3, _v3$1);
+  static getUV(point, p1, p2, p3, uv1, uv2, uv3, target) {
+    this.getBarycoord(point, p1, p2, p3, _v3$1);
     target.set(0, 0);
     target.addScaledVector(uv1, _v3$1.x);
     target.addScaledVector(uv2, _v3$1.y);
@@ -4528,9 +4528,9 @@ var Triangle = class _Triangle {
     this.c.copy(c);
     return this;
   }
-  setFromPointsAndIndices(points, i02, i12, i2) {
-    this.a.copy(points[i02]);
-    this.b.copy(points[i12]);
+  setFromPointsAndIndices(points, i0, i1, i2) {
+    this.a.copy(points[i0]);
+    this.b.copy(points[i1]);
     this.c.copy(points[i2]);
     return this;
   }
@@ -4617,13 +4617,13 @@ var Triangle = class _Triangle {
       w = d2 / (d2 - d6);
       return target.copy(a).addScaledVector(_vac, w);
     }
-    const va = d3 * d6 - d5 * d4;
-    if (va <= 0 && d4 - d3 >= 0 && d5 - d6 >= 0) {
+    const va2 = d3 * d6 - d5 * d4;
+    if (va2 <= 0 && d4 - d3 >= 0 && d5 - d6 >= 0) {
       _vbc.subVectors(c, b);
       w = (d4 - d3) / (d4 - d3 + (d5 - d6));
       return target.copy(b).addScaledVector(_vbc, w);
     }
-    const denom = 1 / (va + vb + vc);
+    const denom = 1 / (va2 + vb + vc);
     v = vb * denom;
     w = vc * denom;
     return target.copy(a).addScaledVector(_vab, v).addScaledVector(_vac, w);
@@ -5069,12 +5069,12 @@ var _colorKeywords = {
 };
 var _hslA = { h: 0, s: 0, l: 0 };
 var _hslB = { h: 0, s: 0, l: 0 };
-function hue2rgb(p, q2, t) {
+function hue2rgb(p, q, t) {
   if (t < 0) t += 1;
   if (t > 1) t -= 1;
-  if (t < 1 / 6) return p + (q2 - p) * 6 * t;
-  if (t < 1 / 2) return q2;
-  if (t < 2 / 3) return p + (q2 - p) * 6 * (2 / 3 - t);
+  if (t < 1 / 6) return p + (q - p) * 6 * t;
+  if (t < 1 / 2) return q;
+  if (t < 2 / 3) return p + (q - p) * 6 * (2 / 3 - t);
   return p;
 }
 function SRGBToLinear(c) {
@@ -5127,10 +5127,10 @@ var Color = class {
       this.r = this.g = this.b = l;
     } else {
       const p = l <= 0.5 ? l * (1 + s) : l + s - l * s;
-      const q2 = 2 * l - p;
-      this.r = hue2rgb(q2, p, h + 1 / 3);
-      this.g = hue2rgb(q2, p, h);
-      this.b = hue2rgb(q2, p, h - 1 / 3);
+      const q = 2 * l - p;
+      this.r = hue2rgb(q, p, h + 1 / 3);
+      this.g = hue2rgb(q, p, h);
+      this.b = hue2rgb(q, p, h - 1 / 3);
     }
     return this;
   }
@@ -7125,13 +7125,13 @@ DataTexture.prototype.isDataTexture = true;
 var _sphere$2 = /* @__PURE__ */ new Sphere();
 var _vector$7 = /* @__PURE__ */ new Vector3();
 var Frustum = class {
-  constructor(p0 = new Plane(), p12 = new Plane(), p2 = new Plane(), p3 = new Plane(), p4 = new Plane(), p5 = new Plane()) {
-    this.planes = [p0, p12, p2, p3, p4, p5];
+  constructor(p0 = new Plane(), p1 = new Plane(), p2 = new Plane(), p3 = new Plane(), p4 = new Plane(), p5 = new Plane()) {
+    this.planes = [p0, p1, p2, p3, p4, p5];
   }
-  set(p0, p12, p2, p3, p4, p5) {
+  set(p0, p1, p2, p3, p4, p5) {
     const planes = this.planes;
     planes[0].copy(p0);
-    planes[1].copy(p12);
+    planes[1].copy(p1);
     planes[2].copy(p2);
     planes[3].copy(p3);
     planes[4].copy(p4);
@@ -15745,7 +15745,7 @@ function indexCurve(start, minX, minY, invSize) {
   sortLinked(p);
 }
 function sortLinked(list) {
-  let i, p, q2, e, tail, numMerges, pSize, qSize, inSize = 1;
+  let i, p, q, e, tail, numMerges, pSize, qSize, inSize = 1;
   do {
     p = list;
     list = null;
@@ -15753,22 +15753,22 @@ function sortLinked(list) {
     numMerges = 0;
     while (p) {
       numMerges++;
-      q2 = p;
+      q = p;
       pSize = 0;
       for (i = 0; i < inSize; i++) {
         pSize++;
-        q2 = q2.nextZ;
-        if (!q2) break;
+        q = q.nextZ;
+        if (!q) break;
       }
       qSize = inSize;
-      while (pSize > 0 || qSize > 0 && q2) {
-        if (pSize !== 0 && (qSize === 0 || !q2 || p.z <= q2.z)) {
+      while (pSize > 0 || qSize > 0 && q) {
+        if (pSize !== 0 && (qSize === 0 || !q || p.z <= q.z)) {
           e = p;
           p = p.nextZ;
           pSize--;
         } else {
-          e = q2;
-          q2 = q2.nextZ;
+          e = q;
+          q = q.nextZ;
           qSize--;
         }
         if (tail) tail.nextZ = e;
@@ -15776,7 +15776,7 @@ function sortLinked(list) {
         e.prevZ = tail;
         tail = e;
       }
-      p = q2;
+      p = q;
     }
     tail.nextZ = null;
     inSize *= 2;
@@ -15813,26 +15813,26 @@ function isValidDiagonal(a, b) {
   (area(a.prev, a, b.prev) || area(a, b.prev, b)) || // does not create opposite-facing sectors
   equals(a, b) && area(a.prev, a, a.next) > 0 && area(b.prev, b, b.next) > 0);
 }
-function area(p, q2, r) {
-  return (q2.y - p.y) * (r.x - q2.x) - (q2.x - p.x) * (r.y - q2.y);
+function area(p, q, r) {
+  return (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
 }
-function equals(p12, p2) {
-  return p12.x === p2.x && p12.y === p2.y;
+function equals(p1, p2) {
+  return p1.x === p2.x && p1.y === p2.y;
 }
-function intersects(p12, q12, p2, q2) {
-  const o12 = sign(area(p12, q12, p2));
-  const o2 = sign(area(p12, q12, q2));
-  const o3 = sign(area(p2, q2, p12));
-  const o4 = sign(area(p2, q2, q12));
-  if (o12 !== o2 && o3 !== o4) return true;
-  if (o12 === 0 && onSegment(p12, p2, q12)) return true;
-  if (o2 === 0 && onSegment(p12, q2, q12)) return true;
-  if (o3 === 0 && onSegment(p2, p12, q2)) return true;
-  if (o4 === 0 && onSegment(p2, q12, q2)) return true;
+function intersects(p1, q1, p2, q2) {
+  const o1 = sign(area(p1, q1, p2));
+  const o2 = sign(area(p1, q1, q2));
+  const o3 = sign(area(p2, q2, p1));
+  const o4 = sign(area(p2, q2, q1));
+  if (o1 !== o2 && o3 !== o4) return true;
+  if (o1 === 0 && onSegment(p1, p2, q1)) return true;
+  if (o2 === 0 && onSegment(p1, q2, q1)) return true;
+  if (o3 === 0 && onSegment(p2, p1, q2)) return true;
+  if (o4 === 0 && onSegment(p2, q1, q2)) return true;
   return false;
 }
-function onSegment(p, q2, r) {
-  return q2.x <= Math.max(p.x, r.x) && q2.x >= Math.min(p.x, r.x) && q2.y <= Math.max(p.y, r.y) && q2.y >= Math.min(p.y, r.y);
+function onSegment(p, q, r) {
+  return q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x) && q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y);
 }
 function sign(num) {
   return num > 0 ? 1 : num < 0 ? -1 : 0;
@@ -15913,8 +15913,8 @@ var ShapeUtils = class _ShapeUtils {
   static area(contour) {
     const n = contour.length;
     let a = 0;
-    for (let p = n - 1, q2 = 0; q2 < n; p = q2++) {
-      a += contour[p].x * contour[q2].y - contour[q2].x * contour[p].y;
+    for (let p = n - 1, q = 0; q < n; p = q++) {
+      a += contour[p].x * contour[q].y - contour[q].x * contour[p].y;
     }
     return a * 0.5;
   }
@@ -17059,77 +17059,77 @@ var Interpolant = class {
   }
   evaluate(t) {
     const pp = this.parameterPositions;
-    let i12 = this._cachedIndex, t12 = pp[i12], t02 = pp[i12 - 1];
+    let i1 = this._cachedIndex, t1 = pp[i1], t0 = pp[i1 - 1];
     validate_interval: {
       seek: {
         let right;
         linear_scan: {
-          forward_scan: if (!(t < t12)) {
-            for (let giveUpAt = i12 + 2; ; ) {
-              if (t12 === void 0) {
-                if (t < t02) break forward_scan;
-                i12 = pp.length;
-                this._cachedIndex = i12;
-                return this.afterEnd_(i12 - 1, t, t02);
+          forward_scan: if (!(t < t1)) {
+            for (let giveUpAt = i1 + 2; ; ) {
+              if (t1 === void 0) {
+                if (t < t0) break forward_scan;
+                i1 = pp.length;
+                this._cachedIndex = i1;
+                return this.afterEnd_(i1 - 1, t, t0);
               }
-              if (i12 === giveUpAt) break;
-              t02 = t12;
-              t12 = pp[++i12];
-              if (t < t12) {
+              if (i1 === giveUpAt) break;
+              t0 = t1;
+              t1 = pp[++i1];
+              if (t < t1) {
                 break seek;
               }
             }
             right = pp.length;
             break linear_scan;
           }
-          if (!(t >= t02)) {
+          if (!(t >= t0)) {
             const t1global = pp[1];
             if (t < t1global) {
-              i12 = 2;
-              t02 = t1global;
+              i1 = 2;
+              t0 = t1global;
             }
-            for (let giveUpAt = i12 - 2; ; ) {
-              if (t02 === void 0) {
+            for (let giveUpAt = i1 - 2; ; ) {
+              if (t0 === void 0) {
                 this._cachedIndex = 0;
-                return this.beforeStart_(0, t, t12);
+                return this.beforeStart_(0, t, t1);
               }
-              if (i12 === giveUpAt) break;
-              t12 = t02;
-              t02 = pp[--i12 - 1];
-              if (t >= t02) {
+              if (i1 === giveUpAt) break;
+              t1 = t0;
+              t0 = pp[--i1 - 1];
+              if (t >= t0) {
                 break seek;
               }
             }
-            right = i12;
-            i12 = 0;
+            right = i1;
+            i1 = 0;
             break linear_scan;
           }
           break validate_interval;
         }
-        while (i12 < right) {
-          const mid = i12 + right >>> 1;
+        while (i1 < right) {
+          const mid = i1 + right >>> 1;
           if (t < pp[mid]) {
             right = mid;
           } else {
-            i12 = mid + 1;
+            i1 = mid + 1;
           }
         }
-        t12 = pp[i12];
-        t02 = pp[i12 - 1];
-        if (t02 === void 0) {
+        t1 = pp[i1];
+        t0 = pp[i1 - 1];
+        if (t0 === void 0) {
           this._cachedIndex = 0;
-          return this.beforeStart_(0, t, t12);
+          return this.beforeStart_(0, t, t1);
         }
-        if (t12 === void 0) {
-          i12 = pp.length;
-          this._cachedIndex = i12;
-          return this.afterEnd_(i12 - 1, t02, t);
+        if (t1 === void 0) {
+          i1 = pp.length;
+          this._cachedIndex = i1;
+          return this.afterEnd_(i1 - 1, t0, t);
         }
       }
-      this._cachedIndex = i12;
-      this.intervalChanged_(i12, t02, t12);
+      this._cachedIndex = i1;
+      this.intervalChanged_(i1, t0, t1);
     }
-    return this.interpolate_(i12, t02, t, t12);
+    return this.interpolate_(i1, t0, t, t1);
   }
   getSettings_() {
     return this.settings || this.DefaultSettings_;
@@ -17162,53 +17162,53 @@ var CubicInterpolant = class extends Interpolant {
       endingEnd: ZeroCurvatureEnding
     };
   }
-  intervalChanged_(i12, t02, t12) {
+  intervalChanged_(i1, t0, t1) {
     const pp = this.parameterPositions;
-    let iPrev = i12 - 2, iNext = i12 + 1, tPrev = pp[iPrev], tNext = pp[iNext];
+    let iPrev = i1 - 2, iNext = i1 + 1, tPrev = pp[iPrev], tNext = pp[iNext];
     if (tPrev === void 0) {
       switch (this.getSettings_().endingStart) {
         case ZeroSlopeEnding:
-          iPrev = i12;
-          tPrev = 2 * t02 - t12;
+          iPrev = i1;
+          tPrev = 2 * t0 - t1;
           break;
         case WrapAroundEnding:
           iPrev = pp.length - 2;
-          tPrev = t02 + pp[iPrev] - pp[iPrev + 1];
+          tPrev = t0 + pp[iPrev] - pp[iPrev + 1];
           break;
         default:
-          iPrev = i12;
-          tPrev = t12;
+          iPrev = i1;
+          tPrev = t1;
       }
     }
     if (tNext === void 0) {
       switch (this.getSettings_().endingEnd) {
         case ZeroSlopeEnding:
-          iNext = i12;
-          tNext = 2 * t12 - t02;
+          iNext = i1;
+          tNext = 2 * t1 - t0;
           break;
         case WrapAroundEnding:
           iNext = 1;
-          tNext = t12 + pp[1] - pp[0];
+          tNext = t1 + pp[1] - pp[0];
           break;
         default:
-          iNext = i12 - 1;
-          tNext = t02;
+          iNext = i1 - 1;
+          tNext = t0;
       }
     }
-    const halfDt = (t12 - t02) * 0.5, stride = this.valueSize;
-    this._weightPrev = halfDt / (t02 - tPrev);
-    this._weightNext = halfDt / (tNext - t12);
+    const halfDt = (t1 - t0) * 0.5, stride = this.valueSize;
+    this._weightPrev = halfDt / (t0 - tPrev);
+    this._weightNext = halfDt / (tNext - t1);
     this._offsetPrev = iPrev * stride;
     this._offsetNext = iNext * stride;
   }
-  interpolate_(i12, t02, t, t12) {
-    const result = this.resultBuffer, values = this.sampleValues, stride = this.valueSize, o12 = i12 * stride, o02 = o12 - stride, oP = this._offsetPrev, oN = this._offsetNext, wP = this._weightPrev, wN = this._weightNext, p = (t - t02) / (t12 - t02), pp = p * p, ppp = pp * p;
+  interpolate_(i1, t0, t, t1) {
+    const result = this.resultBuffer, values = this.sampleValues, stride = this.valueSize, o1 = i1 * stride, o0 = o1 - stride, oP = this._offsetPrev, oN = this._offsetNext, wP = this._weightPrev, wN = this._weightNext, p = (t - t0) / (t1 - t0), pp = p * p, ppp = pp * p;
     const sP = -wP * ppp + 2 * wP * pp - wP * p;
     const s0 = (1 + wP) * ppp + (-1.5 - 2 * wP) * pp + (-0.5 + wP) * p + 1;
-    const s12 = (-1 - wN) * ppp + (1.5 + wN) * pp + 0.5 * p;
+    const s1 = (-1 - wN) * ppp + (1.5 + wN) * pp + 0.5 * p;
     const sN = wN * ppp - wN * pp;
     for (let i = 0; i !== stride; ++i) {
-      result[i] = sP * values[oP + i] + s0 * values[o02 + i] + s12 * values[o12 + i] + sN * values[oN + i];
+      result[i] = sP * values[oP + i] + s0 * values[o0 + i] + s1 * values[o1 + i] + sN * values[oN + i];
     }
     return result;
   }
@@ -17217,8 +17217,8 @@ var LinearInterpolant = class extends Interpolant {
   constructor(parameterPositions, sampleValues, sampleSize, resultBuffer) {
     super(parameterPositions, sampleValues, sampleSize, resultBuffer);
   }
-  interpolate_(i12, t02, t, t12) {
-    const result = this.resultBuffer, values = this.sampleValues, stride = this.valueSize, offset1 = i12 * stride, offset0 = offset1 - stride, weight1 = (t - t02) / (t12 - t02), weight0 = 1 - weight1;
+  interpolate_(i1, t0, t, t1) {
+    const result = this.resultBuffer, values = this.sampleValues, stride = this.valueSize, offset1 = i1 * stride, offset0 = offset1 - stride, weight1 = (t - t0) / (t1 - t0), weight0 = 1 - weight1;
     for (let i = 0; i !== stride; ++i) {
       result[i] = values[offset0 + i] * weight0 + values[offset1 + i] * weight1;
     }
@@ -17229,8 +17229,8 @@ var DiscreteInterpolant = class extends Interpolant {
   constructor(parameterPositions, sampleValues, sampleSize, resultBuffer) {
     super(parameterPositions, sampleValues, sampleSize, resultBuffer);
   }
-  interpolate_(i12) {
-    return this.copySampleValue_(i12 - 1);
+  interpolate_(i1) {
+    return this.copySampleValue_(i1 - 1);
   }
 };
 var KeyframeTrack = class {
@@ -17477,9 +17477,9 @@ var QuaternionLinearInterpolant = class extends Interpolant {
   constructor(parameterPositions, sampleValues, sampleSize, resultBuffer) {
     super(parameterPositions, sampleValues, sampleSize, resultBuffer);
   }
-  interpolate_(i12, t02, t, t12) {
-    const result = this.resultBuffer, values = this.sampleValues, stride = this.valueSize, alpha = (t - t02) / (t12 - t02);
-    let offset = i12 * stride;
+  interpolate_(i1, t0, t, t1) {
+    const result = this.resultBuffer, values = this.sampleValues, stride = this.valueSize, alpha = (t - t0) / (t1 - t0);
+    let offset = i1 * stride;
     for (let end = offset + stride; offset !== end; offset += 4) {
       Quaternion.slerpFlat(result, 0, values, offset - stride, values, offset, alpha);
     }
@@ -18233,11 +18233,11 @@ var Curve = class {
   // which seems to give a reasonable approximation
   getTangent(t, optionalTarget) {
     const delta = 1e-4;
-    let t12 = t - delta;
+    let t1 = t - delta;
     let t2 = t + delta;
-    if (t12 < 0) t12 = 0;
+    if (t1 < 0) t1 = 0;
     if (t2 > 1) t2 = 1;
-    const pt1 = this.getPoint(t12);
+    const pt1 = this.getPoint(t1);
     const pt2 = this.getPoint(t2);
     const tangent = optionalTarget || (pt1.isVector2 ? new Vector2() : new Vector3());
     tangent.copy(pt2).sub(pt1).normalize();
@@ -18424,28 +18424,28 @@ var ArcCurve = class extends EllipseCurve {
 };
 ArcCurve.prototype.isArcCurve = true;
 function CubicPoly() {
-  let c02 = 0, c12 = 0, c2 = 0, c3 = 0;
-  function init(x02, x12, t02, t12) {
-    c02 = x02;
-    c12 = t02;
-    c2 = -3 * x02 + 3 * x12 - 2 * t02 - t12;
-    c3 = 2 * x02 - 2 * x12 + t02 + t12;
+  let c0 = 0, c1 = 0, c2 = 0, c3 = 0;
+  function init(x0, x1, t0, t1) {
+    c0 = x0;
+    c1 = t0;
+    c2 = -3 * x0 + 3 * x1 - 2 * t0 - t1;
+    c3 = 2 * x0 - 2 * x1 + t0 + t1;
   }
   return {
-    initCatmullRom: function(x02, x12, x2, x3, tension) {
-      init(x12, x2, tension * (x2 - x02), tension * (x3 - x12));
+    initCatmullRom: function(x0, x1, x2, x3, tension) {
+      init(x1, x2, tension * (x2 - x0), tension * (x3 - x1));
     },
-    initNonuniformCatmullRom: function(x02, x12, x2, x3, dt0, dt1, dt2) {
-      let t12 = (x12 - x02) / dt0 - (x2 - x02) / (dt0 + dt1) + (x2 - x12) / dt1;
-      let t2 = (x2 - x12) / dt1 - (x3 - x12) / (dt1 + dt2) + (x3 - x2) / dt2;
-      t12 *= dt1;
+    initNonuniformCatmullRom: function(x0, x1, x2, x3, dt0, dt1, dt2) {
+      let t1 = (x1 - x0) / dt0 - (x2 - x0) / (dt0 + dt1) + (x2 - x1) / dt1;
+      let t2 = (x2 - x1) / dt1 - (x3 - x1) / (dt1 + dt2) + (x3 - x2) / dt2;
+      t1 *= dt1;
       t2 *= dt1;
-      init(x12, x2, t12, t2);
+      init(x1, x2, t1, t2);
     },
     calc: function(t) {
       const t2 = t * t;
       const t3 = t2 * t;
-      return c02 + c12 * t + c2 * t2 + c3 * t3;
+      return c0 + c1 * t + c2 * t2 + c3 * t3;
     }
   };
 }
@@ -18482,7 +18482,7 @@ var CatmullRomCurve3 = class extends Curve {
       tmp.subVectors(points[0], points[1]).add(points[0]);
       p0 = tmp;
     }
-    const p12 = points[intPoint % l];
+    const p1 = points[intPoint % l];
     const p2 = points[(intPoint + 1) % l];
     if (this.closed || intPoint + 2 < l) {
       p3 = points[(intPoint + 2) % l];
@@ -18492,19 +18492,19 @@ var CatmullRomCurve3 = class extends Curve {
     }
     if (this.curveType === "centripetal" || this.curveType === "chordal") {
       const pow = this.curveType === "chordal" ? 0.5 : 0.25;
-      let dt0 = Math.pow(p0.distanceToSquared(p12), pow);
-      let dt1 = Math.pow(p12.distanceToSquared(p2), pow);
+      let dt0 = Math.pow(p0.distanceToSquared(p1), pow);
+      let dt1 = Math.pow(p1.distanceToSquared(p2), pow);
       let dt2 = Math.pow(p2.distanceToSquared(p3), pow);
       if (dt1 < 1e-4) dt1 = 1;
       if (dt0 < 1e-4) dt0 = dt1;
       if (dt2 < 1e-4) dt2 = dt1;
-      px.initNonuniformCatmullRom(p0.x, p12.x, p2.x, p3.x, dt0, dt1, dt2);
-      py.initNonuniformCatmullRom(p0.y, p12.y, p2.y, p3.y, dt0, dt1, dt2);
-      pz.initNonuniformCatmullRom(p0.z, p12.z, p2.z, p3.z, dt0, dt1, dt2);
+      px.initNonuniformCatmullRom(p0.x, p1.x, p2.x, p3.x, dt0, dt1, dt2);
+      py.initNonuniformCatmullRom(p0.y, p1.y, p2.y, p3.y, dt0, dt1, dt2);
+      pz.initNonuniformCatmullRom(p0.z, p1.z, p2.z, p3.z, dt0, dt1, dt2);
     } else if (this.curveType === "catmullrom") {
-      px.initCatmullRom(p0.x, p12.x, p2.x, p3.x, this.tension);
-      py.initCatmullRom(p0.y, p12.y, p2.y, p3.y, this.tension);
-      pz.initCatmullRom(p0.z, p12.z, p2.z, p3.z, this.tension);
+      px.initCatmullRom(p0.x, p1.x, p2.x, p3.x, this.tension);
+      py.initCatmullRom(p0.y, p1.y, p2.y, p3.y, this.tension);
+      pz.initCatmullRom(p0.z, p1.z, p2.z, p3.z, this.tension);
     }
     point.set(
       px.calc(weight),
@@ -18551,12 +18551,12 @@ var CatmullRomCurve3 = class extends Curve {
   }
 };
 CatmullRomCurve3.prototype.isCatmullRomCurve3 = true;
-function CatmullRom(t, p0, p12, p2, p3) {
+function CatmullRom(t, p0, p1, p2, p3) {
   const v0 = (p2 - p0) * 0.5;
-  const v12 = (p3 - p12) * 0.5;
+  const v1 = (p3 - p1) * 0.5;
   const t2 = t * t;
   const t3 = t * t2;
-  return (2 * p12 - 2 * p2 + v0 + v12) * t3 + (-3 * p12 + 3 * p2 - 2 * v0 - v12) * t2 + v0 * t + p12;
+  return (2 * p1 - 2 * p2 + v0 + v1) * t3 + (-3 * p1 + 3 * p2 - 2 * v0 - v1) * t2 + v0 * t + p1;
 }
 function QuadraticBezierP0(t, p) {
   const k = 1 - t;
@@ -18568,8 +18568,8 @@ function QuadraticBezierP1(t, p) {
 function QuadraticBezierP2(t, p) {
   return t * t * p;
 }
-function QuadraticBezier(t, p0, p12, p2) {
-  return QuadraticBezierP0(t, p0) + QuadraticBezierP1(t, p12) + QuadraticBezierP2(t, p2);
+function QuadraticBezier(t, p0, p1, p2) {
+  return QuadraticBezierP0(t, p0) + QuadraticBezierP1(t, p1) + QuadraticBezierP2(t, p2);
 }
 function CubicBezierP0(t, p) {
   const k = 1 - t;
@@ -18585,24 +18585,24 @@ function CubicBezierP2(t, p) {
 function CubicBezierP3(t, p) {
   return t * t * t * p;
 }
-function CubicBezier(t, p0, p12, p2, p3) {
-  return CubicBezierP0(t, p0) + CubicBezierP1(t, p12) + CubicBezierP2(t, p2) + CubicBezierP3(t, p3);
+function CubicBezier(t, p0, p1, p2, p3) {
+  return CubicBezierP0(t, p0) + CubicBezierP1(t, p1) + CubicBezierP2(t, p2) + CubicBezierP3(t, p3);
 }
 var CubicBezierCurve = class extends Curve {
-  constructor(v0 = new Vector2(), v12 = new Vector2(), v2 = new Vector2(), v3 = new Vector2()) {
+  constructor(v0 = new Vector2(), v1 = new Vector2(), v2 = new Vector2(), v3 = new Vector2()) {
     super();
     this.type = "CubicBezierCurve";
     this.v0 = v0;
-    this.v1 = v12;
+    this.v1 = v1;
     this.v2 = v2;
     this.v3 = v3;
   }
   getPoint(t, optionalTarget = new Vector2()) {
     const point = optionalTarget;
-    const v0 = this.v0, v12 = this.v1, v2 = this.v2, v3 = this.v3;
+    const v0 = this.v0, v1 = this.v1, v2 = this.v2, v3 = this.v3;
     point.set(
-      CubicBezier(t, v0.x, v12.x, v2.x, v3.x),
-      CubicBezier(t, v0.y, v12.y, v2.y, v3.y)
+      CubicBezier(t, v0.x, v1.x, v2.x, v3.x),
+      CubicBezier(t, v0.y, v1.y, v2.y, v3.y)
     );
     return point;
   }
@@ -18633,21 +18633,21 @@ var CubicBezierCurve = class extends Curve {
 };
 CubicBezierCurve.prototype.isCubicBezierCurve = true;
 var CubicBezierCurve3 = class extends Curve {
-  constructor(v0 = new Vector3(), v12 = new Vector3(), v2 = new Vector3(), v3 = new Vector3()) {
+  constructor(v0 = new Vector3(), v1 = new Vector3(), v2 = new Vector3(), v3 = new Vector3()) {
     super();
     this.type = "CubicBezierCurve3";
     this.v0 = v0;
-    this.v1 = v12;
+    this.v1 = v1;
     this.v2 = v2;
     this.v3 = v3;
   }
   getPoint(t, optionalTarget = new Vector3()) {
     const point = optionalTarget;
-    const v0 = this.v0, v12 = this.v1, v2 = this.v2, v3 = this.v3;
+    const v0 = this.v0, v1 = this.v1, v2 = this.v2, v3 = this.v3;
     point.set(
-      CubicBezier(t, v0.x, v12.x, v2.x, v3.x),
-      CubicBezier(t, v0.y, v12.y, v2.y, v3.y),
-      CubicBezier(t, v0.z, v12.z, v2.z, v3.z)
+      CubicBezier(t, v0.x, v1.x, v2.x, v3.x),
+      CubicBezier(t, v0.y, v1.y, v2.y, v3.y),
+      CubicBezier(t, v0.z, v1.z, v2.z, v3.z)
     );
     return point;
   }
@@ -18678,10 +18678,10 @@ var CubicBezierCurve3 = class extends Curve {
 };
 CubicBezierCurve3.prototype.isCubicBezierCurve3 = true;
 var LineCurve = class extends Curve {
-  constructor(v12 = new Vector2(), v2 = new Vector2()) {
+  constructor(v1 = new Vector2(), v2 = new Vector2()) {
     super();
     this.type = "LineCurve";
-    this.v1 = v12;
+    this.v1 = v1;
     this.v2 = v2;
   }
   getPoint(t, optionalTarget = new Vector2()) {
@@ -18724,11 +18724,11 @@ var LineCurve = class extends Curve {
 };
 LineCurve.prototype.isLineCurve = true;
 var LineCurve3 = class extends Curve {
-  constructor(v12 = new Vector3(), v2 = new Vector3()) {
+  constructor(v1 = new Vector3(), v2 = new Vector3()) {
     super();
     this.type = "LineCurve3";
     this.isLineCurve3 = true;
-    this.v1 = v12;
+    this.v1 = v1;
     this.v2 = v2;
   }
   getPoint(t, optionalTarget = new Vector3()) {
@@ -18765,19 +18765,19 @@ var LineCurve3 = class extends Curve {
   }
 };
 var QuadraticBezierCurve = class extends Curve {
-  constructor(v0 = new Vector2(), v12 = new Vector2(), v2 = new Vector2()) {
+  constructor(v0 = new Vector2(), v1 = new Vector2(), v2 = new Vector2()) {
     super();
     this.type = "QuadraticBezierCurve";
     this.v0 = v0;
-    this.v1 = v12;
+    this.v1 = v1;
     this.v2 = v2;
   }
   getPoint(t, optionalTarget = new Vector2()) {
     const point = optionalTarget;
-    const v0 = this.v0, v12 = this.v1, v2 = this.v2;
+    const v0 = this.v0, v1 = this.v1, v2 = this.v2;
     point.set(
-      QuadraticBezier(t, v0.x, v12.x, v2.x),
-      QuadraticBezier(t, v0.y, v12.y, v2.y)
+      QuadraticBezier(t, v0.x, v1.x, v2.x),
+      QuadraticBezier(t, v0.y, v1.y, v2.y)
     );
     return point;
   }
@@ -18805,20 +18805,20 @@ var QuadraticBezierCurve = class extends Curve {
 };
 QuadraticBezierCurve.prototype.isQuadraticBezierCurve = true;
 var QuadraticBezierCurve3 = class extends Curve {
-  constructor(v0 = new Vector3(), v12 = new Vector3(), v2 = new Vector3()) {
+  constructor(v0 = new Vector3(), v1 = new Vector3(), v2 = new Vector3()) {
     super();
     this.type = "QuadraticBezierCurve3";
     this.v0 = v0;
-    this.v1 = v12;
+    this.v1 = v1;
     this.v2 = v2;
   }
   getPoint(t, optionalTarget = new Vector3()) {
     const point = optionalTarget;
-    const v0 = this.v0, v12 = this.v1, v2 = this.v2;
+    const v0 = this.v0, v1 = this.v1, v2 = this.v2;
     point.set(
-      QuadraticBezier(t, v0.x, v12.x, v2.x),
-      QuadraticBezier(t, v0.y, v12.y, v2.y),
-      QuadraticBezier(t, v0.z, v12.z, v2.z)
+      QuadraticBezier(t, v0.x, v1.x, v2.x),
+      QuadraticBezier(t, v0.y, v1.y, v2.y),
+      QuadraticBezier(t, v0.z, v1.z, v2.z)
     );
     return point;
   }
@@ -18858,12 +18858,12 @@ var SplineCurve = class extends Curve {
     const intPoint = Math.floor(p);
     const weight = p - intPoint;
     const p0 = points[intPoint === 0 ? intPoint : intPoint - 1];
-    const p12 = points[intPoint];
+    const p1 = points[intPoint];
     const p2 = points[intPoint > points.length - 2 ? points.length - 1 : intPoint + 1];
     const p3 = points[intPoint > points.length - 3 ? points.length - 1 : intPoint + 2];
     point.set(
-      CatmullRom(weight, p0.x, p12.x, p2.x, p3.x),
-      CatmullRom(weight, p0.y, p12.y, p2.y, p3.y)
+      CatmullRom(weight, p0.x, p1.x, p2.x, p3.x),
+      CatmullRom(weight, p0.y, p1.y, p2.y, p3.y)
     );
     return point;
   }
@@ -19092,10 +19092,10 @@ var Path = class extends CurvePath {
     return this;
   }
   arc(aX, aY, aRadius, aStartAngle, aEndAngle, aClockwise) {
-    const x02 = this.currentPoint.x;
+    const x0 = this.currentPoint.x;
     const y0 = this.currentPoint.y;
     this.absarc(
-      aX + x02,
+      aX + x0,
       aY + y0,
       aRadius,
       aStartAngle,
@@ -19109,9 +19109,9 @@ var Path = class extends CurvePath {
     return this;
   }
   ellipse(aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aClockwise, aRotation) {
-    const x02 = this.currentPoint.x;
+    const x0 = this.currentPoint.x;
     const y0 = this.currentPoint.y;
-    this.absellipse(aX + x02, aY + y0, xRadius, yRadius, aStartAngle, aEndAngle, aClockwise, aRotation);
+    this.absellipse(aX + x0, aY + y0, xRadius, yRadius, aStartAngle, aEndAngle, aClockwise, aRotation);
     return this;
   }
   absellipse(aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aClockwise, aRotation) {
@@ -19930,14 +19930,14 @@ var ShapePath = class {
     function isPointInsidePolygon(inPt, inPolygon) {
       const polyLen = inPolygon.length;
       let inside = false;
-      for (let p = polyLen - 1, q2 = 0; q2 < polyLen; p = q2++) {
+      for (let p = polyLen - 1, q = 0; q < polyLen; p = q++) {
         let edgeLowPt = inPolygon[p];
-        let edgeHighPt = inPolygon[q2];
+        let edgeHighPt = inPolygon[q];
         let edgeDx = edgeHighPt.x - edgeLowPt.x;
         let edgeDy = edgeHighPt.y - edgeLowPt.y;
         if (Math.abs(edgeDy) > Number.EPSILON) {
           if (edgeDy < 0) {
-            edgeLowPt = inPolygon[q2];
+            edgeLowPt = inPolygon[q];
             edgeDx = -edgeDx;
             edgeHighPt = inPolygon[p];
             edgeDy = -edgeDy;
@@ -20165,10 +20165,10 @@ var HemisphereLightProbe = class extends LightProbe {
     const color2 = new Color().set(groundColor);
     const sky = new Vector3(color1.r, color1.g, color1.b);
     const ground = new Vector3(color2.r, color2.g, color2.b);
-    const c02 = Math.sqrt(Math.PI);
-    const c12 = c02 * Math.sqrt(0.75);
-    this.sh.coefficients[0].copy(sky).add(ground).multiplyScalar(c02);
-    this.sh.coefficients[1].copy(sky).sub(ground).multiplyScalar(c12);
+    const c0 = Math.sqrt(Math.PI);
+    const c1 = c0 * Math.sqrt(0.75);
+    this.sh.coefficients[0].copy(sky).add(ground).multiplyScalar(c0);
+    this.sh.coefficients[1].copy(sky).sub(ground).multiplyScalar(c1);
   }
 };
 HemisphereLightProbe.prototype.isHemisphereLightProbe = true;
@@ -22389,9 +22389,9 @@ Matrix4.prototype.getPosition = function() {
   console.warn("THREE.Matrix4: .getPosition() has been removed. Use Vector3.setFromMatrixPosition( matrix ) instead.");
   return new Vector3().setFromMatrixColumn(this, 3);
 };
-Matrix4.prototype.setRotationFromQuaternion = function(q2) {
+Matrix4.prototype.setRotationFromQuaternion = function(q) {
   console.warn("THREE.Matrix4: .setRotationFromQuaternion() has been renamed to .makeRotationFromQuaternion().");
-  return this.makeRotationFromQuaternion(q2);
+  return this.makeRotationFromQuaternion(q);
 };
 Matrix4.prototype.multiplyToArray = function() {
   console.warn("THREE.Matrix4: .multiplyToArray() has been removed.");
@@ -23210,38 +23210,38 @@ if (typeof window !== "undefined") {
 }
 
 // dist/index.esm.js
-var St = Object.defineProperty;
-var F = (i, e) => {
-  for (var t in e) St(i, t, { get: e[t], enumerable: true });
+var Pr = Object.defineProperty;
+var F = (a, e) => {
+  for (var t in e) Pr(a, t, { get: e[t], enumerable: true });
 };
-var V1 = {};
-F(V1, { algorithms: () => V, brickDepthForLimits: () => N1, createShader: () => L1, default: () => qt, disposeGPU: () => v1, extractCPU: () => q, extractGPU: () => K });
-var Bt = [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0], [0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]];
-var Et = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]];
-var Qe = [[-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 8, 3, 9, 8, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 2, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 8, 3, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [9, 2, 10, 0, 2, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [2, 8, 3, 2, 10, 8, 10, 9, 8, -1, -1, -1, -1, -1, -1, -1], [3, 11, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 11, 2, 8, 11, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 9, 0, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 11, 2, 1, 9, 11, 9, 8, 11, -1, -1, -1, -1, -1, -1, -1], [3, 10, 1, 11, 10, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 10, 1, 0, 8, 10, 8, 11, 10, -1, -1, -1, -1, -1, -1, -1], [3, 9, 0, 3, 11, 9, 11, 10, 9, -1, -1, -1, -1, -1, -1, -1], [9, 8, 10, 10, 8, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 7, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 3, 0, 7, 3, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 1, 9, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 1, 9, 4, 7, 1, 7, 3, 1, -1, -1, -1, -1, -1, -1, -1], [1, 2, 10, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [3, 4, 7, 3, 0, 4, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1], [9, 2, 10, 9, 0, 2, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1], [2, 10, 9, 2, 9, 7, 2, 7, 3, 7, 9, 4, -1, -1, -1, -1], [8, 4, 7, 3, 11, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [11, 4, 7, 11, 2, 4, 2, 0, 4, -1, -1, -1, -1, -1, -1, -1], [9, 0, 1, 8, 4, 7, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1], [4, 7, 11, 9, 4, 11, 9, 11, 2, 9, 2, 1, -1, -1, -1, -1], [3, 10, 1, 3, 11, 10, 7, 8, 4, -1, -1, -1, -1, -1, -1, -1], [1, 11, 10, 1, 4, 11, 1, 0, 4, 7, 11, 4, -1, -1, -1, -1], [4, 7, 8, 9, 0, 11, 9, 11, 10, 11, 0, 3, -1, -1, -1, -1], [4, 7, 11, 4, 11, 9, 9, 11, 10, -1, -1, -1, -1, -1, -1, -1], [9, 5, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [9, 5, 4, 0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 5, 4, 1, 5, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [8, 5, 4, 8, 3, 5, 3, 1, 5, -1, -1, -1, -1, -1, -1, -1], [1, 2, 10, 9, 5, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [3, 0, 8, 1, 2, 10, 9, 5, 4, -1, -1, -1, -1, -1, -1, -1], [5, 2, 10, 5, 4, 2, 4, 0, 2, -1, -1, -1, -1, -1, -1, -1], [2, 10, 5, 3, 2, 5, 3, 5, 4, 3, 4, 8, -1, -1, -1, -1], [9, 5, 4, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 11, 2, 0, 8, 11, 4, 9, 5, -1, -1, -1, -1, -1, -1, -1], [0, 5, 4, 0, 1, 5, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1], [2, 1, 5, 2, 5, 8, 2, 8, 11, 4, 8, 5, -1, -1, -1, -1], [10, 3, 11, 10, 1, 3, 9, 5, 4, -1, -1, -1, -1, -1, -1, -1], [4, 9, 5, 0, 8, 1, 8, 10, 1, 8, 11, 10, -1, -1, -1, -1], [5, 4, 0, 5, 0, 11, 5, 11, 10, 11, 0, 3, -1, -1, -1, -1], [5, 4, 8, 5, 8, 10, 10, 8, 11, -1, -1, -1, -1, -1, -1, -1], [9, 7, 8, 5, 7, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [9, 3, 0, 9, 5, 3, 5, 7, 3, -1, -1, -1, -1, -1, -1, -1], [0, 7, 8, 0, 1, 7, 1, 5, 7, -1, -1, -1, -1, -1, -1, -1], [1, 5, 3, 3, 5, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [9, 7, 8, 9, 5, 7, 10, 1, 2, -1, -1, -1, -1, -1, -1, -1], [10, 1, 2, 9, 5, 0, 5, 3, 0, 5, 7, 3, -1, -1, -1, -1], [8, 0, 2, 8, 2, 5, 8, 5, 7, 10, 5, 2, -1, -1, -1, -1], [2, 10, 5, 2, 5, 3, 3, 5, 7, -1, -1, -1, -1, -1, -1, -1], [7, 9, 5, 7, 8, 9, 3, 11, 2, -1, -1, -1, -1, -1, -1, -1], [9, 5, 7, 9, 7, 2, 9, 2, 0, 2, 7, 11, -1, -1, -1, -1], [2, 3, 11, 0, 1, 8, 1, 7, 8, 1, 5, 7, -1, -1, -1, -1], [11, 2, 1, 11, 1, 7, 7, 1, 5, -1, -1, -1, -1, -1, -1, -1], [9, 5, 8, 8, 5, 7, 10, 1, 3, 10, 3, 11, -1, -1, -1, -1], [5, 7, 0, 5, 0, 9, 7, 11, 0, 1, 0, 10, 11, 10, 0, -1], [11, 10, 0, 11, 0, 3, 10, 5, 0, 8, 0, 7, 5, 7, 0, -1], [11, 10, 5, 7, 11, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [10, 6, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 8, 3, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [9, 0, 1, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 8, 3, 1, 9, 8, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1], [1, 6, 5, 2, 6, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 6, 5, 1, 2, 6, 3, 0, 8, -1, -1, -1, -1, -1, -1, -1], [9, 6, 5, 9, 0, 6, 0, 2, 6, -1, -1, -1, -1, -1, -1, -1], [5, 9, 8, 5, 8, 2, 5, 2, 6, 3, 2, 8, -1, -1, -1, -1], [2, 3, 11, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [11, 0, 8, 11, 2, 0, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1], [0, 1, 9, 2, 3, 11, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1], [5, 10, 6, 1, 9, 2, 9, 11, 2, 9, 8, 11, -1, -1, -1, -1], [6, 3, 11, 6, 5, 3, 5, 1, 3, -1, -1, -1, -1, -1, -1, -1], [0, 8, 11, 0, 11, 5, 0, 5, 1, 5, 11, 6, -1, -1, -1, -1], [3, 11, 6, 0, 3, 6, 0, 6, 5, 0, 5, 9, -1, -1, -1, -1], [6, 5, 9, 6, 9, 11, 11, 9, 8, -1, -1, -1, -1, -1, -1, -1], [5, 10, 6, 4, 7, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 3, 0, 4, 7, 3, 6, 5, 10, -1, -1, -1, -1, -1, -1, -1], [1, 9, 0, 5, 10, 6, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1], [10, 6, 5, 1, 9, 7, 1, 7, 3, 7, 9, 4, -1, -1, -1, -1], [6, 1, 2, 6, 5, 1, 4, 7, 8, -1, -1, -1, -1, -1, -1, -1], [1, 2, 5, 5, 2, 6, 3, 0, 4, 3, 4, 7, -1, -1, -1, -1], [8, 4, 7, 9, 0, 5, 0, 6, 5, 0, 2, 6, -1, -1, -1, -1], [7, 3, 9, 7, 9, 4, 3, 2, 9, 5, 9, 6, 2, 6, 9, -1], [3, 11, 2, 7, 8, 4, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1], [5, 10, 6, 4, 7, 2, 4, 2, 0, 2, 7, 11, -1, -1, -1, -1], [0, 1, 9, 4, 7, 8, 2, 3, 11, 5, 10, 6, -1, -1, -1, -1], [9, 2, 1, 9, 11, 2, 9, 4, 11, 7, 11, 4, 5, 10, 6, -1], [8, 4, 7, 3, 11, 5, 3, 5, 1, 5, 11, 6, -1, -1, -1, -1], [5, 1, 11, 5, 11, 6, 1, 0, 11, 7, 11, 4, 0, 4, 11, -1], [0, 5, 9, 0, 6, 5, 0, 3, 6, 11, 6, 3, 8, 4, 7, -1], [6, 5, 9, 6, 9, 11, 4, 7, 9, 7, 11, 9, -1, -1, -1, -1], [10, 4, 9, 6, 4, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 10, 6, 4, 9, 10, 0, 8, 3, -1, -1, -1, -1, -1, -1, -1], [10, 0, 1, 10, 6, 0, 6, 4, 0, -1, -1, -1, -1, -1, -1, -1], [8, 3, 1, 8, 1, 6, 8, 6, 4, 6, 1, 10, -1, -1, -1, -1], [1, 4, 9, 1, 2, 4, 2, 6, 4, -1, -1, -1, -1, -1, -1, -1], [3, 0, 8, 1, 2, 9, 2, 4, 9, 2, 6, 4, -1, -1, -1, -1], [0, 2, 4, 4, 2, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [8, 3, 2, 8, 2, 4, 4, 2, 6, -1, -1, -1, -1, -1, -1, -1], [10, 4, 9, 10, 6, 4, 11, 2, 3, -1, -1, -1, -1, -1, -1, -1], [0, 8, 2, 2, 8, 11, 4, 9, 10, 4, 10, 6, -1, -1, -1, -1], [3, 11, 2, 0, 1, 6, 0, 6, 4, 6, 1, 10, -1, -1, -1, -1], [6, 4, 1, 6, 1, 10, 4, 8, 1, 2, 1, 11, 8, 11, 1, -1], [9, 6, 4, 9, 3, 6, 9, 1, 3, 11, 6, 3, -1, -1, -1, -1], [8, 11, 1, 8, 1, 0, 11, 6, 1, 9, 1, 4, 6, 4, 1, -1], [3, 11, 6, 3, 6, 0, 0, 6, 4, -1, -1, -1, -1, -1, -1, -1], [6, 4, 8, 11, 6, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [7, 10, 6, 7, 8, 10, 8, 9, 10, -1, -1, -1, -1, -1, -1, -1], [0, 7, 3, 0, 10, 7, 0, 9, 10, 6, 7, 10, -1, -1, -1, -1], [10, 6, 7, 1, 10, 7, 1, 7, 8, 1, 8, 0, -1, -1, -1, -1], [10, 6, 7, 10, 7, 1, 1, 7, 3, -1, -1, -1, -1, -1, -1, -1], [1, 2, 6, 1, 6, 8, 1, 8, 9, 8, 6, 7, -1, -1, -1, -1], [2, 6, 9, 2, 9, 1, 6, 7, 9, 0, 9, 3, 7, 3, 9, -1], [7, 8, 0, 7, 0, 6, 6, 0, 2, -1, -1, -1, -1, -1, -1, -1], [7, 3, 2, 6, 7, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [2, 3, 11, 10, 6, 8, 10, 8, 9, 8, 6, 7, -1, -1, -1, -1], [2, 0, 7, 2, 7, 11, 0, 9, 7, 6, 7, 10, 9, 10, 7, -1], [1, 8, 0, 1, 7, 8, 1, 10, 7, 6, 7, 10, 2, 3, 11, -1], [11, 2, 1, 11, 1, 7, 10, 6, 1, 6, 7, 1, -1, -1, -1, -1], [8, 9, 6, 8, 6, 7, 9, 1, 6, 11, 6, 3, 1, 3, 6, -1], [0, 9, 1, 11, 6, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [7, 8, 0, 7, 0, 6, 3, 11, 0, 11, 6, 0, -1, -1, -1, -1], [7, 11, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [7, 6, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [3, 0, 8, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 1, 9, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [8, 1, 9, 8, 3, 1, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1], [10, 1, 2, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 2, 10, 3, 0, 8, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1], [2, 9, 0, 2, 10, 9, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1], [6, 11, 7, 2, 10, 3, 10, 8, 3, 10, 9, 8, -1, -1, -1, -1], [7, 2, 3, 6, 2, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [7, 0, 8, 7, 6, 0, 6, 2, 0, -1, -1, -1, -1, -1, -1, -1], [2, 7, 6, 2, 3, 7, 0, 1, 9, -1, -1, -1, -1, -1, -1, -1], [1, 6, 2, 1, 8, 6, 1, 9, 8, 8, 7, 6, -1, -1, -1, -1], [10, 7, 6, 10, 1, 7, 1, 3, 7, -1, -1, -1, -1, -1, -1, -1], [10, 7, 6, 1, 7, 10, 1, 8, 7, 1, 0, 8, -1, -1, -1, -1], [0, 3, 7, 0, 7, 10, 0, 10, 9, 6, 10, 7, -1, -1, -1, -1], [7, 6, 10, 7, 10, 8, 8, 10, 9, -1, -1, -1, -1, -1, -1, -1], [6, 8, 4, 11, 8, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [3, 6, 11, 3, 0, 6, 0, 4, 6, -1, -1, -1, -1, -1, -1, -1], [8, 6, 11, 8, 4, 6, 9, 0, 1, -1, -1, -1, -1, -1, -1, -1], [9, 4, 6, 9, 6, 3, 9, 3, 1, 11, 3, 6, -1, -1, -1, -1], [6, 8, 4, 6, 11, 8, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1], [1, 2, 10, 3, 0, 11, 0, 6, 11, 0, 4, 6, -1, -1, -1, -1], [4, 11, 8, 4, 6, 11, 0, 2, 9, 2, 10, 9, -1, -1, -1, -1], [10, 9, 3, 10, 3, 2, 9, 4, 3, 11, 3, 6, 4, 6, 3, -1], [8, 2, 3, 8, 4, 2, 4, 6, 2, -1, -1, -1, -1, -1, -1, -1], [0, 4, 2, 4, 6, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 9, 0, 2, 3, 4, 2, 4, 6, 4, 3, 8, -1, -1, -1, -1], [1, 9, 4, 1, 4, 2, 2, 4, 6, -1, -1, -1, -1, -1, -1, -1], [8, 1, 3, 8, 4, 1, 4, 6, 1, 6, 10, 1, -1, -1, -1, -1], [10, 1, 0, 10, 0, 6, 6, 0, 4, -1, -1, -1, -1, -1, -1, -1], [4, 6, 3, 4, 3, 8, 6, 10, 3, 0, 3, 9, 10, 9, 3, -1], [10, 9, 4, 6, 10, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 9, 5, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 8, 3, 4, 9, 5, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1], [5, 0, 1, 5, 4, 0, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1], [11, 7, 6, 8, 3, 4, 3, 5, 4, 3, 1, 5, -1, -1, -1, -1], [9, 5, 4, 10, 1, 2, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1], [6, 11, 7, 1, 2, 10, 0, 8, 3, 4, 9, 5, -1, -1, -1, -1], [7, 6, 11, 5, 4, 10, 4, 2, 10, 4, 0, 2, -1, -1, -1, -1], [3, 4, 8, 3, 5, 4, 3, 2, 5, 10, 5, 2, 11, 7, 6, -1], [7, 2, 3, 7, 6, 2, 5, 4, 9, -1, -1, -1, -1, -1, -1, -1], [9, 5, 4, 0, 8, 6, 0, 6, 2, 6, 8, 7, -1, -1, -1, -1], [3, 6, 2, 3, 7, 6, 1, 5, 0, 5, 4, 0, -1, -1, -1, -1], [6, 2, 8, 6, 8, 7, 2, 1, 8, 4, 8, 5, 1, 5, 8, -1], [9, 5, 4, 10, 1, 6, 1, 7, 6, 1, 3, 7, -1, -1, -1, -1], [1, 6, 10, 1, 7, 6, 1, 0, 7, 8, 7, 0, 9, 5, 4, -1], [4, 0, 10, 4, 10, 5, 0, 3, 10, 6, 10, 7, 3, 7, 10, -1], [7, 6, 10, 7, 10, 8, 5, 4, 10, 4, 8, 10, -1, -1, -1, -1], [6, 9, 5, 6, 11, 9, 11, 8, 9, -1, -1, -1, -1, -1, -1, -1], [3, 6, 11, 0, 6, 3, 0, 5, 6, 0, 9, 5, -1, -1, -1, -1], [0, 11, 8, 0, 5, 11, 0, 1, 5, 5, 6, 11, -1, -1, -1, -1], [6, 11, 3, 6, 3, 5, 5, 3, 1, -1, -1, -1, -1, -1, -1, -1], [1, 2, 10, 9, 5, 11, 9, 11, 8, 11, 5, 6, -1, -1, -1, -1], [0, 11, 3, 0, 6, 11, 0, 9, 6, 5, 6, 9, 1, 2, 10, -1], [11, 8, 5, 11, 5, 6, 8, 0, 5, 10, 5, 2, 0, 2, 5, -1], [6, 11, 3, 6, 3, 5, 2, 10, 3, 10, 5, 3, -1, -1, -1, -1], [5, 8, 9, 5, 2, 8, 5, 6, 2, 3, 8, 2, -1, -1, -1, -1], [9, 5, 6, 9, 6, 0, 0, 6, 2, -1, -1, -1, -1, -1, -1, -1], [1, 5, 8, 1, 8, 0, 5, 6, 8, 3, 8, 2, 6, 2, 8, -1], [1, 5, 6, 2, 1, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 3, 6, 1, 6, 10, 3, 8, 6, 5, 6, 9, 8, 9, 6, -1], [10, 1, 0, 10, 0, 6, 9, 5, 0, 5, 6, 0, -1, -1, -1, -1], [0, 3, 8, 5, 6, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [10, 5, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [11, 5, 10, 7, 5, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [11, 5, 10, 11, 7, 5, 8, 3, 0, -1, -1, -1, -1, -1, -1, -1], [5, 11, 7, 5, 10, 11, 1, 9, 0, -1, -1, -1, -1, -1, -1, -1], [10, 11, 7, 10, 7, 5, 9, 8, 1, 8, 3, 1, -1, -1, -1, -1], [11, 1, 2, 11, 7, 1, 7, 5, 1, -1, -1, -1, -1, -1, -1, -1], [0, 8, 3, 1, 2, 7, 1, 7, 5, 7, 2, 11, -1, -1, -1, -1], [9, 7, 5, 9, 2, 7, 9, 0, 2, 2, 11, 7, -1, -1, -1, -1], [7, 5, 2, 7, 2, 11, 5, 9, 2, 3, 2, 8, 9, 8, 2, -1], [2, 5, 10, 2, 3, 5, 3, 7, 5, -1, -1, -1, -1, -1, -1, -1], [8, 2, 0, 8, 5, 2, 8, 7, 5, 10, 2, 5, -1, -1, -1, -1], [9, 0, 1, 5, 10, 3, 5, 3, 7, 3, 10, 2, -1, -1, -1, -1], [9, 8, 2, 9, 2, 1, 8, 7, 2, 10, 2, 5, 7, 5, 2, -1], [1, 3, 5, 3, 7, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 8, 7, 0, 7, 1, 1, 7, 5, -1, -1, -1, -1, -1, -1, -1], [9, 0, 3, 9, 3, 5, 5, 3, 7, -1, -1, -1, -1, -1, -1, -1], [9, 8, 7, 5, 9, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [5, 8, 4, 5, 10, 8, 10, 11, 8, -1, -1, -1, -1, -1, -1, -1], [5, 0, 4, 5, 11, 0, 5, 10, 11, 11, 3, 0, -1, -1, -1, -1], [0, 1, 9, 8, 4, 10, 8, 10, 11, 10, 4, 5, -1, -1, -1, -1], [10, 11, 4, 10, 4, 5, 11, 3, 4, 9, 4, 1, 3, 1, 4, -1], [2, 5, 1, 2, 8, 5, 2, 11, 8, 4, 5, 8, -1, -1, -1, -1], [0, 4, 11, 0, 11, 3, 4, 5, 11, 2, 11, 1, 5, 1, 11, -1], [0, 2, 5, 0, 5, 9, 2, 11, 5, 4, 5, 8, 11, 8, 5, -1], [9, 4, 5, 2, 11, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [2, 5, 10, 3, 5, 2, 3, 4, 5, 3, 8, 4, -1, -1, -1, -1], [5, 10, 2, 5, 2, 4, 4, 2, 0, -1, -1, -1, -1, -1, -1, -1], [3, 10, 2, 3, 5, 10, 3, 8, 5, 4, 5, 8, 0, 1, 9, -1], [5, 10, 2, 5, 2, 4, 1, 9, 2, 9, 4, 2, -1, -1, -1, -1], [8, 4, 5, 8, 5, 3, 3, 5, 1, -1, -1, -1, -1, -1, -1, -1], [0, 4, 5, 1, 0, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [8, 4, 5, 8, 5, 3, 9, 0, 5, 0, 3, 5, -1, -1, -1, -1], [9, 4, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 11, 7, 4, 9, 11, 9, 10, 11, -1, -1, -1, -1, -1, -1, -1], [0, 8, 3, 4, 9, 7, 9, 11, 7, 9, 10, 11, -1, -1, -1, -1], [1, 10, 11, 1, 11, 4, 1, 4, 0, 7, 4, 11, -1, -1, -1, -1], [3, 1, 4, 3, 4, 8, 1, 10, 4, 7, 4, 11, 10, 11, 4, -1], [4, 11, 7, 9, 11, 4, 9, 2, 11, 9, 1, 2, -1, -1, -1, -1], [9, 7, 4, 9, 11, 7, 9, 1, 11, 2, 11, 1, 0, 8, 3, -1], [11, 7, 4, 11, 4, 2, 2, 4, 0, -1, -1, -1, -1, -1, -1, -1], [11, 7, 4, 11, 4, 2, 8, 3, 4, 3, 2, 4, -1, -1, -1, -1], [2, 9, 10, 2, 7, 9, 2, 3, 7, 7, 4, 9, -1, -1, -1, -1], [9, 10, 7, 9, 7, 4, 10, 2, 7, 8, 7, 0, 2, 0, 7, -1], [3, 7, 10, 3, 10, 2, 7, 4, 10, 1, 10, 0, 4, 0, 10, -1], [1, 10, 2, 8, 7, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 9, 1, 4, 1, 7, 7, 1, 3, -1, -1, -1, -1, -1, -1, -1], [4, 9, 1, 4, 1, 7, 0, 8, 1, 8, 7, 1, -1, -1, -1, -1], [4, 0, 3, 7, 4, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 8, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [9, 10, 8, 10, 11, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [3, 0, 9, 3, 9, 11, 11, 9, 10, -1, -1, -1, -1, -1, -1, -1], [0, 1, 10, 0, 10, 8, 8, 10, 11, -1, -1, -1, -1, -1, -1, -1], [3, 1, 10, 11, 3, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 2, 11, 1, 11, 9, 9, 11, 8, -1, -1, -1, -1, -1, -1, -1], [3, 0, 9, 3, 9, 11, 1, 2, 9, 2, 11, 9, -1, -1, -1, -1], [0, 2, 11, 8, 0, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [3, 2, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [2, 3, 8, 2, 8, 10, 10, 8, 9, -1, -1, -1, -1, -1, -1, -1], [9, 10, 2, 0, 9, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [2, 3, 8, 2, 8, 10, 0, 1, 8, 1, 10, 8, -1, -1, -1, -1], [1, 10, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 3, 8, 9, 1, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 9, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]];
-var Ut = Uint32Array.from(Qe.flat(), (i) => i >>> 0);
-var At = { name: "Bourke", corners: Bt, edges: Et, maxVertices: 15, table: Ut, cornerBit: (i) => 1 << i, createPolygonizer() {
-  return (i, e, t) => {
-    let s = Qe[e], r = 0;
-    for (; r < 15 && s[r] >= 0; ) t[r] = s[r], r++;
+var it = {};
+F(it, { algorithms: () => ee, brickDepthForLimits: () => tt, createShader: () => et, default: () => Lr, disposeGPU: () => ke, extractCPU: () => te, extractGPU: () => de });
+var Sr = [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0], [0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]];
+var Dr = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]];
+var Bi = [[-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 8, 3, 9, 8, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 2, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 8, 3, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [9, 2, 10, 0, 2, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [2, 8, 3, 2, 10, 8, 10, 9, 8, -1, -1, -1, -1, -1, -1, -1], [3, 11, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 11, 2, 8, 11, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 9, 0, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 11, 2, 1, 9, 11, 9, 8, 11, -1, -1, -1, -1, -1, -1, -1], [3, 10, 1, 11, 10, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 10, 1, 0, 8, 10, 8, 11, 10, -1, -1, -1, -1, -1, -1, -1], [3, 9, 0, 3, 11, 9, 11, 10, 9, -1, -1, -1, -1, -1, -1, -1], [9, 8, 10, 10, 8, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 7, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 3, 0, 7, 3, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 1, 9, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 1, 9, 4, 7, 1, 7, 3, 1, -1, -1, -1, -1, -1, -1, -1], [1, 2, 10, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [3, 4, 7, 3, 0, 4, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1], [9, 2, 10, 9, 0, 2, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1], [2, 10, 9, 2, 9, 7, 2, 7, 3, 7, 9, 4, -1, -1, -1, -1], [8, 4, 7, 3, 11, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [11, 4, 7, 11, 2, 4, 2, 0, 4, -1, -1, -1, -1, -1, -1, -1], [9, 0, 1, 8, 4, 7, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1], [4, 7, 11, 9, 4, 11, 9, 11, 2, 9, 2, 1, -1, -1, -1, -1], [3, 10, 1, 3, 11, 10, 7, 8, 4, -1, -1, -1, -1, -1, -1, -1], [1, 11, 10, 1, 4, 11, 1, 0, 4, 7, 11, 4, -1, -1, -1, -1], [4, 7, 8, 9, 0, 11, 9, 11, 10, 11, 0, 3, -1, -1, -1, -1], [4, 7, 11, 4, 11, 9, 9, 11, 10, -1, -1, -1, -1, -1, -1, -1], [9, 5, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [9, 5, 4, 0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 5, 4, 1, 5, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [8, 5, 4, 8, 3, 5, 3, 1, 5, -1, -1, -1, -1, -1, -1, -1], [1, 2, 10, 9, 5, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [3, 0, 8, 1, 2, 10, 9, 5, 4, -1, -1, -1, -1, -1, -1, -1], [5, 2, 10, 5, 4, 2, 4, 0, 2, -1, -1, -1, -1, -1, -1, -1], [2, 10, 5, 3, 2, 5, 3, 5, 4, 3, 4, 8, -1, -1, -1, -1], [9, 5, 4, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 11, 2, 0, 8, 11, 4, 9, 5, -1, -1, -1, -1, -1, -1, -1], [0, 5, 4, 0, 1, 5, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1], [2, 1, 5, 2, 5, 8, 2, 8, 11, 4, 8, 5, -1, -1, -1, -1], [10, 3, 11, 10, 1, 3, 9, 5, 4, -1, -1, -1, -1, -1, -1, -1], [4, 9, 5, 0, 8, 1, 8, 10, 1, 8, 11, 10, -1, -1, -1, -1], [5, 4, 0, 5, 0, 11, 5, 11, 10, 11, 0, 3, -1, -1, -1, -1], [5, 4, 8, 5, 8, 10, 10, 8, 11, -1, -1, -1, -1, -1, -1, -1], [9, 7, 8, 5, 7, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [9, 3, 0, 9, 5, 3, 5, 7, 3, -1, -1, -1, -1, -1, -1, -1], [0, 7, 8, 0, 1, 7, 1, 5, 7, -1, -1, -1, -1, -1, -1, -1], [1, 5, 3, 3, 5, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [9, 7, 8, 9, 5, 7, 10, 1, 2, -1, -1, -1, -1, -1, -1, -1], [10, 1, 2, 9, 5, 0, 5, 3, 0, 5, 7, 3, -1, -1, -1, -1], [8, 0, 2, 8, 2, 5, 8, 5, 7, 10, 5, 2, -1, -1, -1, -1], [2, 10, 5, 2, 5, 3, 3, 5, 7, -1, -1, -1, -1, -1, -1, -1], [7, 9, 5, 7, 8, 9, 3, 11, 2, -1, -1, -1, -1, -1, -1, -1], [9, 5, 7, 9, 7, 2, 9, 2, 0, 2, 7, 11, -1, -1, -1, -1], [2, 3, 11, 0, 1, 8, 1, 7, 8, 1, 5, 7, -1, -1, -1, -1], [11, 2, 1, 11, 1, 7, 7, 1, 5, -1, -1, -1, -1, -1, -1, -1], [9, 5, 8, 8, 5, 7, 10, 1, 3, 10, 3, 11, -1, -1, -1, -1], [5, 7, 0, 5, 0, 9, 7, 11, 0, 1, 0, 10, 11, 10, 0, -1], [11, 10, 0, 11, 0, 3, 10, 5, 0, 8, 0, 7, 5, 7, 0, -1], [11, 10, 5, 7, 11, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [10, 6, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 8, 3, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [9, 0, 1, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 8, 3, 1, 9, 8, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1], [1, 6, 5, 2, 6, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 6, 5, 1, 2, 6, 3, 0, 8, -1, -1, -1, -1, -1, -1, -1], [9, 6, 5, 9, 0, 6, 0, 2, 6, -1, -1, -1, -1, -1, -1, -1], [5, 9, 8, 5, 8, 2, 5, 2, 6, 3, 2, 8, -1, -1, -1, -1], [2, 3, 11, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [11, 0, 8, 11, 2, 0, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1], [0, 1, 9, 2, 3, 11, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1], [5, 10, 6, 1, 9, 2, 9, 11, 2, 9, 8, 11, -1, -1, -1, -1], [6, 3, 11, 6, 5, 3, 5, 1, 3, -1, -1, -1, -1, -1, -1, -1], [0, 8, 11, 0, 11, 5, 0, 5, 1, 5, 11, 6, -1, -1, -1, -1], [3, 11, 6, 0, 3, 6, 0, 6, 5, 0, 5, 9, -1, -1, -1, -1], [6, 5, 9, 6, 9, 11, 11, 9, 8, -1, -1, -1, -1, -1, -1, -1], [5, 10, 6, 4, 7, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 3, 0, 4, 7, 3, 6, 5, 10, -1, -1, -1, -1, -1, -1, -1], [1, 9, 0, 5, 10, 6, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1], [10, 6, 5, 1, 9, 7, 1, 7, 3, 7, 9, 4, -1, -1, -1, -1], [6, 1, 2, 6, 5, 1, 4, 7, 8, -1, -1, -1, -1, -1, -1, -1], [1, 2, 5, 5, 2, 6, 3, 0, 4, 3, 4, 7, -1, -1, -1, -1], [8, 4, 7, 9, 0, 5, 0, 6, 5, 0, 2, 6, -1, -1, -1, -1], [7, 3, 9, 7, 9, 4, 3, 2, 9, 5, 9, 6, 2, 6, 9, -1], [3, 11, 2, 7, 8, 4, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1], [5, 10, 6, 4, 7, 2, 4, 2, 0, 2, 7, 11, -1, -1, -1, -1], [0, 1, 9, 4, 7, 8, 2, 3, 11, 5, 10, 6, -1, -1, -1, -1], [9, 2, 1, 9, 11, 2, 9, 4, 11, 7, 11, 4, 5, 10, 6, -1], [8, 4, 7, 3, 11, 5, 3, 5, 1, 5, 11, 6, -1, -1, -1, -1], [5, 1, 11, 5, 11, 6, 1, 0, 11, 7, 11, 4, 0, 4, 11, -1], [0, 5, 9, 0, 6, 5, 0, 3, 6, 11, 6, 3, 8, 4, 7, -1], [6, 5, 9, 6, 9, 11, 4, 7, 9, 7, 11, 9, -1, -1, -1, -1], [10, 4, 9, 6, 4, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 10, 6, 4, 9, 10, 0, 8, 3, -1, -1, -1, -1, -1, -1, -1], [10, 0, 1, 10, 6, 0, 6, 4, 0, -1, -1, -1, -1, -1, -1, -1], [8, 3, 1, 8, 1, 6, 8, 6, 4, 6, 1, 10, -1, -1, -1, -1], [1, 4, 9, 1, 2, 4, 2, 6, 4, -1, -1, -1, -1, -1, -1, -1], [3, 0, 8, 1, 2, 9, 2, 4, 9, 2, 6, 4, -1, -1, -1, -1], [0, 2, 4, 4, 2, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [8, 3, 2, 8, 2, 4, 4, 2, 6, -1, -1, -1, -1, -1, -1, -1], [10, 4, 9, 10, 6, 4, 11, 2, 3, -1, -1, -1, -1, -1, -1, -1], [0, 8, 2, 2, 8, 11, 4, 9, 10, 4, 10, 6, -1, -1, -1, -1], [3, 11, 2, 0, 1, 6, 0, 6, 4, 6, 1, 10, -1, -1, -1, -1], [6, 4, 1, 6, 1, 10, 4, 8, 1, 2, 1, 11, 8, 11, 1, -1], [9, 6, 4, 9, 3, 6, 9, 1, 3, 11, 6, 3, -1, -1, -1, -1], [8, 11, 1, 8, 1, 0, 11, 6, 1, 9, 1, 4, 6, 4, 1, -1], [3, 11, 6, 3, 6, 0, 0, 6, 4, -1, -1, -1, -1, -1, -1, -1], [6, 4, 8, 11, 6, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [7, 10, 6, 7, 8, 10, 8, 9, 10, -1, -1, -1, -1, -1, -1, -1], [0, 7, 3, 0, 10, 7, 0, 9, 10, 6, 7, 10, -1, -1, -1, -1], [10, 6, 7, 1, 10, 7, 1, 7, 8, 1, 8, 0, -1, -1, -1, -1], [10, 6, 7, 10, 7, 1, 1, 7, 3, -1, -1, -1, -1, -1, -1, -1], [1, 2, 6, 1, 6, 8, 1, 8, 9, 8, 6, 7, -1, -1, -1, -1], [2, 6, 9, 2, 9, 1, 6, 7, 9, 0, 9, 3, 7, 3, 9, -1], [7, 8, 0, 7, 0, 6, 6, 0, 2, -1, -1, -1, -1, -1, -1, -1], [7, 3, 2, 6, 7, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [2, 3, 11, 10, 6, 8, 10, 8, 9, 8, 6, 7, -1, -1, -1, -1], [2, 0, 7, 2, 7, 11, 0, 9, 7, 6, 7, 10, 9, 10, 7, -1], [1, 8, 0, 1, 7, 8, 1, 10, 7, 6, 7, 10, 2, 3, 11, -1], [11, 2, 1, 11, 1, 7, 10, 6, 1, 6, 7, 1, -1, -1, -1, -1], [8, 9, 6, 8, 6, 7, 9, 1, 6, 11, 6, 3, 1, 3, 6, -1], [0, 9, 1, 11, 6, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [7, 8, 0, 7, 0, 6, 3, 11, 0, 11, 6, 0, -1, -1, -1, -1], [7, 11, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [7, 6, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [3, 0, 8, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 1, 9, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [8, 1, 9, 8, 3, 1, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1], [10, 1, 2, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 2, 10, 3, 0, 8, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1], [2, 9, 0, 2, 10, 9, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1], [6, 11, 7, 2, 10, 3, 10, 8, 3, 10, 9, 8, -1, -1, -1, -1], [7, 2, 3, 6, 2, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [7, 0, 8, 7, 6, 0, 6, 2, 0, -1, -1, -1, -1, -1, -1, -1], [2, 7, 6, 2, 3, 7, 0, 1, 9, -1, -1, -1, -1, -1, -1, -1], [1, 6, 2, 1, 8, 6, 1, 9, 8, 8, 7, 6, -1, -1, -1, -1], [10, 7, 6, 10, 1, 7, 1, 3, 7, -1, -1, -1, -1, -1, -1, -1], [10, 7, 6, 1, 7, 10, 1, 8, 7, 1, 0, 8, -1, -1, -1, -1], [0, 3, 7, 0, 7, 10, 0, 10, 9, 6, 10, 7, -1, -1, -1, -1], [7, 6, 10, 7, 10, 8, 8, 10, 9, -1, -1, -1, -1, -1, -1, -1], [6, 8, 4, 11, 8, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [3, 6, 11, 3, 0, 6, 0, 4, 6, -1, -1, -1, -1, -1, -1, -1], [8, 6, 11, 8, 4, 6, 9, 0, 1, -1, -1, -1, -1, -1, -1, -1], [9, 4, 6, 9, 6, 3, 9, 3, 1, 11, 3, 6, -1, -1, -1, -1], [6, 8, 4, 6, 11, 8, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1], [1, 2, 10, 3, 0, 11, 0, 6, 11, 0, 4, 6, -1, -1, -1, -1], [4, 11, 8, 4, 6, 11, 0, 2, 9, 2, 10, 9, -1, -1, -1, -1], [10, 9, 3, 10, 3, 2, 9, 4, 3, 11, 3, 6, 4, 6, 3, -1], [8, 2, 3, 8, 4, 2, 4, 6, 2, -1, -1, -1, -1, -1, -1, -1], [0, 4, 2, 4, 6, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 9, 0, 2, 3, 4, 2, 4, 6, 4, 3, 8, -1, -1, -1, -1], [1, 9, 4, 1, 4, 2, 2, 4, 6, -1, -1, -1, -1, -1, -1, -1], [8, 1, 3, 8, 4, 1, 4, 6, 1, 6, 10, 1, -1, -1, -1, -1], [10, 1, 0, 10, 0, 6, 6, 0, 4, -1, -1, -1, -1, -1, -1, -1], [4, 6, 3, 4, 3, 8, 6, 10, 3, 0, 3, 9, 10, 9, 3, -1], [10, 9, 4, 6, 10, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 9, 5, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 8, 3, 4, 9, 5, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1], [5, 0, 1, 5, 4, 0, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1], [11, 7, 6, 8, 3, 4, 3, 5, 4, 3, 1, 5, -1, -1, -1, -1], [9, 5, 4, 10, 1, 2, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1], [6, 11, 7, 1, 2, 10, 0, 8, 3, 4, 9, 5, -1, -1, -1, -1], [7, 6, 11, 5, 4, 10, 4, 2, 10, 4, 0, 2, -1, -1, -1, -1], [3, 4, 8, 3, 5, 4, 3, 2, 5, 10, 5, 2, 11, 7, 6, -1], [7, 2, 3, 7, 6, 2, 5, 4, 9, -1, -1, -1, -1, -1, -1, -1], [9, 5, 4, 0, 8, 6, 0, 6, 2, 6, 8, 7, -1, -1, -1, -1], [3, 6, 2, 3, 7, 6, 1, 5, 0, 5, 4, 0, -1, -1, -1, -1], [6, 2, 8, 6, 8, 7, 2, 1, 8, 4, 8, 5, 1, 5, 8, -1], [9, 5, 4, 10, 1, 6, 1, 7, 6, 1, 3, 7, -1, -1, -1, -1], [1, 6, 10, 1, 7, 6, 1, 0, 7, 8, 7, 0, 9, 5, 4, -1], [4, 0, 10, 4, 10, 5, 0, 3, 10, 6, 10, 7, 3, 7, 10, -1], [7, 6, 10, 7, 10, 8, 5, 4, 10, 4, 8, 10, -1, -1, -1, -1], [6, 9, 5, 6, 11, 9, 11, 8, 9, -1, -1, -1, -1, -1, -1, -1], [3, 6, 11, 0, 6, 3, 0, 5, 6, 0, 9, 5, -1, -1, -1, -1], [0, 11, 8, 0, 5, 11, 0, 1, 5, 5, 6, 11, -1, -1, -1, -1], [6, 11, 3, 6, 3, 5, 5, 3, 1, -1, -1, -1, -1, -1, -1, -1], [1, 2, 10, 9, 5, 11, 9, 11, 8, 11, 5, 6, -1, -1, -1, -1], [0, 11, 3, 0, 6, 11, 0, 9, 6, 5, 6, 9, 1, 2, 10, -1], [11, 8, 5, 11, 5, 6, 8, 0, 5, 10, 5, 2, 0, 2, 5, -1], [6, 11, 3, 6, 3, 5, 2, 10, 3, 10, 5, 3, -1, -1, -1, -1], [5, 8, 9, 5, 2, 8, 5, 6, 2, 3, 8, 2, -1, -1, -1, -1], [9, 5, 6, 9, 6, 0, 0, 6, 2, -1, -1, -1, -1, -1, -1, -1], [1, 5, 8, 1, 8, 0, 5, 6, 8, 3, 8, 2, 6, 2, 8, -1], [1, 5, 6, 2, 1, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 3, 6, 1, 6, 10, 3, 8, 6, 5, 6, 9, 8, 9, 6, -1], [10, 1, 0, 10, 0, 6, 9, 5, 0, 5, 6, 0, -1, -1, -1, -1], [0, 3, 8, 5, 6, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [10, 5, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [11, 5, 10, 7, 5, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [11, 5, 10, 11, 7, 5, 8, 3, 0, -1, -1, -1, -1, -1, -1, -1], [5, 11, 7, 5, 10, 11, 1, 9, 0, -1, -1, -1, -1, -1, -1, -1], [10, 11, 7, 10, 7, 5, 9, 8, 1, 8, 3, 1, -1, -1, -1, -1], [11, 1, 2, 11, 7, 1, 7, 5, 1, -1, -1, -1, -1, -1, -1, -1], [0, 8, 3, 1, 2, 7, 1, 7, 5, 7, 2, 11, -1, -1, -1, -1], [9, 7, 5, 9, 2, 7, 9, 0, 2, 2, 11, 7, -1, -1, -1, -1], [7, 5, 2, 7, 2, 11, 5, 9, 2, 3, 2, 8, 9, 8, 2, -1], [2, 5, 10, 2, 3, 5, 3, 7, 5, -1, -1, -1, -1, -1, -1, -1], [8, 2, 0, 8, 5, 2, 8, 7, 5, 10, 2, 5, -1, -1, -1, -1], [9, 0, 1, 5, 10, 3, 5, 3, 7, 3, 10, 2, -1, -1, -1, -1], [9, 8, 2, 9, 2, 1, 8, 7, 2, 10, 2, 5, 7, 5, 2, -1], [1, 3, 5, 3, 7, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 8, 7, 0, 7, 1, 1, 7, 5, -1, -1, -1, -1, -1, -1, -1], [9, 0, 3, 9, 3, 5, 5, 3, 7, -1, -1, -1, -1, -1, -1, -1], [9, 8, 7, 5, 9, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [5, 8, 4, 5, 10, 8, 10, 11, 8, -1, -1, -1, -1, -1, -1, -1], [5, 0, 4, 5, 11, 0, 5, 10, 11, 11, 3, 0, -1, -1, -1, -1], [0, 1, 9, 8, 4, 10, 8, 10, 11, 10, 4, 5, -1, -1, -1, -1], [10, 11, 4, 10, 4, 5, 11, 3, 4, 9, 4, 1, 3, 1, 4, -1], [2, 5, 1, 2, 8, 5, 2, 11, 8, 4, 5, 8, -1, -1, -1, -1], [0, 4, 11, 0, 11, 3, 4, 5, 11, 2, 11, 1, 5, 1, 11, -1], [0, 2, 5, 0, 5, 9, 2, 11, 5, 4, 5, 8, 11, 8, 5, -1], [9, 4, 5, 2, 11, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [2, 5, 10, 3, 5, 2, 3, 4, 5, 3, 8, 4, -1, -1, -1, -1], [5, 10, 2, 5, 2, 4, 4, 2, 0, -1, -1, -1, -1, -1, -1, -1], [3, 10, 2, 3, 5, 10, 3, 8, 5, 4, 5, 8, 0, 1, 9, -1], [5, 10, 2, 5, 2, 4, 1, 9, 2, 9, 4, 2, -1, -1, -1, -1], [8, 4, 5, 8, 5, 3, 3, 5, 1, -1, -1, -1, -1, -1, -1, -1], [0, 4, 5, 1, 0, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [8, 4, 5, 8, 5, 3, 9, 0, 5, 0, 3, 5, -1, -1, -1, -1], [9, 4, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 11, 7, 4, 9, 11, 9, 10, 11, -1, -1, -1, -1, -1, -1, -1], [0, 8, 3, 4, 9, 7, 9, 11, 7, 9, 10, 11, -1, -1, -1, -1], [1, 10, 11, 1, 11, 4, 1, 4, 0, 7, 4, 11, -1, -1, -1, -1], [3, 1, 4, 3, 4, 8, 1, 10, 4, 7, 4, 11, 10, 11, 4, -1], [4, 11, 7, 9, 11, 4, 9, 2, 11, 9, 1, 2, -1, -1, -1, -1], [9, 7, 4, 9, 11, 7, 9, 1, 11, 2, 11, 1, 0, 8, 3, -1], [11, 7, 4, 11, 4, 2, 2, 4, 0, -1, -1, -1, -1, -1, -1, -1], [11, 7, 4, 11, 4, 2, 8, 3, 4, 3, 2, 4, -1, -1, -1, -1], [2, 9, 10, 2, 7, 9, 2, 3, 7, 7, 4, 9, -1, -1, -1, -1], [9, 10, 7, 9, 7, 4, 10, 2, 7, 8, 7, 0, 2, 0, 7, -1], [3, 7, 10, 3, 10, 2, 7, 4, 10, 1, 10, 0, 4, 0, 10, -1], [1, 10, 2, 8, 7, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 9, 1, 4, 1, 7, 7, 1, 3, -1, -1, -1, -1, -1, -1, -1], [4, 9, 1, 4, 1, 7, 0, 8, 1, 8, 7, 1, -1, -1, -1, -1], [4, 0, 3, 7, 4, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 8, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [9, 10, 8, 10, 11, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [3, 0, 9, 3, 9, 11, 11, 9, 10, -1, -1, -1, -1, -1, -1, -1], [0, 1, 10, 0, 10, 8, 8, 10, 11, -1, -1, -1, -1, -1, -1, -1], [3, 1, 10, 11, 3, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 2, 11, 1, 11, 9, 9, 11, 8, -1, -1, -1, -1, -1, -1, -1], [3, 0, 9, 3, 9, 11, 1, 2, 9, 2, 11, 9, -1, -1, -1, -1], [0, 2, 11, 8, 0, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [3, 2, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [2, 3, 8, 2, 8, 10, 10, 8, 9, -1, -1, -1, -1, -1, -1, -1], [9, 10, 2, 0, 9, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [2, 3, 8, 2, 8, 10, 0, 1, 8, 1, 10, 8, -1, -1, -1, -1], [1, 10, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 3, 8, 9, 1, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 9, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]];
+var Br = Uint32Array.from(Bi.flat(), (a) => a >>> 0);
+var Cr = { name: "Bourke", corners: Sr, edges: Dr, maxVertices: 15, table: Br, cornerBit: (a) => 1 << a, createPolygonizer() {
+  return (a, e, t) => {
+    let i = Bi[e], r = 0;
+    for (; r < 15 && i[r] >= 0; ) t[r] = i[r], r++;
     return r;
   };
 } };
-var ye = At;
-var Tt = new Uint32Array([0, 2181, 2182, 2197, 2179, 6166, 2205, 2371, 2180, 2199, 6164, 2326, 2193, 2380, 2335, 1167, 2178, 2203, 6152, 2356, 10243, 14359, 14356, 1317, 6158, 2344, 18434, 1181, 14357, 1345, 24580, 272, 2177, 6154, 2201, 2338, 6150, 18432, 2323, 1177, 10242, 14350, 14353, 1341, 14349, 24578, 1313, 269, 2187, 2374, 2359, 1171, 14355, 24579, 1349, 302, 14351, 1329, 24586, 284, 20481, 12289, 12297, 135, 2176, 10241, 6148, 14343, 2191, 14347, 2347, 1337, 6146, 14342, 18438, 24577, 2341, 1309, 1173, 266, 6162, 14346, 18437, 24585, 14358, 20482, 24584, 12304, 18433, 24576, 28672, 16387, 24582, 12292, 16391, 4112, 2185, 14344, 2362, 1325, 2377, 24581, 1169, 305, 14348, 20480, 24587, 12306, 1353, 12290, 281, 141, 2311, 1333, 1185, 317, 1321, 12293, 320, 147, 24583, 12288, 16388, 4096, 12291, 8192, 4108, 127, 896, 265, 538, 2866, 2373, 1864, 1974, 1701, 4489, 312, 4762, 146, 6970, 794, 4784, 2944, 4165, 261, 6517, 2439, 4928, 884, 7077, 1973, 5254, 2920, 5653, 534, 5926, 1842, 5226, 2378, 6469, 56, 4361, 1864, 5797, 265, 6469, 538, 5797, 811, 6070, 538, 6070, 56, 6962, 1864, 4634, 56, 6962, 265, 5797, 2164, 6469, 1974, 6405, 4149, 5203, 2115, 6516, 6423, 6257, 129, 5637, 6480, 4458, 262, 6725, 6466, 4682, 402, 5029, 6998, 4906, 2869, 4518, 6066, 4631, 1649, 6022, 6150, 7008, 944, 6196, 4900, 5954, 2930, 4666, 5002, 4520, 24, 4393, 4793, 4251, 779, 5285, 6790, 5258, 1896, 7013, 6036, 6073, 1435, 5797, 896, 6070, 265, 4634, 1864, 6469, 2866, 4261, 6149, 6243, 5765, 5795, 928, 6038, 4534, 4457, 6512, 6064, 177, 5962, 6050, 6258, 6721, 5249, 386, 4789, 6964, 6467, 5556, 5522, 659, 7066, 6448, 2483, 6154, 4122, 2954, 6299, 6930, 2961, 4746, 4994, 2472, 4678, 5145, 1057, 6309, 5253, 2984, 4134, 4199, 120, 6213, 5432, 309, 5994, 6791, 2442, 5909, 4530, 379, 4469, 5896, 1808, 5158, 6194, 584, 4202, 5216, 266, 4425, 4468, 881, 5163, 5963, 36, 4773, 5426, 1845, 5685, 4971, 339, 5781, 5641, 518, 6453, 5008, 1875, 5046, 4960, 1030, 6586, 6068, 2964, 6054, 5914, 791, 6693, 4677, 66, 6501, 6582, 2233, 5226, 6804, 896, 5797, 4489, 312, 5797, 6155, 43, 7077, 5499, 56, 5653, 5665, 2051, 5797, 4148, 884, 6326, 5704, 265, 7077, 6069, 265, 4762, 6070, 146, 6070, 4489, 312, 5926, 5938, 265, 4165, 6070, 261, 4762, 4617, 1864, 6517, 4634, 2169, 5254, 4634, 2230, 4890, 6970, 2164, 4634, 4980, 1027, 5653, 4630, 2164, 6469, 4784, 2944, 6469, 6970, 794, 5226, 6474, 811, 6517, 6535, 691, 4165, 5392, 2866, 6469, 5926, 1842, 4970, 6410, 4244, 6148, 5764, 4998, 928, 6293, 4517, 4970, 5521, 5025, 6243, 2134, 4261, 6838, 4138, 6699, 6251, 5480, 88, 4261, 6021, 6267, 5003, 6715, 4154, 88, 5765, 4662, 4897, 4145, 5377, 6149, 2147, 4261, 5206, 4982, 5748, 4180, 5024, 2614, 5270, 6472, 4248, 6920, 4363, 5659, 361, 6037, 4517, 4538, 6421, 4247, 6919, 177, 6566, 5794, 7010, 4274, 6064, 6512, 1942, 6038, 4411, 6968, 6072, 6520, 4457, 438, 6038, 5936, 4146, 4354, 5650, 6422, 2416, 4453, 5957, 5974, 5892, 7009, 4273, 2823, 5274, 4616, 6153, 5257, 5962, 4730, 1832, 6565, 5978, 4521, 6169, 4632, 5928, 634, 5286, 6322, 4790, 6694, 4516, 6164, 386, 5146, 7034, 6067, 6259, 4483, 5249, 1191, 5146, 4116, 4355, 4627, 5923, 6695, 1191, 5701, 5141, 5958, 4726, 6258, 4482, 2068, 6437, 7044, 5248, 6464, 4752, 6994, 1460, 6565, 4889, 6426, 7002, 5211, 4939, 1081, 7018, 6982, 4794, 6442, 4905, 5177, 843, 4789, 5016, 4999, 6967, 5559, 6437, 659, 6981, 4389, 4624, 4896, 5168, 6964, 2898, 4709, 5492, 5479, 4935, 6467, 4755, 2341, 4970, 6410, 5024, 5764, 902, 5765, 4970, 6293, 4410, 2147, 4261, 6230, 4138, 6251, 88, 4261, 6021, 4184, 6715, 58, 5765, 4662, 6243, 5377, 2053, 4261, 6710, 4180, 4982, 928, 5270, 4457, 6920, 4363, 1563, 6037, 4538, 4273, 4247, 2823, 6566, 6038, 4274, 6064, 2416, 6038, 4411, 5659, 6520, 361, 6038, 4390, 5936, 6512, 2326, 4453, 5892, 6919, 7009, 177, 5274, 4616, 5928, 5962, 634, 6773, 4730, 6169, 4632, 1832, 5286, 6322, 4482, 4516, 2068, 5962, 7034, 4483, 5249, 2625, 5146, 4116, 5923, 6695, 1191, 5141, 4726, 6164, 6258, 386, 6437, 7044, 5556, 4752, 2898, 6837, 4889, 5177, 5211, 843, 6982, 6442, 4939, 4905, 1081, 4789, 5016, 4755, 5559, 2341, 4789, 4389, 5168, 6964, 1460, 4709, 6437, 5940, 6467, 659, 6469, 4634, 1974, 4787, 6260, 265, 5797, 6962, 2164, 6469, 4634, 56, 6469, 6070, 56, 5797, 6962, 265, 5797, 4361, 1864, 4634, 6070, 896, 7013, 6581, 4634, 6036, 2967, 7058, 6260, 6960, 6576, 2322, 5285, 6790, 6962, 6262, 2212, 6469, 5002, 6145, 6785, 2595, 7013, 4992, 6036, 7063, 2485, 5797, 4393, 7058, 6960, 2480, 5285, 6262, 4361, 6308, 2694, 6070, 4666, 6307, 6145, 2689, 6725, 6070, 4682, 4633, 1065, 4361, 5251, 4675, 4791, 1063, 5797, 4724, 4791, 5251, 579, 6725, 4152, 4633, 5161, 586, 6469, 6150, 5752, 4155, 1547, 5637, 4245, 4458, 4907, 97, 5637, 4245, 4458, 5960, 97, 6022, 4634, 4155, 5643, 104, 6469, 4518, 5910, 6066, 370, 4907, 5961, 4360, 5912, 377, 5029, 6998, 5960, 4955, 810, 6405, 4634, 4944, 4996, 1332, 6405, 5428, 6070, 4996, 848, 5029, 6998, 4361, 4906, 859, 5797, 5961, 4473, 4360, 1816, 4518, 4992, 6066, 4466, 1814, 7269, 7258, 6084, 7291, 7316, 7193, 7201, 7330, 3254, 7284, 7351, 7211, 4553, 7186, 7177, 7216, 7299, 3144, 7333, 7274, 7218, 7299, 7240, 7252, 7286, 7351, 3115, 6853, 7224, 7203, 7330, 7237, 7316, 7193, 7169, 3200, 7269, 6597, 7350, 7227, 7171, 7296, 6084, 7288, 3220, 5829, 7274, 7317, 7177, 7216, 7347, 7211, 7186, 3233, 7317, 7274, 7184, 7329, 7240, 7286, 7303, 7252, 3081, 7194, 6086, 7169, 7296, 7288, 7350, 7227, 7203, 3234, 7269, 7334, 7257, 4546, 7346, 6084, 7291, 7316, 3098, 7211, 4553, 7186, 7241, 7284, 7303, 7176, 7216, 3251, 7333, 7252, 7286, 7240, 7210, 7218, 7347, 7275, 3207, 7237, 4810, 7300, 7224, 7203, 7257, 7194, 7169, 3216, 7269, 7171, 7312, 7257, 7350, 6084, 7291, 7300, 3128, 7333, 7254, 7177, 7216, 7347, 7275, 7210, 7186, 3217, 7333, 7274, 7252, 7286, 7303, 7176, 4553, 7184, 3145, 7334, 6086, 7194, 7169, 7296, 7224, 7203, 7346, 3195, 6853, 7334, 7316, 7193, 7201, 7346, 7291, 7271, 3141, 7211, 4553, 7241, 7284, 7351, 7218, 7299, 7176, 3088, 7333, 7254, 7210, 7218, 7299, 7240, 7284, 7351, 3179, 6853, 4810, 7237, 7300, 7224, 7171, 7312, 7193, 3105, 7237, 7350, 7227, 7171, 7312, 7257, 7300, 7288, 3175, 5829, 7210, 5067, 7275, 7317, 7177, 7184, 7329, 3122, 5829, 7274, 7317, 7284, 6088, 7176, 7184, 7329, 3145, 7334, 7296, 7288, 7271, 7194, 7201, 7346, 7227, 3075, 6757, 5145, 4530, 6068, 1201, 5963, 4425, 4785, 4532, 2096, 4773, 5253, 7030, 6194, 1410, 6693, 4664, 5208, 5416, 25, 6501, 5008, 7011, 5779, 1924, 5781, 4394, 4243, 6966, 918, 5269, 5994, 4362, 6256, 1952, 6054, 6016, 4512, 6768, 946, 5221, 5209, 4634, 6834, 7078, 6070, 5238, 5537, 2385, 4228, 5960, 6327, 7043, 4787, 4361, 4400, 4387, 2308, 5797, 4907, 7043, 6260, 6327, 5494, 5447, 5810, 2658, 6469, 4442, 4152, 4131, 4609, 6689, 5401, 6408, 1176, 5221, 4992, 6288, 6532, 5524, 5703, 7015, 6019, 2931, 5797, 6805, 6561, 4241, 4882, 4865, 6962, 4774, 2854, 5797, 4361, 6561, 6805, 5972, 5989, 6260, 5264, 2112, 7078, 4992, 4984, 5947, 5755, 6834, 4514, 4656, 288, 7066, 2488, 5158, 36, 4981, 309, 6054, 4480, 6017, 2673, 6978, 4393, 5266, 1207, 6709, 5026, 6227, 1412, 6501, 5040, 4278, 105, 5226, 6474, 4136, 2091, 6053, 4489, 4993, 1978, 5669, 4928, 5955, 1313, 6214, 6410, 6251, 42, 6037, 4538, 6025, 945, 4117, 4662, 5440, 1891, 4714, 4137, 4777, 7010, 5816, 5224, 5257, 2057, 6565, 6025, 6487, 4521, 6675, 7075, 6967, 903, 5125, 5974, 4117, 4129, 4896, 4663, 5671, 1861, 5226, 6804, 6404, 5128, 7040, 6914, 6834, 2667, 7077, 4489, 4408, 5048, 6327, 5499, 4442, 405, 5221, 4438, 5665, 4657, 4400, 5123, 5175, 1607, 6602, 6854, 6412, 4140, 4796, 6347, 6220, 1132, 7317, 7354, 7291, 7255, 6600, 7224, 7187, 458, 7189, 4806, 7201, 5317, 7286, 6083, 7171, 3136, 7238, 7210, 7316, 7337, 4800, 7296, 7352, 3014, 7333, 6085, 7354, 7227, 4553, 5057, 7305, 2247, 5829, 4806, 4668, 5964, 4988, 4292, 4124, 348, 5813, 7040, 5552, 336, 6022, 4489, 4390, 1665, 4762, 6516, 6034, 882, 5285, 5050, 5028, 832, 6517, 6402, 6439, 1835, 4458, 6214, 6241, 2067, 5994, 6800, 6048, 880, 6938, 4416, 4532, 1867, 4389, 4741, 4792, 1112, 5781, 4662, 5014, 905, 5270, 4409, 4969, 1595, 4773, 6021, 6181, 2050, 4678, 4498, 5161, 56, 6469, 6170, 4480, 2954, 5797, 4393, 7058, 2203, 5797, 5961, 4473, 881, 4666, 6070, 6307, 2472, 5797, 4724, 5931, 36, 5909, 6066, 4466, 896, 6586, 6036, 7063, 2051, 5126, 4634, 4155, 1547, 6405, 4634, 4944, 1875, 4933, 6070, 4996, 309, 6469, 6022, 4200, 608, 4678, 4996, 4930, 400, 6725, 5288, 6315, 25, 5813, 5561, 4394, 2488, 5269, 4458, 5655, 1811, 6022, 5770, 6793, 571, 5285, 7030, 6722, 576, 5909, 4480, 6167, 2851, 6586, 5040, 4281, 1924, 4518, 4448, 4196, 946, 6709, 4666, 5431, 25, 7013, 6995, 4945, 1924, 4197, 6405, 5634, 1924, 6214, 6472, 6528, 6401, 6243, 4962, 4402, 259, 6837, 4441, 4517, 4496, 5556, 5304, 4168, 148, 5765, 4714, 5513, 4517, 4790, 5816, 4769, 345, 6565, 6710, 6426, 6675, 6484, 5687, 5223, 1110, 4714, 5944, 4987, 6025, 5042, 6038, 5786, 694, 4261, 7018, 5957, 5974, 5440, 5995, 6658, 2978, 4117, 4354, 4611, 4667, 4184, 6231, 7047, 2872, 5050, 6020, 4987, 5944, 5024, 4265, 5129, 1152, 7018, 7074, 6756, 6947, 6721, 4416, 4880, 801, 6565, 4896, 4129, 4663, 4121, 4730, 6773, 2330, 4453, 5206, 5223, 5240, 5659, 6931, 6323, 2171, 4709, 6153, 6292, 6402, 6215, 6437, 5974, 1861, 6470, 4882, 4115, 5665, 6147, 6497, 5272, 2312, 6469, 4442, 4228, 6404, 7040, 4528, 6833, 405, 5797, 4501, 6677, 6289, 4737, 7042, 6950, 678, 5797, 5988, 5446, 4980, 6452, 4409, 4506, 2394, 4774, 6950, 6562, 6070, 5010, 6291, 6199, 951, 5797, 6954, 5818, 4139, 5972, 5899, 5127, 1893, 6949, 6027, 5048, 5499, 4152, 4434, 4384, 560, 6474, 5264, 6208, 4992, 6052, 7079, 7027, 1923, 7078, 4400, 4657, 5123, 6689, 6979, 5707, 2858, 6805, 4506, 5977, 4634, 4217, 4976, 4866, 18, 5221, 5048, 6027, 4408, 5755, 5144, 5396, 1142, 6469, 5989, 5972, 4711, 6183, 4136, 4233, 2121, 4806, 7193, 4544, 5058, 6156, 6339, 6476, 1132, 6853, 4508, 5321, 5212, 6844, 4296, 7052, 448, 7333, 5484, 4780, 5820, 7052, 4553, 6300, 705, 7333, 6854, 5317, 5831, 4988, 4553, 4412, 2500, 4810, 7350, 5052, 6028, 5756, 6300, 6572, 962, 7333, 5452, 5996, 6854, 5132, 7106, 4140, 1995, 7189, 4668, 4124, 6339, 6156, 7111, 5500, 715, 7354, 7224, 6084, 7111, 7300, 7312, 7337, 960, 5834, 4546, 7171, 4811, 7227, 7232, 7268, 2753, 6853, 7193, 4546, 5056, 4297, 7223, 7285, 714, 7237, 6086, 6028, 7107, 5835, 4412, 5404, 1224, 7237, 7206, 6220, 6412, 5532, 4140, 6086, 2247, 5228, 6412, 6220, 5056, 5004, 4546, 5676, 2497, 7237, 4297, 5320, 5532, 7052, 4524, 6844, 448, 5829, 5804, 5577, 4554, 6300, 4796, 7052, 705, 5829, 5804, 6492, 6684, 4412, 7284, 4988, 2500, 5834, 4811, 6076, 6086, 6572, 5004, 6300, 962, 5829, 5578, 7110, 6850, 4140, 5964, 5132, 1995, 6085, 7227, 6343, 4156, 4296, 4636, 4444, 715, 6602, 7296, 7316, 6343, 7239, 7107, 7354, 960, 4810, 7350, 7203, 7107, 7268, 7169, 7232, 2753, 6597, 7194, 4544, 7312, 7285, 5058, 7223, 714, 7269, 6084, 7111, 7020, 5404, 6339, 4412, 1224, 7269, 6084, 6476, 6597, 4716, 6156, 4140, 2247, 6469, 4634, 6070, 896, 6757, 4496, 6947, 1924, 7013, 7001, 4634, 4992, 6036, 2967, 6469, 6070, 6170, 6145, 6712, 2595, 6469, 4634, 4278, 4155, 5760, 1656, 6469, 4518, 4152, 4466, 6066, 359, 6725, 6070, 4992, 5161, 4633, 1186, 6757, 6036, 4503, 5042, 6167, 2049, 6405, 4634, 4933, 6070, 4944, 900, 4197, 5520, 4518, 6020, 6947, 22, 7013, 4954, 6020, 4121, 6995, 2595, 6757, 4496, 4930, 4996, 5234, 1970, 6757, 6020, 4281, 4155, 6953, 537, 6725, 6310, 4496, 5042, 5288, 1656, 7269, 7257, 4634, 5321, 4296, 7288, 7239, 7227, 5835, 3075, 6469, 7334, 5056, 4546, 7346, 7227, 7296, 7288, 6086, 3098, 7269, 7334, 6597, 4524, 7201, 7346, 6084, 7111, 7316, 2051, 6469, 4810, 7350, 7227, 7203, 7194, 7169, 7288, 4296, 3175, 7269, 6764, 6084, 5532, 6476, 6028, 6156, 4524, 4544, 946, 6469, 7334, 6076, 6339, 7203, 7346, 7271, 7169, 6849, 3200, 7269, 7258, 7350, 4810, 6084, 7291, 7193, 5321, 7201, 56, 6853, 7334, 7237, 6086, 7316, 7193, 7346, 4546, 7291, 896, 6757, 7227, 6084, 6343, 6156, 4156, 6956, 7193, 4636, 2380, 6853, 7237, 6070, 4296, 5321, 7193, 7169, 7224, 7203, 714, 6757, 4508, 4544, 5058, 5004, 6156, 6476, 6076, 6084, 2860, 6853, 6764, 7193, 6476, 5212, 5756, 6156, 6343, 4124, 2851, 7269, 5834, 4811, 5532, 4636, 4524, 4156, 4297, 5052, 1924, 7237, 6086, 7257, 4634, 7300, 7288, 7350, 7227, 7312, 960, 7269, 6597, 4634, 7224, 6084, 7111, 7300, 7171, 7312, 3254, 7237, 5834, 4297, 5320, 5532, 4124, 4524, 5756, 6028, 571, 7269, 4810, 5058, 5532, 4544, 4524, 5052, 7020, 6412, 1924, 6597, 4810, 7237, 6070, 6849, 7169, 7312, 7300, 7203, 2243, 6757, 5320, 4297, 4156, 5004, 5244, 6076, 4636, 4811, 412, 6853, 5572, 6070, 7193, 4546, 5056, 7312, 7330, 7300, 3128, 6853, 7020, 7193, 6700, 4636, 6412, 4156, 7107, 5724, 1924, 6853, 5834, 4811, 5212, 5756, 6076, 4668, 5004, 5320, 25, 7269, 5548, 6084, 6076, 7020, 6700, 5004, 5058, 6220, 400, 6853, 7020, 5212, 7288, 7107, 5756, 6220, 6700, 4668, 25, 7269, 7258, 7312, 7171, 7224, 7300, 7239, 7291, 7350, 7330, 7201, 3097, 6853, 6764, 5004, 4668, 6956, 5212, 6076, 5756, 6476, 4508, 4124, 2060, 7269, 7334, 7346, 7257, 7201, 7194, 7316, 7239, 7288, 7296, 7171, 3131, 7237, 7020, 5532, 4524, 4124, 6412, 6220, 6028, 5756, 5052, 4668, 2604, 6757, 6020, 7047, 6323, 6148, 4244, 4496, 4880, 4627, 2851, 6469, 4442, 6070, 4992, 4866, 4114, 6408, 5272, 6481, 2593, 6757, 6565, 6801, 6694, 4790, 5042, 4402, 4145, 6401, 1924, 6469, 7078, 4992, 6199, 5047, 4656, 4384, 4634, 4779, 1659, 5221, 7078, 5401, 4634, 4779, 5537, 5524, 5238, 6070, 2051, 6757, 5042, 6323, 5492, 7047, 7010, 5794, 5974, 6215, 400, 5221, 5209, 4634, 4992, 4233, 6217, 6019, 7027, 6070, 1892, 6757, 4496, 6801, 6565, 6464, 5248, 6020, 5492, 5749, 946, 6757, 4992, 4633, 6466, 5298, 1972, 6709, 5508, 6070, 4496, 4666, 901, 6501, 4634, 6915, 7008, 5776, 1924, 6469, 6054, 5042, 4120, 4472, 423]);
-var p1 = Tt;
-var Gt = [[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 0, 1], [1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]];
-var Ct = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]];
-var we = class {
+var It = Cr;
+var Ar = new Uint32Array([0, 2181, 2182, 2197, 2179, 6166, 2205, 2371, 2180, 2199, 6164, 2326, 2193, 2380, 2335, 1167, 2178, 2203, 6152, 2356, 10243, 14359, 14356, 1317, 6158, 2344, 18434, 1181, 14357, 1345, 24580, 272, 2177, 6154, 2201, 2338, 6150, 18432, 2323, 1177, 10242, 14350, 14353, 1341, 14349, 24578, 1313, 269, 2187, 2374, 2359, 1171, 14355, 24579, 1349, 302, 14351, 1329, 24586, 284, 20481, 12289, 12297, 135, 2176, 10241, 6148, 14343, 2191, 14347, 2347, 1337, 6146, 14342, 18438, 24577, 2341, 1309, 1173, 266, 6162, 14346, 18437, 24585, 14358, 20482, 24584, 12304, 18433, 24576, 28672, 16387, 24582, 12292, 16391, 4112, 2185, 14344, 2362, 1325, 2377, 24581, 1169, 305, 14348, 20480, 24587, 12306, 1353, 12290, 281, 141, 2311, 1333, 1185, 317, 1321, 12293, 320, 147, 24583, 12288, 16388, 4096, 12291, 8192, 4108, 127, 896, 265, 538, 2866, 2373, 1864, 1974, 1701, 4489, 312, 4762, 146, 6970, 794, 4784, 2944, 4165, 261, 6517, 2439, 4928, 884, 7077, 1973, 5254, 2920, 5653, 534, 5926, 1842, 5226, 2378, 6469, 56, 4361, 1864, 5797, 265, 6469, 538, 5797, 811, 6070, 538, 6070, 56, 6962, 1864, 4634, 56, 6962, 265, 5797, 2164, 6469, 1974, 6405, 4149, 5203, 2115, 6516, 6423, 6257, 129, 5637, 6480, 4458, 262, 6725, 6466, 4682, 402, 5029, 6998, 4906, 2869, 4518, 6066, 4631, 1649, 6022, 6150, 7008, 944, 6196, 4900, 5954, 2930, 4666, 5002, 4520, 24, 4393, 4793, 4251, 779, 5285, 6790, 5258, 1896, 7013, 6036, 6073, 1435, 5797, 896, 6070, 265, 4634, 1864, 6469, 2866, 4261, 6149, 6243, 5765, 5795, 928, 6038, 4534, 4457, 6512, 6064, 177, 5962, 6050, 6258, 6721, 5249, 386, 4789, 6964, 6467, 5556, 5522, 659, 7066, 6448, 2483, 6154, 4122, 2954, 6299, 6930, 2961, 4746, 4994, 2472, 4678, 5145, 1057, 6309, 5253, 2984, 4134, 4199, 120, 6213, 5432, 309, 5994, 6791, 2442, 5909, 4530, 379, 4469, 5896, 1808, 5158, 6194, 584, 4202, 5216, 266, 4425, 4468, 881, 5163, 5963, 36, 4773, 5426, 1845, 5685, 4971, 339, 5781, 5641, 518, 6453, 5008, 1875, 5046, 4960, 1030, 6586, 6068, 2964, 6054, 5914, 791, 6693, 4677, 66, 6501, 6582, 2233, 5226, 6804, 896, 5797, 4489, 312, 5797, 6155, 43, 7077, 5499, 56, 5653, 5665, 2051, 5797, 4148, 884, 6326, 5704, 265, 7077, 6069, 265, 4762, 6070, 146, 6070, 4489, 312, 5926, 5938, 265, 4165, 6070, 261, 4762, 4617, 1864, 6517, 4634, 2169, 5254, 4634, 2230, 4890, 6970, 2164, 4634, 4980, 1027, 5653, 4630, 2164, 6469, 4784, 2944, 6469, 6970, 794, 5226, 6474, 811, 6517, 6535, 691, 4165, 5392, 2866, 6469, 5926, 1842, 4970, 6410, 4244, 6148, 5764, 4998, 928, 6293, 4517, 4970, 5521, 5025, 6243, 2134, 4261, 6838, 4138, 6699, 6251, 5480, 88, 4261, 6021, 6267, 5003, 6715, 4154, 88, 5765, 4662, 4897, 4145, 5377, 6149, 2147, 4261, 5206, 4982, 5748, 4180, 5024, 2614, 5270, 6472, 4248, 6920, 4363, 5659, 361, 6037, 4517, 4538, 6421, 4247, 6919, 177, 6566, 5794, 7010, 4274, 6064, 6512, 1942, 6038, 4411, 6968, 6072, 6520, 4457, 438, 6038, 5936, 4146, 4354, 5650, 6422, 2416, 4453, 5957, 5974, 5892, 7009, 4273, 2823, 5274, 4616, 6153, 5257, 5962, 4730, 1832, 6565, 5978, 4521, 6169, 4632, 5928, 634, 5286, 6322, 4790, 6694, 4516, 6164, 386, 5146, 7034, 6067, 6259, 4483, 5249, 1191, 5146, 4116, 4355, 4627, 5923, 6695, 1191, 5701, 5141, 5958, 4726, 6258, 4482, 2068, 6437, 7044, 5248, 6464, 4752, 6994, 1460, 6565, 4889, 6426, 7002, 5211, 4939, 1081, 7018, 6982, 4794, 6442, 4905, 5177, 843, 4789, 5016, 4999, 6967, 5559, 6437, 659, 6981, 4389, 4624, 4896, 5168, 6964, 2898, 4709, 5492, 5479, 4935, 6467, 4755, 2341, 4970, 6410, 5024, 5764, 902, 5765, 4970, 6293, 4410, 2147, 4261, 6230, 4138, 6251, 88, 4261, 6021, 4184, 6715, 58, 5765, 4662, 6243, 5377, 2053, 4261, 6710, 4180, 4982, 928, 5270, 4457, 6920, 4363, 1563, 6037, 4538, 4273, 4247, 2823, 6566, 6038, 4274, 6064, 2416, 6038, 4411, 5659, 6520, 361, 6038, 4390, 5936, 6512, 2326, 4453, 5892, 6919, 7009, 177, 5274, 4616, 5928, 5962, 634, 6773, 4730, 6169, 4632, 1832, 5286, 6322, 4482, 4516, 2068, 5962, 7034, 4483, 5249, 2625, 5146, 4116, 5923, 6695, 1191, 5141, 4726, 6164, 6258, 386, 6437, 7044, 5556, 4752, 2898, 6837, 4889, 5177, 5211, 843, 6982, 6442, 4939, 4905, 1081, 4789, 5016, 4755, 5559, 2341, 4789, 4389, 5168, 6964, 1460, 4709, 6437, 5940, 6467, 659, 6469, 4634, 1974, 4787, 6260, 265, 5797, 6962, 2164, 6469, 4634, 56, 6469, 6070, 56, 5797, 6962, 265, 5797, 4361, 1864, 4634, 6070, 896, 7013, 6581, 4634, 6036, 2967, 7058, 6260, 6960, 6576, 2322, 5285, 6790, 6962, 6262, 2212, 6469, 5002, 6145, 6785, 2595, 7013, 4992, 6036, 7063, 2485, 5797, 4393, 7058, 6960, 2480, 5285, 6262, 4361, 6308, 2694, 6070, 4666, 6307, 6145, 2689, 6725, 6070, 4682, 4633, 1065, 4361, 5251, 4675, 4791, 1063, 5797, 4724, 4791, 5251, 579, 6725, 4152, 4633, 5161, 586, 6469, 6150, 5752, 4155, 1547, 5637, 4245, 4458, 4907, 97, 5637, 4245, 4458, 5960, 97, 6022, 4634, 4155, 5643, 104, 6469, 4518, 5910, 6066, 370, 4907, 5961, 4360, 5912, 377, 5029, 6998, 5960, 4955, 810, 6405, 4634, 4944, 4996, 1332, 6405, 5428, 6070, 4996, 848, 5029, 6998, 4361, 4906, 859, 5797, 5961, 4473, 4360, 1816, 4518, 4992, 6066, 4466, 1814, 7269, 7258, 6084, 7291, 7316, 7193, 7201, 7330, 3254, 7284, 7351, 7211, 4553, 7186, 7177, 7216, 7299, 3144, 7333, 7274, 7218, 7299, 7240, 7252, 7286, 7351, 3115, 6853, 7224, 7203, 7330, 7237, 7316, 7193, 7169, 3200, 7269, 6597, 7350, 7227, 7171, 7296, 6084, 7288, 3220, 5829, 7274, 7317, 7177, 7216, 7347, 7211, 7186, 3233, 7317, 7274, 7184, 7329, 7240, 7286, 7303, 7252, 3081, 7194, 6086, 7169, 7296, 7288, 7350, 7227, 7203, 3234, 7269, 7334, 7257, 4546, 7346, 6084, 7291, 7316, 3098, 7211, 4553, 7186, 7241, 7284, 7303, 7176, 7216, 3251, 7333, 7252, 7286, 7240, 7210, 7218, 7347, 7275, 3207, 7237, 4810, 7300, 7224, 7203, 7257, 7194, 7169, 3216, 7269, 7171, 7312, 7257, 7350, 6084, 7291, 7300, 3128, 7333, 7254, 7177, 7216, 7347, 7275, 7210, 7186, 3217, 7333, 7274, 7252, 7286, 7303, 7176, 4553, 7184, 3145, 7334, 6086, 7194, 7169, 7296, 7224, 7203, 7346, 3195, 6853, 7334, 7316, 7193, 7201, 7346, 7291, 7271, 3141, 7211, 4553, 7241, 7284, 7351, 7218, 7299, 7176, 3088, 7333, 7254, 7210, 7218, 7299, 7240, 7284, 7351, 3179, 6853, 4810, 7237, 7300, 7224, 7171, 7312, 7193, 3105, 7237, 7350, 7227, 7171, 7312, 7257, 7300, 7288, 3175, 5829, 7210, 5067, 7275, 7317, 7177, 7184, 7329, 3122, 5829, 7274, 7317, 7284, 6088, 7176, 7184, 7329, 3145, 7334, 7296, 7288, 7271, 7194, 7201, 7346, 7227, 3075, 6757, 5145, 4530, 6068, 1201, 5963, 4425, 4785, 4532, 2096, 4773, 5253, 7030, 6194, 1410, 6693, 4664, 5208, 5416, 25, 6501, 5008, 7011, 5779, 1924, 5781, 4394, 4243, 6966, 918, 5269, 5994, 4362, 6256, 1952, 6054, 6016, 4512, 6768, 946, 5221, 5209, 4634, 6834, 7078, 6070, 5238, 5537, 2385, 4228, 5960, 6327, 7043, 4787, 4361, 4400, 4387, 2308, 5797, 4907, 7043, 6260, 6327, 5494, 5447, 5810, 2658, 6469, 4442, 4152, 4131, 4609, 6689, 5401, 6408, 1176, 5221, 4992, 6288, 6532, 5524, 5703, 7015, 6019, 2931, 5797, 6805, 6561, 4241, 4882, 4865, 6962, 4774, 2854, 5797, 4361, 6561, 6805, 5972, 5989, 6260, 5264, 2112, 7078, 4992, 4984, 5947, 5755, 6834, 4514, 4656, 288, 7066, 2488, 5158, 36, 4981, 309, 6054, 4480, 6017, 2673, 6978, 4393, 5266, 1207, 6709, 5026, 6227, 1412, 6501, 5040, 4278, 105, 5226, 6474, 4136, 2091, 6053, 4489, 4993, 1978, 5669, 4928, 5955, 1313, 6214, 6410, 6251, 42, 6037, 4538, 6025, 945, 4117, 4662, 5440, 1891, 4714, 4137, 4777, 7010, 5816, 5224, 5257, 2057, 6565, 6025, 6487, 4521, 6675, 7075, 6967, 903, 5125, 5974, 4117, 4129, 4896, 4663, 5671, 1861, 5226, 6804, 6404, 5128, 7040, 6914, 6834, 2667, 7077, 4489, 4408, 5048, 6327, 5499, 4442, 405, 5221, 4438, 5665, 4657, 4400, 5123, 5175, 1607, 6602, 6854, 6412, 4140, 4796, 6347, 6220, 1132, 7317, 7354, 7291, 7255, 6600, 7224, 7187, 458, 7189, 4806, 7201, 5317, 7286, 6083, 7171, 3136, 7238, 7210, 7316, 7337, 4800, 7296, 7352, 3014, 7333, 6085, 7354, 7227, 4553, 5057, 7305, 2247, 5829, 4806, 4668, 5964, 4988, 4292, 4124, 348, 5813, 7040, 5552, 336, 6022, 4489, 4390, 1665, 4762, 6516, 6034, 882, 5285, 5050, 5028, 832, 6517, 6402, 6439, 1835, 4458, 6214, 6241, 2067, 5994, 6800, 6048, 880, 6938, 4416, 4532, 1867, 4389, 4741, 4792, 1112, 5781, 4662, 5014, 905, 5270, 4409, 4969, 1595, 4773, 6021, 6181, 2050, 4678, 4498, 5161, 56, 6469, 6170, 4480, 2954, 5797, 4393, 7058, 2203, 5797, 5961, 4473, 881, 4666, 6070, 6307, 2472, 5797, 4724, 5931, 36, 5909, 6066, 4466, 896, 6586, 6036, 7063, 2051, 5126, 4634, 4155, 1547, 6405, 4634, 4944, 1875, 4933, 6070, 4996, 309, 6469, 6022, 4200, 608, 4678, 4996, 4930, 400, 6725, 5288, 6315, 25, 5813, 5561, 4394, 2488, 5269, 4458, 5655, 1811, 6022, 5770, 6793, 571, 5285, 7030, 6722, 576, 5909, 4480, 6167, 2851, 6586, 5040, 4281, 1924, 4518, 4448, 4196, 946, 6709, 4666, 5431, 25, 7013, 6995, 4945, 1924, 4197, 6405, 5634, 1924, 6214, 6472, 6528, 6401, 6243, 4962, 4402, 259, 6837, 4441, 4517, 4496, 5556, 5304, 4168, 148, 5765, 4714, 5513, 4517, 4790, 5816, 4769, 345, 6565, 6710, 6426, 6675, 6484, 5687, 5223, 1110, 4714, 5944, 4987, 6025, 5042, 6038, 5786, 694, 4261, 7018, 5957, 5974, 5440, 5995, 6658, 2978, 4117, 4354, 4611, 4667, 4184, 6231, 7047, 2872, 5050, 6020, 4987, 5944, 5024, 4265, 5129, 1152, 7018, 7074, 6756, 6947, 6721, 4416, 4880, 801, 6565, 4896, 4129, 4663, 4121, 4730, 6773, 2330, 4453, 5206, 5223, 5240, 5659, 6931, 6323, 2171, 4709, 6153, 6292, 6402, 6215, 6437, 5974, 1861, 6470, 4882, 4115, 5665, 6147, 6497, 5272, 2312, 6469, 4442, 4228, 6404, 7040, 4528, 6833, 405, 5797, 4501, 6677, 6289, 4737, 7042, 6950, 678, 5797, 5988, 5446, 4980, 6452, 4409, 4506, 2394, 4774, 6950, 6562, 6070, 5010, 6291, 6199, 951, 5797, 6954, 5818, 4139, 5972, 5899, 5127, 1893, 6949, 6027, 5048, 5499, 4152, 4434, 4384, 560, 6474, 5264, 6208, 4992, 6052, 7079, 7027, 1923, 7078, 4400, 4657, 5123, 6689, 6979, 5707, 2858, 6805, 4506, 5977, 4634, 4217, 4976, 4866, 18, 5221, 5048, 6027, 4408, 5755, 5144, 5396, 1142, 6469, 5989, 5972, 4711, 6183, 4136, 4233, 2121, 4806, 7193, 4544, 5058, 6156, 6339, 6476, 1132, 6853, 4508, 5321, 5212, 6844, 4296, 7052, 448, 7333, 5484, 4780, 5820, 7052, 4553, 6300, 705, 7333, 6854, 5317, 5831, 4988, 4553, 4412, 2500, 4810, 7350, 5052, 6028, 5756, 6300, 6572, 962, 7333, 5452, 5996, 6854, 5132, 7106, 4140, 1995, 7189, 4668, 4124, 6339, 6156, 7111, 5500, 715, 7354, 7224, 6084, 7111, 7300, 7312, 7337, 960, 5834, 4546, 7171, 4811, 7227, 7232, 7268, 2753, 6853, 7193, 4546, 5056, 4297, 7223, 7285, 714, 7237, 6086, 6028, 7107, 5835, 4412, 5404, 1224, 7237, 7206, 6220, 6412, 5532, 4140, 6086, 2247, 5228, 6412, 6220, 5056, 5004, 4546, 5676, 2497, 7237, 4297, 5320, 5532, 7052, 4524, 6844, 448, 5829, 5804, 5577, 4554, 6300, 4796, 7052, 705, 5829, 5804, 6492, 6684, 4412, 7284, 4988, 2500, 5834, 4811, 6076, 6086, 6572, 5004, 6300, 962, 5829, 5578, 7110, 6850, 4140, 5964, 5132, 1995, 6085, 7227, 6343, 4156, 4296, 4636, 4444, 715, 6602, 7296, 7316, 6343, 7239, 7107, 7354, 960, 4810, 7350, 7203, 7107, 7268, 7169, 7232, 2753, 6597, 7194, 4544, 7312, 7285, 5058, 7223, 714, 7269, 6084, 7111, 7020, 5404, 6339, 4412, 1224, 7269, 6084, 6476, 6597, 4716, 6156, 4140, 2247, 6469, 4634, 6070, 896, 6757, 4496, 6947, 1924, 7013, 7001, 4634, 4992, 6036, 2967, 6469, 6070, 6170, 6145, 6712, 2595, 6469, 4634, 4278, 4155, 5760, 1656, 6469, 4518, 4152, 4466, 6066, 359, 6725, 6070, 4992, 5161, 4633, 1186, 6757, 6036, 4503, 5042, 6167, 2049, 6405, 4634, 4933, 6070, 4944, 900, 4197, 5520, 4518, 6020, 6947, 22, 7013, 4954, 6020, 4121, 6995, 2595, 6757, 4496, 4930, 4996, 5234, 1970, 6757, 6020, 4281, 4155, 6953, 537, 6725, 6310, 4496, 5042, 5288, 1656, 7269, 7257, 4634, 5321, 4296, 7288, 7239, 7227, 5835, 3075, 6469, 7334, 5056, 4546, 7346, 7227, 7296, 7288, 6086, 3098, 7269, 7334, 6597, 4524, 7201, 7346, 6084, 7111, 7316, 2051, 6469, 4810, 7350, 7227, 7203, 7194, 7169, 7288, 4296, 3175, 7269, 6764, 6084, 5532, 6476, 6028, 6156, 4524, 4544, 946, 6469, 7334, 6076, 6339, 7203, 7346, 7271, 7169, 6849, 3200, 7269, 7258, 7350, 4810, 6084, 7291, 7193, 5321, 7201, 56, 6853, 7334, 7237, 6086, 7316, 7193, 7346, 4546, 7291, 896, 6757, 7227, 6084, 6343, 6156, 4156, 6956, 7193, 4636, 2380, 6853, 7237, 6070, 4296, 5321, 7193, 7169, 7224, 7203, 714, 6757, 4508, 4544, 5058, 5004, 6156, 6476, 6076, 6084, 2860, 6853, 6764, 7193, 6476, 5212, 5756, 6156, 6343, 4124, 2851, 7269, 5834, 4811, 5532, 4636, 4524, 4156, 4297, 5052, 1924, 7237, 6086, 7257, 4634, 7300, 7288, 7350, 7227, 7312, 960, 7269, 6597, 4634, 7224, 6084, 7111, 7300, 7171, 7312, 3254, 7237, 5834, 4297, 5320, 5532, 4124, 4524, 5756, 6028, 571, 7269, 4810, 5058, 5532, 4544, 4524, 5052, 7020, 6412, 1924, 6597, 4810, 7237, 6070, 6849, 7169, 7312, 7300, 7203, 2243, 6757, 5320, 4297, 4156, 5004, 5244, 6076, 4636, 4811, 412, 6853, 5572, 6070, 7193, 4546, 5056, 7312, 7330, 7300, 3128, 6853, 7020, 7193, 6700, 4636, 6412, 4156, 7107, 5724, 1924, 6853, 5834, 4811, 5212, 5756, 6076, 4668, 5004, 5320, 25, 7269, 5548, 6084, 6076, 7020, 6700, 5004, 5058, 6220, 400, 6853, 7020, 5212, 7288, 7107, 5756, 6220, 6700, 4668, 25, 7269, 7258, 7312, 7171, 7224, 7300, 7239, 7291, 7350, 7330, 7201, 3097, 6853, 6764, 5004, 4668, 6956, 5212, 6076, 5756, 6476, 4508, 4124, 2060, 7269, 7334, 7346, 7257, 7201, 7194, 7316, 7239, 7288, 7296, 7171, 3131, 7237, 7020, 5532, 4524, 4124, 6412, 6220, 6028, 5756, 5052, 4668, 2604, 6757, 6020, 7047, 6323, 6148, 4244, 4496, 4880, 4627, 2851, 6469, 4442, 6070, 4992, 4866, 4114, 6408, 5272, 6481, 2593, 6757, 6565, 6801, 6694, 4790, 5042, 4402, 4145, 6401, 1924, 6469, 7078, 4992, 6199, 5047, 4656, 4384, 4634, 4779, 1659, 5221, 7078, 5401, 4634, 4779, 5537, 5524, 5238, 6070, 2051, 6757, 5042, 6323, 5492, 7047, 7010, 5794, 5974, 6215, 400, 5221, 5209, 4634, 4992, 4233, 6217, 6019, 7027, 6070, 1892, 6757, 4496, 6801, 6565, 6464, 5248, 6020, 5492, 5749, 946, 6757, 4992, 4633, 6466, 5298, 1972, 6709, 5508, 6070, 4496, 4666, 901, 6501, 4634, 6915, 7008, 5776, 1924, 6469, 6054, 5042, 4120, 4472, 423]);
+var Be = Ar;
+var kr = [[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 0, 1], [1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]];
+var Tr = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]];
+var Ft = class {
   constructor() {
-    this.table = p1, this.f_test_results = new Int32Array(6);
+    this.table = Be, this.f_test_results = new Int32Array(6);
   }
   signbf(e) {
     return e < 0;
   }
   face_tests(e) {
-    let t = this.v, s = this.f_test_results;
-    return s.fill(0), e & 128 ? (s[0] = (e & 204) === 132 ? t[0] * t[5] < t[1] * t[4] ? -1 : 1 : 0, s[3] = (e & 153) === 129 ? t[0] * t[7] < t[3] * t[4] ? -1 : 1 : 0, s[4] = (e & 240) === 160 ? t[0] * t[2] < t[1] * t[3] ? -1 : 1 : 0) : (s[0] = (e & 204) === 72 ? t[0] * t[5] < t[1] * t[4] ? 1 : -1 : 0, s[3] = (e & 153) === 24 ? t[0] * t[7] < t[3] * t[4] ? 1 : -1 : 0, s[4] = (e & 240) === 80 ? t[0] * t[2] < t[1] * t[3] ? 1 : -1 : 0), e & 2 ? (s[1] = (e & 102) === 66 ? t[1] * t[6] < t[2] * t[5] ? -1 : 1 : 0, s[2] = (e & 51) === 18 ? t[3] * t[6] < t[2] * t[7] ? -1 : 1 : 0, s[5] = (e & 15) === 10 ? t[4] * t[6] < t[5] * t[7] ? -1 : 1 : 0) : (s[1] = (e & 102) === 36 ? t[1] * t[6] < t[2] * t[5] ? 1 : -1 : 0, s[2] = (e & 51) === 33 ? t[3] * t[6] < t[2] * t[7] ? 1 : -1 : 0, s[5] = (e & 15) === 5 ? t[4] * t[6] < t[5] * t[7] ? 1 : -1 : 0), s[0] + s[1] + s[2] + s[3] + s[4] + s[5];
+    let t = this.v, i = this.f_test_results;
+    return i.fill(0), e & 128 ? (i[0] = (e & 204) === 132 ? t[0] * t[5] < t[1] * t[4] ? -1 : 1 : 0, i[3] = (e & 153) === 129 ? t[0] * t[7] < t[3] * t[4] ? -1 : 1 : 0, i[4] = (e & 240) === 160 ? t[0] * t[2] < t[1] * t[3] ? -1 : 1 : 0) : (i[0] = (e & 204) === 72 ? t[0] * t[5] < t[1] * t[4] ? 1 : -1 : 0, i[3] = (e & 153) === 24 ? t[0] * t[7] < t[3] * t[4] ? 1 : -1 : 0, i[4] = (e & 240) === 80 ? t[0] * t[2] < t[1] * t[3] ? 1 : -1 : 0), e & 2 ? (i[1] = (e & 102) === 66 ? t[1] * t[6] < t[2] * t[5] ? -1 : 1 : 0, i[2] = (e & 51) === 18 ? t[3] * t[6] < t[2] * t[7] ? -1 : 1 : 0, i[5] = (e & 15) === 10 ? t[4] * t[6] < t[5] * t[7] ? -1 : 1 : 0) : (i[1] = (e & 102) === 36 ? t[1] * t[6] < t[2] * t[5] ? 1 : -1 : 0, i[2] = (e & 51) === 33 ? t[3] * t[6] < t[2] * t[7] ? 1 : -1 : 0, i[5] = (e & 15) === 5 ? t[4] * t[6] < t[5] * t[7] ? 1 : -1 : 0), i[0] + i[1] + i[2] + i[3] + i[4] + i[5];
   }
   face_test1(e) {
     let t = this.v;
@@ -23261,145 +23261,145 @@ var we = class {
     }
   }
   interior_test(e, t) {
-    let s = this.v, r = 1e-9, n = s[4] - s[0], o = s[5] - s[1], a = s[6] - s[2], c = s[7] - s[3], x = n * a - o * c;
-    if (this.signbf(x)) {
+    let i = this.v, r = 1e-9, s = i[4] - i[0], o = i[5] - i[1], l = i[6] - i[2], n = i[7] - i[3], f = s * l - o * n;
+    if (this.signbf(f)) {
       if (e & 1) return 0;
-    } else if (!(e & 1) || Math.abs(x) < r) return 0;
-    let l = 0.5 * (s[3] * o + s[1] * c - s[2] * n - s[0] * a) / x;
-    if (l <= r || l >= 1 - r) return 0;
-    let u = s[0] + n * l, f = s[1] + o * l, p = s[2] + a * l, h = s[3] + c * l, d = p * u, b = h * f;
+    } else if (!(e & 1) || Math.abs(f) < r) return 0;
+    let c = 0.5 * (i[3] * o + i[1] * n - i[2] * s - i[0] * l) / f;
+    if (c <= r || c >= 1 - r) return 0;
+    let u = i[0] + s * c, p = i[1] + o * c, h = i[2] + l * c, d = i[3] + n * c, m = h * u, x = d * p;
     if (e & 1) {
-      if (d < b && !this.signbf(b)) return (this.signbf(f) === this.signbf(s[e])) + t;
-    } else if (d > b && !this.signbf(d)) return (this.signbf(u) === this.signbf(s[e])) + t;
+      if (m < x && !this.signbf(x)) return (this.signbf(p) === this.signbf(i[e])) + t;
+    } else if (m > x && !this.signbf(m)) return (this.signbf(u) === this.signbf(i[e])) + t;
     return 0;
   }
   pattern(e) {
-    let t = this.table, s = (e & 128) !== 0, r = s ? e ^ 255 : e, n = t[r];
-    if (n === void 0) throw new Error(`MC33 lookup miss: ${r}`);
-    let o = (n & 2048) !== 0, a = s ? !o : o, c = a ? e : e ^ 255, x = n & 2047, l = n >>> 12, u;
-    switch (l) {
+    let t = this.table, i = (e & 128) !== 0, r = i ? e ^ 255 : e, s = t[r];
+    if (s === void 0) throw new Error(`MC33 lookup miss: ${r}`);
+    let o = (s & 2048) !== 0, l = i ? !o : o, n = l ? e : e ^ 255, f = s & 2047, c = s >>> 12, u;
+    switch (c) {
       case 0:
-        u = x;
+        u = f;
         break;
       case 1:
-        u = c & this.face_test1(x >> 2) ? 183 + (x << 1) : 159 + x;
+        u = n & this.face_test1(f >> 2) ? 183 + (f << 1) : 159 + f;
         break;
       case 2:
-        u = this.interior_test(x, 0) ? 239 + 6 * x : 231 + (x << 1);
+        u = this.interior_test(f, 0) ? 239 + 6 * f : 231 + (f << 1);
         break;
       case 3:
-        c & this.face_test1(x % 6) ? u = 575 + 5 * x : u = this.interior_test(Math.floor(x / 6), 0) ? 407 + 7 * x : 335 + 3 * x;
+        n & this.face_test1(f % 6) ? u = 575 + 5 * f : u = this.interior_test(Math.floor(f / 6), 0) ? 407 + 7 * f : 335 + 3 * f;
         break;
       case 4: {
-        let f = this.face_tests(c);
-        f === -3 ? u = 695 + 3 * x : f === -1 ? u = (this.f_test_results[4] + this.f_test_results[5] < 0 ? this.f_test_results[0] + this.f_test_results[2] < 0 ? 759 : 799 : 719) + 5 * x : f === 1 ? u = (this.f_test_results[4] + this.f_test_results[5] < 0 ? 983 : this.f_test_results[0] + this.f_test_results[2] < 0 ? 839 : 911) + 9 * x : u = this.interior_test(x >> 1, 0) ? 1095 + 9 * x : 1055 + 5 * x;
+        let p = this.face_tests(n);
+        p === -3 ? u = 695 + 3 * f : p === -1 ? u = (this.f_test_results[4] + this.f_test_results[5] < 0 ? this.f_test_results[0] + this.f_test_results[2] < 0 ? 759 : 799 : 719) + 5 * f : p === 1 ? u = (this.f_test_results[4] + this.f_test_results[5] < 0 ? 983 : this.f_test_results[0] + this.f_test_results[2] < 0 ? 839 : 911) + 9 * f : u = this.interior_test(f >> 1, 0) ? 1095 + 9 * f : 1055 + 5 * f;
         break;
       }
       case 5: {
-        let f = this.face_tests(c);
-        f === -2 ? u = (x & 2 ? this.interior_test(0, 0) : this.interior_test(0, 0) || this.interior_test(x ? 1 : 3, 0)) ? 1213 + (x << 3) : 1189 + (x << 2) : f === 0 ? u = (this.f_test_results[2 + x] < 0 ? 1261 : 1285) + (x << 3) : u = (x & 2 ? this.interior_test(1, 0) : this.interior_test(2, 0) || this.interior_test(x ? 3 : 1, 0)) ? 1237 + (x << 3) : 1201 + (x << 2);
+        let p = this.face_tests(n);
+        p === -2 ? u = (f & 2 ? this.interior_test(0, 0) : this.interior_test(0, 0) || this.interior_test(f ? 1 : 3, 0)) ? 1213 + (f << 3) : 1189 + (f << 2) : p === 0 ? u = (this.f_test_results[2 + f] < 0 ? 1261 : 1285) + (f << 3) : u = (f & 2 ? this.interior_test(1, 0) : this.interior_test(2, 0) || this.interior_test(f ? 3 : 1, 0)) ? 1237 + (f << 3) : 1201 + (f << 2);
         break;
       }
       case 6: {
-        let f = this.face_tests(c);
-        f === -2 ? u = this.interior_test(14287116 >> (x << 1) & 3, 0) ? 1453 + (x << 3) : 1357 + (x << 2) : f === 0 ? u = (this.f_test_results[x >> 1] < 0 ? 1645 : 1741) + (x << 3) : u = this.interior_test(10991589 >> (x << 1) & 3, 0) ? 1549 + (x << 3) : 1405 + (x << 2);
+        let p = this.face_tests(n);
+        p === -2 ? u = this.interior_test(14287116 >> (f << 1) & 3, 0) ? 1453 + (f << 3) : 1357 + (f << 2) : p === 0 ? u = (this.f_test_results[f >> 1] < 0 ? 1645 : 1741) + (f << 3) : u = this.interior_test(10991589 >> (f << 1) & 3, 0) ? 1549 + (f << 3) : 1405 + (f << 2);
         break;
       }
       default: {
-        let f = Math.abs(this.face_tests(c));
-        if (f === 0) {
-          let p = (this.f_test_results[1] < 0) << 1 | this.f_test_results[5] < 0;
-          if (this.f_test_results[0] * this.f_test_results[1] === this.f_test_results[5]) u = 2157 + 12 * p;
+        let p = Math.abs(this.face_tests(n));
+        if (p === 0) {
+          let h = (this.f_test_results[1] < 0) << 1 | this.f_test_results[5] < 0;
+          if (this.f_test_results[0] * this.f_test_results[1] === this.f_test_results[5]) u = 2157 + 12 * h;
           else {
-            let h = this.interior_test(p, 1);
-            u = 2285 + (h ? 10 * p - 40 * h : 6 * p);
+            let d = this.interior_test(h, 1);
+            u = 2285 + (d ? 10 * h - 40 * d : 6 * h);
           }
-        } else if (f === 2) u = 1917 + 10 * ((this.f_test_results[0] < 0 ? this.f_test_results[2] > 0 : 12 + (this.f_test_results[2] < 0)) + (this.f_test_results[1] < 0 ? this.f_test_results[3] < 0 : 6 + (this.f_test_results[3] > 0))), this.f_test_results[4] > 0 && (u += 30);
-        else if (f === 4) {
-          let p = 21 + 11 * this.f_test_results[0] + 4 * this.f_test_results[1] + 3 * this.f_test_results[2] + 2 * this.f_test_results[3] + this.f_test_results[4];
-          p >> 4 && (p -= p & 32 ? 20 : 10), u = 1845 + 3 * p;
+        } else if (p === 2) u = 1917 + 10 * ((this.f_test_results[0] < 0 ? this.f_test_results[2] > 0 : 12 + (this.f_test_results[2] < 0)) + (this.f_test_results[1] < 0 ? this.f_test_results[3] < 0 : 6 + (this.f_test_results[3] > 0))), this.f_test_results[4] > 0 && (u += 30);
+        else if (p === 4) {
+          let h = 21 + 11 * this.f_test_results[0] + 4 * this.f_test_results[1] + 3 * this.f_test_results[2] + 2 * this.f_test_results[3] + this.f_test_results[4];
+          h >> 4 && (h -= h & 32 ? 20 : 10), u = 1845 + 3 * h;
         } else u = 1839 + 2 * this.f_test_results[0];
       }
     }
-    return { offset: u + 1, reverse: a };
+    return { offset: u + 1, reverse: l };
   }
-  triangles(e, t, s) {
+  triangles(e, t, i) {
     if (this.v = e, t === 0 || t === 255) return 0;
-    let r = this.pattern(t), n = 0;
-    for (let o = r.offset; o < p1.length; o++) {
-      let a = p1[o], c = a & 15, x = a >> 4 & 15, l = a >> 8 & 15;
-      if (c <= 12 && x <= 12 && l <= 12 && c !== x && x !== l && c !== l) {
-        if (n + 3 > s.length) throw new Error("MC33 cell exceeds output capacity");
-        s[n++] = c, s[n++] = r.reverse ? l : x, s[n++] = r.reverse ? x : l;
+    let r = this.pattern(t), s = 0;
+    for (let o = r.offset; o < Be.length; o++) {
+      let l = Be[o], n = l & 15, f = l >> 4 & 15, c = l >> 8 & 15;
+      if (n <= 12 && f <= 12 && c <= 12 && n !== f && f !== c && n !== c) {
+        if (s + 3 > i.length) throw new Error("MC33 cell exceeds output capacity");
+        i[s++] = n, i[s++] = r.reverse ? c : f, i[s++] = r.reverse ? f : c;
       }
-      if (!(a & 4096)) return n;
+      if (!(l & 4096)) return s;
     }
     throw new Error("MC33 pattern exceeds lookup table");
   }
 };
-var It = { name: "MC33", corners: Gt, edges: Ct, maxVertices: 36, table: p1, cornerBit: (i) => 128 >> i, createPolygonizer() {
-  let i = new we();
-  return i.triangles.bind(i);
+var Rr = { name: "MC33", corners: kr, edges: Tr, maxVertices: 36, table: Be, cornerBit: (a) => 128 >> a, createPolygonizer() {
+  let a = new Ft();
+  return a.triangles.bind(a);
 } };
-var Me = It;
-var Pe = {};
-F(Pe, { cartesianSampler: () => Ke, createMapper: () => j, default: () => Ft, mapPositions: () => b1, sampleField: () => m1 });
-function j(i = { type: "cartesian" }) {
-  if (i.type === "cartesian") return (n, o, a) => [n, o, a];
-  if (i.type !== "spherical" && i.type !== "cube-sphere") throw new Error(`Unknown coordinates: ${i.type}`);
-  let e = i.radius || [0.02, 0.7], t = i.center || [0.5, 0.5, 0.5];
+var Lt = Rr;
+var Vt = {};
+F(Vt, { cartesianSampler: () => Ci, createMapper: () => ne, default: () => qr, mapPositions: () => Ce, sampleField: () => Ae });
+function ne(a = { type: "cartesian" }) {
+  if (a.type === "cartesian") return (s, o, l) => [s, o, l];
+  if (a.type !== "spherical" && a.type !== "cube-sphere") throw new Error(`Unknown coordinates: ${a.type}`);
+  let e = a.radius || [0.02, 0.7], t = a.center || [0.5, 0.5, 0.5];
   if (e.length !== 2 || !e.every(Number.isFinite) || e[0] < 0 || e[1] <= e[0]) throw new Error("Radius must be an increasing, nonnegative pair");
   if (t.length !== 3 || !t.every(Number.isFinite)) throw new Error("Center must contain three finite coordinates");
-  if (i.type === "cube-sphere") {
-    if (!Number.isInteger(i.face) || i.face < 0 || i.face > 5) throw new Error("Cube-sphere face must be 0..5");
-    return (n, o, a) => {
-      let c = 2 * n - 1, x = 2 * o - 1, u = [[1, x, -c], [-1, x, c], [c, 1, -x], [c, -1, x], [c, x, 1], [-c, x, -1]][i.face], p = (e[0] + a * (e[1] - e[0])) / Math.hypot(...u);
-      return u.map((h, d) => t[d] + h * p);
+  if (a.type === "cube-sphere") {
+    if (!Number.isInteger(a.face) || a.face < 0 || a.face > 5) throw new Error("Cube-sphere face must be 0..5");
+    return (s, o, l) => {
+      let n = 2 * s - 1, f = 2 * o - 1, u = [[1, f, -n], [-1, f, n], [n, 1, -f], [n, -1, f], [n, f, 1], [-n, f, -1]][a.face], h = (e[0] + l * (e[1] - e[0])) / Math.hypot(...u);
+      return u.map((d, m) => t[m] + d * h);
     };
   }
-  let s = i.longitude || [-Math.PI, Math.PI], r = i.latitude || [-Math.PI / 2, Math.PI / 2];
-  for (let n of [s, r]) if (n.length !== 2 || !n.every(Number.isFinite) || n[1] <= n[0]) throw new Error("Angular ranges must be increasing finite pairs in radians");
-  if (r[0] < -Math.PI / 2 || r[1] > Math.PI / 2 || s[1] - s[0] > 2 * Math.PI + 1e-9) throw new Error("Latitude must be within \xB1pi/2 and longitude span at most 2*pi");
-  return (n, o, a) => {
-    let c = s[0] + n * (s[1] - s[0]), x = r[0] + o * (r[1] - r[0]), l = e[0] + a * (e[1] - e[0]), u = l * Math.cos(x);
-    return Math.abs(Math.cos(x)) < 1e-15 ? [t[0], t[1] + l * Math.sin(x), t[2]] : [t[0] + u * Math.cos(c), t[1] + l * Math.sin(x), t[2] + u * Math.sin(c)];
+  let i = a.longitude || [-Math.PI, Math.PI], r = a.latitude || [-Math.PI / 2, Math.PI / 2];
+  for (let s of [i, r]) if (s.length !== 2 || !s.every(Number.isFinite) || s[1] <= s[0]) throw new Error("Angular ranges must be increasing finite pairs in radians");
+  if (r[0] < -Math.PI / 2 || r[1] > Math.PI / 2 || i[1] - i[0] > 2 * Math.PI + 1e-9) throw new Error("Latitude must be within \xB1pi/2 and longitude span at most 2*pi");
+  return (s, o, l) => {
+    let n = i[0] + s * (i[1] - i[0]), f = r[0] + o * (r[1] - r[0]), c = e[0] + l * (e[1] - e[0]), u = c * Math.cos(f);
+    return Math.abs(Math.cos(f)) < 1e-15 ? [t[0], t[1] + c * Math.sin(f), t[2]] : [t[0] + u * Math.cos(n), t[1] + c * Math.sin(f), t[2] + u * Math.sin(n)];
   };
 }
-function b1(i, e) {
-  if (!e || e.type === "cartesian") return i;
-  let t = j(e);
-  for (let s = 0; s < i.length; s += 3) {
-    let r = t(i[s], i[s + 1], i[s + 2]);
-    i[s] = r[0], i[s + 1] = r[1], i[s + 2] = r[2];
+function Ce(a, e) {
+  if (!e || e.type === "cartesian") return a;
+  let t = ne(e);
+  for (let i = 0; i < a.length; i += 3) {
+    let r = t(a[i], a[i + 1], a[i + 2]);
+    a[i] = r[0], a[i + 1] = r[1], a[i + 2] = r[2];
   }
-  return i;
+  return a;
 }
-function m1(i, e, t) {
-  let s = j(t), r = new Float32Array(i.x * i.y * i.z), n = t?.type === "spherical" && Math.abs((t.longitude || [-Math.PI, Math.PI])[1] - (t.longitude || [-Math.PI, Math.PI])[0] - 2 * Math.PI) < 1e-9;
-  for (let o = 0; o < i.z; o++) for (let a = 0; a < i.y; a++) for (let c = 0; c < i.x; c++) {
-    let x = (o * i.y + a) * i.x + c;
-    if (n && c === i.x - 1) {
-      r[x] = r[(o * i.y + a) * i.x];
+function Ae(a, e, t) {
+  let i = ne(t), r = new Float32Array(a.x * a.y * a.z), s = t?.type === "spherical" && Math.abs((t.longitude || [-Math.PI, Math.PI])[1] - (t.longitude || [-Math.PI, Math.PI])[0] - 2 * Math.PI) < 1e-9;
+  for (let o = 0; o < a.z; o++) for (let l = 0; l < a.y; l++) for (let n = 0; n < a.x; n++) {
+    let f = (o * a.y + l) * a.x + n;
+    if (s && n === a.x - 1) {
+      r[f] = r[(o * a.y + l) * a.x];
       continue;
     }
-    let l = s(c / (i.x - 1), a / (i.y - 1), o / (i.z - 1));
-    r[x] = e(...l);
+    let c = i(n / (a.x - 1), l / (a.y - 1), o / (a.z - 1));
+    r[f] = e(...c);
   }
   return r;
 }
-function Ke(i, e) {
-  return (t, s, r) => {
-    if (t < 0 || t > 1 || s < 0 || s > 1 || r < 0 || r > 1) return 0;
-    let n = [t * (e.x - 1), s * (e.y - 1), r * (e.z - 1)], o = n.map(Math.floor), a = n.map((x, l) => x - o[l]), c = 0;
-    for (let x = 0; x < 2; x++) for (let l = 0; l < 2; l++) for (let u = 0; u < 2; u++) {
-      let f = Math.min(o[0] + u, e.x - 1), p = Math.min(o[1] + l, e.y - 1), h = Math.min(o[2] + x, e.z - 1);
-      c += i[(h * e.y + p) * e.x + f] * (u ? a[0] : 1 - a[0]) * (l ? a[1] : 1 - a[1]) * (x ? a[2] : 1 - a[2]);
+function Ci(a, e) {
+  return (t, i, r) => {
+    if (t < 0 || t > 1 || i < 0 || i > 1 || r < 0 || r > 1) return 0;
+    let s = [t * (e.x - 1), i * (e.y - 1), r * (e.z - 1)], o = s.map(Math.floor), l = s.map((f, c) => f - o[c]), n = 0;
+    for (let f = 0; f < 2; f++) for (let c = 0; c < 2; c++) for (let u = 0; u < 2; u++) {
+      let p = Math.min(o[0] + u, e.x - 1), h = Math.min(o[1] + c, e.y - 1), d = Math.min(o[2] + f, e.z - 1);
+      n += a[(d * e.y + h) * e.x + p] * (u ? l[0] : 1 - l[0]) * (c ? l[1] : 1 - l[1]) * (f ? l[2] : 1 - l[2]);
     }
-    return c;
+    return n;
   };
 }
-var Ft = { createMapper: j, mapPositions: b1, sampleField: m1, cartesianSampler: Ke };
-var Ze = `struct Uniforms {
+var qr = { createMapper: ne, mapPositions: Ce, sampleField: Ae, cartesianSampler: Ci };
+var Ai = `struct Uniforms {
   isolevel: f32, dx: f32, dy: f32, dz: f32,
   gx: u32, gy: u32, gz: u32, zBase: f32,
 };
@@ -23410,7 +23410,7 @@ var Ze = `struct Uniforms {
 @group(0) @binding(4) var<storage, read_write> counter: atomic<u32>;
 struct TriangleCodes { count: u32, codes: array<vec3<u32>, 12> }
 `;
-var Je = `struct CubeVals {
+var ki = `struct CubeVals {
   v0: f32,
   v1: f32,
   v2: f32,
@@ -23751,7 +23751,7 @@ fn get_face_result(ft: FaceTests, idx: u32) -> i32 {
   }
 }
 `;
-var et = `fn cell_triangles(v: CubeVals, mask: u32) -> TriangleCodes {
+var Ti = `fn cell_triangles(v: CubeVals, mask: u32) -> TriangleCodes {
   let info = pattern_info(mask, v);
   var pcase = info.pcase;
   var result: TriangleCodes;
@@ -23771,7 +23771,7 @@ var et = `fn cell_triangles(v: CubeVals, mask: u32) -> TriangleCodes {
   return result;
 }
 `;
-var tt = `struct CubeVals { v0: f32, v1: f32, v2: f32, v3: f32, v4: f32, v5: f32, v6: f32, v7: f32 }
+var Ri = `struct CubeVals { v0: f32, v1: f32, v2: f32, v3: f32, v4: f32, v5: f32, v6: f32, v7: f32 }
 fn corner_offset(c: u32) -> vec3<u32> {
   var offsets = array<vec3<u32>, 8>(vec3<u32>(0,0,0),vec3<u32>(1,0,0),vec3<u32>(1,1,0),vec3<u32>(0,1,0),vec3<u32>(0,0,1),vec3<u32>(1,0,1),vec3<u32>(1,1,1),vec3<u32>(0,1,1));
   return offsets[c];
@@ -23797,7 +23797,7 @@ fn cell_triangles(v: CubeVals, mask: u32) -> TriangleCodes {
   return result;
 }
 `;
-var st = `fn sample_corner(cell: vec3<u32>, c: u32) -> f32 {
+var qi = `fn sample_corner(cell: vec3<u32>, c: u32) -> f32 {
   let p = cell + corner_offset(c);
   return field[(p.z * uni.gy + p.y) * uni.gx + p.x] - uni.isolevel;
 }
@@ -23831,208 +23831,208 @@ fn cs(@builtin(global_invocation_id) cell: vec3<u32>) {
   }
 }
 `;
-var V = { bourke: ye, mc33: Me };
-function it(i, e, t, s) {
-  let r = V[s];
-  if (!r) throw new Error(`Unknown marching cubes algorithm: ${s}`);
-  if (!["x", "y", "z"].every((n) => Number.isInteger(e[n]) && e[n] >= 2)) throw new Error("Grid dimensions must be integers of at least 2");
-  if (!(i instanceof Float32Array) || i.length !== e.x * e.y * e.z) throw new Error("Expected a Float32Array with x*y*z samples, indexed as (z*y + y)*x + x");
+var ee = { bourke: It, mc33: Lt };
+function Ei(a, e, t, i) {
+  let r = ee[i];
+  if (!r) throw new Error(`Unknown marching cubes algorithm: ${i}`);
+  if (!["x", "y", "z"].every((s) => Number.isInteger(e[s]) && e[s] >= 2)) throw new Error("Grid dimensions must be integers of at least 2");
+  if (!(a instanceof Float32Array) || a.length !== e.x * e.y * e.z) throw new Error("Expected a Float32Array with x*y*z samples, indexed as (z*y + y)*x + x");
   if (!Number.isFinite(t)) throw new Error("Isolevel must be finite");
-  for (let n of i) if (!Number.isFinite(n) || !Number.isFinite(Math.fround(n - t))) throw new Error("Field samples and their differences from the isolevel must be finite f32 values");
+  for (let s of a) if (!Number.isFinite(s) || !Number.isFinite(Math.fround(s - t))) throw new Error("Field samples and their differences from the isolevel must be finite f32 values");
   return r;
 }
-function q(i, e, t = 0, s = "bourke", r = {}) {
-  t = Math.fround(t), r.coordinates && j(r.coordinates);
-  let n = it(i, e, t, s), { x: o, y: a, z: c } = e, x = n.createPolygonizer(), l = new Float32Array(8), u = new Uint8Array(n.maxVertices), f = new Float32Array(39), p = new Float32Array(65536), h = 0;
-  for (let d = 0; d < c - 1; d++) for (let b = 0; b < a - 1; b++) for (let m = 0; m < o - 1; m++) {
-    let v = 0;
-    for (let y = 0; y < 8; y++) {
-      let w = n.corners[y];
-      l[y] = i[((d + w[2]) * a + b + w[1]) * o + m + w[0]] - t, l[y] < 0 && (v |= n.cornerBit(y));
+function te(a, e, t = 0, i = "bourke", r = {}) {
+  t = Math.fround(t), r.coordinates && ne(r.coordinates);
+  let s = Ei(a, e, t, i), { x: o, y: l, z: n } = e, f = s.createPolygonizer(), c = new Float32Array(8), u = new Uint8Array(s.maxVertices), p = new Float32Array(39), h = new Float32Array(65536), d = 0;
+  for (let m = 0; m < n - 1; m++) for (let x = 0; x < l - 1; x++) for (let v = 0; v < o - 1; v++) {
+    let g = 0;
+    for (let b = 0; b < 8; b++) {
+      let z = s.corners[b];
+      c[b] = a[((m + z[2]) * l + x + z[1]) * o + v + z[0]] - t, c[b] < 0 && (g |= s.cornerBit(b));
     }
-    if (v === 0 || v === 255) continue;
-    let g = x(l, v, u);
-    if (h + g * 3 > p.length) {
-      let y = new Float32Array(Math.max(p.length * 2, h + g * 3));
-      y.set(p), p = y;
+    if (g === 0 || g === 255) continue;
+    let y = f(c, g, u);
+    if (d + y * 3 > h.length) {
+      let b = new Float32Array(Math.max(h.length * 2, d + y * 3));
+      b.set(h), h = b;
     }
-    for (let y = 0; y < 12; y++) {
-      let [w, M] = n.edges[y];
-      if (l[w] < 0 == l[M] < 0) continue;
-      let P = l[w] - l[M], _ = Math.abs(P) < 1e-9 ? 0.5 : Math.max(0, Math.min(1, l[w] / P)), k = n.corners[w], S = n.corners[M];
-      f[y * 3] = (m + k[0] + _ * (S[0] - k[0])) / (o - 1), f[y * 3 + 1] = (b + k[1] + _ * (S[1] - k[1])) / (a - 1), f[y * 3 + 2] = (d + k[2] + _ * (S[2] - k[2])) / (c - 1);
+    for (let b = 0; b < 12; b++) {
+      let [z, w] = s.edges[b];
+      if (c[z] < 0 == c[w] < 0) continue;
+      let P = c[z] - c[w], _ = Math.abs(P) < 1e-9 ? 0.5 : Math.max(0, Math.min(1, c[z] / P)), S = s.corners[z], D = s.corners[w];
+      p[b * 3] = (v + S[0] + _ * (D[0] - S[0])) / (o - 1), p[b * 3 + 1] = (x + S[1] + _ * (D[1] - S[1])) / (l - 1), p[b * 3 + 2] = (m + S[2] + _ * (D[2] - S[2])) / (n - 1);
     }
-    f[36] = (m + 0.5) / (o - 1), f[37] = (b + 0.5) / (a - 1), f[38] = (d + 0.5) / (c - 1);
-    for (let y = 0; y < g; y++) {
-      let w = u[y] * 3;
-      p[h++] = f[w], p[h++] = f[w + 1], p[h++] = f[w + 2];
+    p[36] = (v + 0.5) / (o - 1), p[37] = (x + 0.5) / (l - 1), p[38] = (m + 0.5) / (n - 1);
+    for (let b = 0; b < y; b++) {
+      let z = u[b] * 3;
+      h[d++] = p[z], h[d++] = p[z + 1], h[d++] = p[z + 2];
     }
   }
-  return b1(p.slice(0, h), r.coordinates);
+  return Ce(h.slice(0, d), r.coordinates);
 }
-function L1(i) {
-  if (!V[i]) throw new Error(`Unknown marching cubes algorithm: ${i}`);
-  let e = i === "mc33" ? Je + et : tt;
-  return Ze + e + st;
+function et(a) {
+  if (!ee[a]) throw new Error(`Unknown marching cubes algorithm: ${a}`);
+  let e = a === "mc33" ? ki + Ti : Ri;
+  return Ai + e + qi;
 }
-var O1 = /* @__PURE__ */ new WeakMap();
-async function Vt(i, e) {
-  let t = O1.get(i);
-  if (t || (t = /* @__PURE__ */ new Map(), O1.set(i, t)), !t.has(e)) {
-    let s = (async () => {
-      let r = i.createShaderModule({ code: L1(e), label: `${e} marching cubes` }), o = (await r.getCompilationInfo()).messages.filter((x) => x.type === "error");
-      if (o.length) throw new Error(o.map((x) => `${x.lineNum}: ${x.message}`).join(`
+var Je = /* @__PURE__ */ new WeakMap();
+async function Fr(a, e) {
+  let t = Je.get(a);
+  if (t || (t = /* @__PURE__ */ new Map(), Je.set(a, t)), !t.has(e)) {
+    let i = (async () => {
+      let r = a.createShaderModule({ code: et(e), label: `${e} marching cubes` }), o = (await r.getCompilationInfo()).messages.filter((f) => f.type === "error");
+      if (o.length) throw new Error(o.map((f) => `${f.lineNum}: ${f.message}`).join(`
 `));
-      let a = await i.createComputePipelineAsync({ layout: "auto", compute: { module: r, entryPoint: "cs" } }), c = R1(i, V[e].table, GPUBufferUsage.STORAGE);
-      return { pipeline: a, table: c };
+      let l = await a.createComputePipelineAsync({ layout: "auto", compute: { module: r, entryPoint: "cs" } }), n = Qe(a, ee[e].table, GPUBufferUsage.STORAGE);
+      return { pipeline: l, table: n };
     })();
-    t.set(e, s), s.catch(() => t.delete(e));
+    t.set(e, i), i.catch(() => t.delete(e));
   }
   return t.get(e);
 }
-function R1(i, e, t) {
-  let s = i.createBuffer({ size: e.byteLength, usage: t, mappedAtCreation: true });
-  return new Uint8Array(s.getMappedRange()).set(new Uint8Array(e.buffer, e.byteOffset, e.byteLength)), s.unmap(), s;
+function Qe(a, e, t) {
+  let i = a.createBuffer({ size: e.byteLength, usage: t, mappedAtCreation: true });
+  return new Uint8Array(i.getMappedRange()).set(new Uint8Array(e.buffer, e.byteOffset, e.byteLength)), i.unmap(), i;
 }
-function N1(i, e, t) {
-  let s = Math.min(t.maxBufferSize, t.maxStorageBufferBindingSize), r = Math.floor(s / (i.x * i.y * 4)), n = Math.floor(s / ((i.x - 1) * (i.y - 1) * e.maxVertices * 16)), o = t.maxComputeWorkgroupsPerDimension * 4, a = Math.min(i.z, r, n + 1, o + 1);
-  if (a < 2 || i.x - 1 > o || i.y - 1 > o) throw new Error("Grid XY plane exceeds GPU limits; reduce the grid dimensions");
-  return a;
+function tt(a, e, t) {
+  let i = Math.min(t.maxBufferSize, t.maxStorageBufferBindingSize), r = Math.floor(i / (a.x * a.y * 4)), s = Math.floor(i / ((a.x - 1) * (a.y - 1) * e.maxVertices * 16)), o = t.maxComputeWorkgroupsPerDimension * 4, l = Math.min(a.z, r, s + 1, o + 1);
+  if (l < 2 || a.x - 1 > o || a.y - 1 > o) throw new Error("Grid XY plane exceeds GPU limits; reduce the grid dimensions");
+  return l;
 }
-async function K(i, e, t, s = 0, r = "bourke", n = {}) {
-  s = Math.fround(s), n.coordinates && j(n.coordinates);
-  let o = it(e, t, s, r), { x: a, y: c, z: x } = t, l = N1(t, o, i.limits);
-  if (n.brickDepth !== void 0) {
-    if (!Number.isInteger(n.brickDepth) || n.brickDepth < 2) throw new Error("Brick depth must be at least 2");
-    l = Math.min(l, n.brickDepth);
+async function de(a, e, t, i = 0, r = "bourke", s = {}) {
+  i = Math.fround(i), s.coordinates && ne(s.coordinates);
+  let o = Ei(e, t, i, r), { x: l, y: n, z: f } = t, c = tt(t, o, a.limits);
+  if (s.brickDepth !== void 0) {
+    if (!Number.isInteger(s.brickDepth) || s.brickDepth < 2) throw new Error("Brick depth must be at least 2");
+    c = Math.min(c, s.brickDepth);
   }
-  let { pipeline: u, table: f } = await Vt(i, r), p = [], h = 0;
-  for (let m = 0; m < x - 1; m += l - 1) {
-    let v = Math.min(l, x - m), g = [], y = (w) => (g.push(w), w);
+  let { pipeline: u, table: p } = await Fr(a, r), h = [], d = 0;
+  for (let v = 0; v < f - 1; v += c - 1) {
+    let g = Math.min(c, f - v), y = [], b = (z) => (y.push(z), z);
     try {
-      let w = e.subarray(m * a * c, (m + v) * a * c), M = y(R1(i, w, GPUBufferUsage.STORAGE)), P = (a - 1) * (c - 1) * (v - 1) * o.maxVertices, _ = y(i.createBuffer({ size: P * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC })), k = y(R1(i, new Uint32Array([0]), GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC)), S = new Uint32Array(8), B = new Float32Array(S.buffer);
-      B.set([s, 1 / (a - 1), 1 / (c - 1), 1 / (x - 1)]), S.set([a, c, v], 4), B[7] = m / (x - 1);
-      let z = y(R1(i, S, GPUBufferUsage.UNIFORM)), E = i.createBindGroup({ layout: u.getBindGroupLayout(0), entries: [z, M, f, _, k].map((N, F1) => ({ binding: F1, resource: { buffer: N } })) }), U = y(i.createBuffer({ size: 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ })), G = i.createCommandEncoder(), A = G.beginComputePass();
-      A.setPipeline(u), A.setBindGroup(0, E), A.dispatchWorkgroups(Math.ceil((a - 1) / 4), Math.ceil((c - 1) / 4), Math.ceil((v - 1) / 4)), A.end(), G.copyBufferToBuffer(k, 0, U, 0, 4), i.queue.submit([G.finish()]), await U.mapAsync(GPUMapMode.READ);
-      let T = new Uint32Array(U.getMappedRange())[0];
-      if (U.unmap(), T > P || T % 3 !== 0) throw new Error("Invalid GPU vertex count");
-      if (T) {
-        let N = y(i.createBuffer({ size: T * 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ })), F1 = i.createCommandEncoder();
-        F1.copyBufferToBuffer(_, 0, N, 0, T * 16), i.queue.submit([F1.finish()]), await N.mapAsync(GPUMapMode.READ);
-        let D1 = new Float32Array(N.getMappedRange()), h1 = new Float32Array(T * 3);
-        for (let d1 = 0, ge = 0; d1 < D1.length; d1 += 4) h1[ge++] = D1[d1], h1[ge++] = D1[d1 + 1], h1[ge++] = D1[d1 + 2];
-        N.unmap(), p.push(h1), h += h1.length;
+      let z = e.subarray(v * l * n, (v + g) * l * n), w = b(Qe(a, z, GPUBufferUsage.STORAGE)), P = (l - 1) * (n - 1) * (g - 1) * o.maxVertices, _ = b(a.createBuffer({ size: P * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC })), S = b(Qe(a, new Uint32Array([0]), GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC)), D = new Uint32Array(8), C = new Float32Array(D.buffer);
+      C.set([i, 1 / (l - 1), 1 / (n - 1), 1 / (f - 1)]), D.set([l, n, g], 4), C[7] = v / (f - 1);
+      let M = b(Qe(a, D, GPUBufferUsage.UNIFORM)), B = a.createBindGroup({ layout: u.getBindGroupLayout(0), entries: [M, w, p, _, S].map((N, I) => ({ binding: I, resource: { buffer: N } })) }), A = b(a.createBuffer({ size: 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ })), k = a.createCommandEncoder(), T = k.beginComputePass();
+      T.setPipeline(u), T.setBindGroup(0, B), T.dispatchWorkgroups(Math.ceil((l - 1) / 4), Math.ceil((n - 1) / 4), Math.ceil((g - 1) / 4)), T.end(), k.copyBufferToBuffer(S, 0, A, 0, 4), a.queue.submit([k.finish()]), await A.mapAsync(GPUMapMode.READ);
+      let R = new Uint32Array(A.getMappedRange())[0];
+      if (A.unmap(), R > P || R % 3 !== 0) throw new Error("Invalid GPU vertex count");
+      if (R) {
+        let N = b(a.createBuffer({ size: R * 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ })), I = a.createCommandEncoder();
+        I.copyBufferToBuffer(_, 0, N, 0, R * 16), a.queue.submit([I.finish()]), await N.mapAsync(GPUMapMode.READ);
+        let q = new Float32Array(N.getMappedRange()), E = new Float32Array(R * 3);
+        for (let U = 0, G = 0; U < q.length; U += 4) E[G++] = q[U], E[G++] = q[U + 1], E[G++] = q[U + 2];
+        N.unmap(), h.push(E), d += E.length;
       }
     } finally {
-      for (let w of g) w.destroy();
+      for (let z of y) z.destroy();
     }
   }
-  let d = new Float32Array(h), b = 0;
-  for (let m of p) d.set(m, b), b += m.length;
-  return b1(d, n.coordinates);
+  let m = new Float32Array(d), x = 0;
+  for (let v of h) m.set(v, x), x += v.length;
+  return Ce(m, s.coordinates);
 }
-async function v1(i) {
-  let e = O1.get(i);
+async function ke(a) {
+  let e = Je.get(a);
   if (!e) return;
   let t = await Promise.allSettled(e.values());
-  for (let s of t) s.status === "fulfilled" && s.value.table.destroy();
-  O1.delete(i);
+  for (let i of t) i.status === "fulfilled" && i.value.table.destroy();
+  Je.delete(a);
 }
-var qt = { extractCPU: q, extractGPU: K, createShader: L1, disposeGPU: v1, algorithms: V, brickDepthForLimits: N1 };
-var at = {};
-F(at, { createScalarField: () => nt, default: () => Wt, fitSphere: () => q1, generateSpherePoints: () => rt, refineSphereSurface: () => j1, sphereSampler: () => $1, sphereSurfaces: () => W1 });
-function rt(i, e, t) {
-  let s = new Float32Array(i * 3), r = e.x, n = e.y, o = e.z;
-  for (let a = 0, c = 0; a < i; ++a, c += 3) {
-    let x = Math.random(), l = Math.random(), u = 2 * Math.PI * x, f = Math.acos(2 * l - 1), p = Math.sin(f);
-    s[c] = r + t * p * Math.cos(u), s[c + 1] = n + t * p * Math.sin(u), s[c + 2] = o + t * Math.cos(f);
+var Lr = { extractCPU: te, extractGPU: de, createShader: et, disposeGPU: ke, algorithms: ee, brickDepthForLimits: tt };
+var Gi = {};
+F(Gi, { createScalarField: () => Ni, default: () => Vr, fitSphere: () => rt, generateSpherePoints: () => Ui, refineSphereSurface: () => ot, sphereSampler: () => st, sphereSurfaces: () => at });
+function Ui(a, e, t) {
+  let i = new Float32Array(a * 3), r = e.x, s = e.y, o = e.z;
+  for (let l = 0, n = 0; l < a; ++l, n += 3) {
+    let f = Math.random(), c = Math.random(), u = 2 * Math.PI * f, p = Math.acos(2 * c - 1), h = Math.sin(p);
+    i[n] = r + t * h * Math.cos(u), i[n + 1] = s + t * h * Math.sin(u), i[n + 2] = o + t * Math.cos(p);
   }
-  return s;
+  return i;
 }
-function nt(i, e, t, s = 1e-4) {
-  let r = e.x, n = e.y, o = e.z, a = 1 / (r - 1), c = 1 / (n - 1), x = 1 / (o - 1), l = new Float32Array(r * n * o), u = (b, m, v) => v * (r * n) + m * r + b, f = Math.sqrt(-Math.log(s) / t), p = a, h = c, d = x;
-  for (let b = 0; b < i.length; b += 3) {
-    let m = i[b], v = i[b + 1], g = i[b + 2], y = Math.max(0, Math.floor((m - f) / p)), w = Math.min(r - 1, Math.ceil((m + f) / p)), M = Math.max(0, Math.floor((v - f) / h)), P = Math.min(n - 1, Math.ceil((v + f) / h)), _ = Math.max(0, Math.floor((g - f) / d)), k = Math.min(o - 1, Math.ceil((g + f) / d));
-    for (let S = y; S <= w; ++S) {
-      let B = S * a - m;
-      for (let z = M; z <= P; ++z) {
-        let E = z * c - v;
-        for (let U = _; U <= k; ++U) {
-          let G = U * x - g, A = B * B + E * E + G * G;
-          l[u(S, z, U)] += Math.exp(-t * A);
+function Ni(a, e, t, i = 1e-4) {
+  let r = e.x, s = e.y, o = e.z, l = 1 / (r - 1), n = 1 / (s - 1), f = 1 / (o - 1), c = new Float32Array(r * s * o), u = (x, v, g) => g * (r * s) + v * r + x, p = Math.sqrt(-Math.log(i) / t), h = l, d = n, m = f;
+  for (let x = 0; x < a.length; x += 3) {
+    let v = a[x], g = a[x + 1], y = a[x + 2], b = Math.max(0, Math.floor((v - p) / h)), z = Math.min(r - 1, Math.ceil((v + p) / h)), w = Math.max(0, Math.floor((g - p) / d)), P = Math.min(s - 1, Math.ceil((g + p) / d)), _ = Math.max(0, Math.floor((y - p) / m)), S = Math.min(o - 1, Math.ceil((y + p) / m));
+    for (let D = b; D <= z; ++D) {
+      let C = D * l - v;
+      for (let M = w; M <= P; ++M) {
+        let B = M * n - g;
+        for (let A = _; A <= S; ++A) {
+          let k = A * f - y, T = C * C + B * B + k * k;
+          c[u(D, M, A)] += Math.exp(-t * T);
         }
       }
     }
   }
-  return { data: l, idx: u };
+  return { data: c, idx: u };
 }
-function q1(i) {
-  if (i.length < 12 || i.length % 3) throw new Error("A sphere fit needs at least four xyz points");
-  let e = [0, 0, 0], t = i.length / 3;
-  for (let l = 0; l < i.length; l++) {
-    if (!Number.isFinite(i[l])) throw new Error("Sphere points must be finite");
-    e[l % 3] += i[l] / t;
+function rt(a) {
+  if (a.length < 12 || a.length % 3) throw new Error("A sphere fit needs at least four xyz points");
+  let e = [0, 0, 0], t = a.length / 3;
+  for (let c = 0; c < a.length; c++) {
+    if (!Number.isFinite(a[c])) throw new Error("Sphere points must be finite");
+    e[c % 3] += a[c] / t;
   }
-  let s = Array.from({ length: 4 }, () => new Float64Array(5));
-  for (let l = 0; l < i.length; l += 3) {
-    let u = [i[l] - e[0], i[l + 1] - e[1], i[l + 2] - e[2]], f = [2 * u[0], 2 * u[1], 2 * u[2], 1], p = u.reduce((h, d) => h + d * d, 0);
-    for (let h = 0; h < 4; h++) {
-      for (let d = 0; d < 4; d++) s[h][d] += f[h] * f[d];
-      s[h][4] += f[h] * p;
+  let i = Array.from({ length: 4 }, () => new Float64Array(5));
+  for (let c = 0; c < a.length; c += 3) {
+    let u = [a[c] - e[0], a[c + 1] - e[1], a[c + 2] - e[2]], p = [2 * u[0], 2 * u[1], 2 * u[2], 1], h = u.reduce((d, m) => d + m * m, 0);
+    for (let d = 0; d < 4; d++) {
+      for (let m = 0; m < 4; m++) i[d][m] += p[d] * p[m];
+      i[d][4] += p[d] * h;
     }
   }
-  let r = Math.max(...s.map((l) => Math.max(...l.slice(0, 4))));
-  for (let l = 0; l < 4; l++) {
-    let u = l;
-    for (let p = l + 1; p < 4; p++) Math.abs(s[p][l]) > Math.abs(s[u][l]) && (u = p);
-    if (Math.abs(s[u][l]) < r * 1e-12) throw new Error("Sphere points must span three dimensions");
-    [s[l], s[u]] = [s[u], s[l]];
-    let f = s[l][l];
-    for (let p = l; p < 5; p++) s[l][p] /= f;
-    for (let p = 0; p < 4; p++) if (p !== l) {
-      let h = s[p][l];
-      for (let d = l; d < 5; d++) s[p][d] -= h * s[l][d];
+  let r = Math.max(...i.map((c) => Math.max(...c.slice(0, 4))));
+  for (let c = 0; c < 4; c++) {
+    let u = c;
+    for (let h = c + 1; h < 4; h++) Math.abs(i[h][c]) > Math.abs(i[u][c]) && (u = h);
+    if (Math.abs(i[u][c]) < r * 1e-12) throw new Error("Sphere points must span three dimensions");
+    [i[c], i[u]] = [i[u], i[c]];
+    let p = i[c][c];
+    for (let h = c; h < 5; h++) i[c][h] /= p;
+    for (let h = 0; h < 4; h++) if (h !== c) {
+      let d = i[h][c];
+      for (let m = c; m < 5; m++) i[h][m] -= d * i[c][m];
     }
   }
-  let n = s.slice(0, 3).map((l) => l[4]), o = e.map((l, u) => l + n[u]), a = Math.sqrt(s[3][4] + n.reduce((l, u) => l + u * u, 0));
-  if (!Number.isFinite(a) || a <= 0) throw new Error("Sphere fit has no positive radius");
-  let c = 0, x = 0;
-  for (let l = 0; l < i.length; l += 3) {
-    let u = Math.abs(Math.hypot(i[l] - o[0], i[l + 1] - o[1], i[l + 2] - o[2]) - a);
-    c += u * u, x = Math.max(x, u);
+  let s = i.slice(0, 3).map((c) => c[4]), o = e.map((c, u) => c + s[u]), l = Math.sqrt(i[3][4] + s.reduce((c, u) => c + u * u, 0));
+  if (!Number.isFinite(l) || l <= 0) throw new Error("Sphere fit has no positive radius");
+  let n = 0, f = 0;
+  for (let c = 0; c < a.length; c += 3) {
+    let u = Math.abs(Math.hypot(a[c] - o[0], a[c + 1] - o[1], a[c + 2] - o[2]) - l);
+    n += u * u, f = Math.max(f, u);
   }
-  return { center: o, radius: a, rmsError: Math.sqrt(c / t), maxError: x };
+  return { center: o, radius: l, rmsError: Math.sqrt(n / t), maxError: f };
 }
-function W1(i, e = "outer", t = 4e-3, s = 0) {
+function at(a, e = "outer", t = 4e-3, i = 0) {
   if (!["outer", "inner", "both"].includes(e)) throw new Error("Choose outer, inner or both surfaces");
-  if (!Number.isFinite(s) || !Number.isFinite(t) || t <= 0) throw new Error("Use a finite offset and positive shell thickness");
-  let r = i.radius + s, n = r - t;
-  if (r <= 0 || n <= 0) throw new Error("Shell thickness must be smaller than the sphere radius plus offset");
-  return [{ side: "outer", radius: r, iso: s }, { side: "inner", radius: n, iso: s - t }].filter((a) => e === "both" || a.side === e);
+  if (!Number.isFinite(i) || !Number.isFinite(t) || t <= 0) throw new Error("Use a finite offset and positive shell thickness");
+  let r = a.radius + i, s = r - t;
+  if (r <= 0 || s <= 0) throw new Error("Shell thickness must be smaller than the sphere radius plus offset");
+  return [{ side: "outer", radius: r, iso: i }, { side: "inner", radius: s, iso: i - t }].filter((l) => e === "both" || l.side === e);
 }
-function $1(i) {
-  return (e, t, s) => Math.hypot(e - i.center[0], t - i.center[1], s - i.center[2]) - i.radius;
+function st(a) {
+  return (e, t, i) => Math.hypot(e - a.center[0], t - a.center[1], i - a.center[2]) - a.radius;
 }
-function j1(i, e, t) {
-  let s = new Float32Array(i.length), r = new Float32Array(i.length), n = 0, o = t.side === "inner" ? -1 : 1;
-  for (let a = 0; a < i.length; a += 9) {
-    let c = [], x = [];
-    for (let d = 0; d < 3; d++) {
-      let b = [0, 1, 2].map((v) => i[a + d * 3 + v] - e.center[v]), m = Math.hypot(...b);
-      if (!Number.isFinite(m) || m === 0) throw new Error("Invalid sphere vertex");
-      c.push(b.map((v, g) => e.center[g] + v / m * t.radius)), x.push(b.map((v) => v / m * o));
+function ot(a, e, t) {
+  let i = new Float32Array(a.length), r = new Float32Array(a.length), s = 0, o = t.side === "inner" ? -1 : 1;
+  for (let l = 0; l < a.length; l += 9) {
+    let n = [], f = [];
+    for (let m = 0; m < 3; m++) {
+      let x = [0, 1, 2].map((g) => a[l + m * 3 + g] - e.center[g]), v = Math.hypot(...x);
+      if (!Number.isFinite(v) || v === 0) throw new Error("Invalid sphere vertex");
+      n.push(x.map((g, y) => e.center[y] + g / v * t.radius)), f.push(x.map((g) => g / v * o));
     }
-    let l = c[1].map((d, b) => d - c[0][b]), u = c[2].map((d, b) => d - c[0][b]), f = [l[1] * u[2] - l[2] * u[1], l[2] * u[0] - l[0] * u[2], l[0] * u[1] - l[1] * u[0]];
-    if (Math.hypot(...f) < t.radius * t.radius * 1e-12) continue;
-    let h = f.reduce((d, b, m) => d + b * x[0][m], 0) < 0 ? [0, 2, 1] : [0, 1, 2];
-    for (let d of h) s.set(c[d], n), r.set(x[d], n), n += 3;
+    let c = n[1].map((m, x) => m - n[0][x]), u = n[2].map((m, x) => m - n[0][x]), p = [c[1] * u[2] - c[2] * u[1], c[2] * u[0] - c[0] * u[2], c[0] * u[1] - c[1] * u[0]];
+    if (Math.hypot(...p) < t.radius * t.radius * 1e-12) continue;
+    let d = p.reduce((m, x, v) => m + x * f[0][v], 0) < 0 ? [0, 2, 1] : [0, 1, 2];
+    for (let m of d) i.set(n[m], s), r.set(f[m], s), s += 3;
   }
-  return { positions: s.slice(0, n), normals: r.slice(0, n) };
+  return { positions: i.slice(0, s), normals: r.slice(0, s) };
 }
-var Wt = { generateSpherePoints: rt, createScalarField: nt, fitSphere: q1, sphereSurfaces: W1, sphereSampler: $1, refineSphereSurface: j1 };
-var W = {};
-F(W, { bounds: () => L, default: () => jt, estimatedError: () => X, hash: () => I, height: () => J, heightGradient: () => Z, noise: () => y1, noiseValue: () => w1, wgsl: () => Y });
-var Y = `fn terrain_hash(p: vec2<i32>, seed: u32) -> f32 {
+var Vr = { generateSpherePoints: Ui, createScalarField: Ni, fitSphere: rt, sphereSurfaces: at, sphereSampler: st, refineSphereSurface: ot };
+var ie = {};
+F(ie, { bounds: () => K, default: () => Wr, estimatedError: () => fe, hash: () => V, height: () => he, heightGradient: () => me, noise: () => Re, noiseValue: () => qe, wgsl: () => le });
+var le = `fn terrain_hash(p: vec2<i32>, seed: u32) -> f32 {
   var h = (bitcast<u32>(p.x)*0x8da6b343u) ^ (bitcast<u32>(p.y)*0xd8163841u) ^ (seed*0xcb1ab31fu);
   h = (h ^ (h >> 16u))*0x7feb352du;
   h = (h ^ (h >> 15u))*0x846ca68bu;
@@ -24046,370 +24046,376 @@ fn terrain_noise(p: vec2<f32>, seed: u32) -> vec3<f32> {
   return vec3<f32>(mix(mix(a,b,uv.x),mix(c,d,uv.x),uv.y),
     mix(b-a,d-c,uv.y)*grad.x,mix(c-a,d-b,uv.x)*grad.y);
 }
-fn terrain_height_gradient(xz: vec2<f32>, seed: u32) -> vec3<f32> {
+fn terrain_filtered_gradient(xz: vec2<f32>, seed: u32, footprint: f32) -> vec3<f32> {
   var waves=array<f32,7>(2400.0,1000.0,420.0,180.0,72.0,28.0,10.0);
   var amplitudes=array<f32,7>(140.0,65.0,28.0,12.0,5.0,2.0,0.8);
   var result=vec3<f32>(25.0,0.0,0.0);
   for(var i=0u;i<7u;i++) {
+    let weight=1.0-smoothstep(waves[i]*0.25,waves[i]*0.65,footprint);
+    if(weight<=0.0){break;}
     let n=terrain_noise(xz/waves[i]+vec2<f32>(13.71,-8.29),seed+i*19u);
-    result+=vec3<f32>(n.x,n.y/waves[i],n.z/waves[i])*amplitudes[i];
+    result+=vec3<f32>(n.x,n.y/waves[i],n.z/waves[i])*(amplitudes[i]*weight);
   }
   let n=terrain_noise(xz/620.0+vec2<f32>(-2.7,4.1),seed+101u); let r=1.0-abs(n.x);
   result.x+=r*r*100.0-50.0;
   result=vec3<f32>(result.x,result.yz+n.yz*(-2.0*r*sign(n.x)*100.0/620.0));
   return result;
 }
+fn terrain_height_gradient(xz: vec2<f32>, seed: u32) -> vec3<f32> {
+  return terrain_filtered_gradient(xz,seed,0.0);
+}
 `;
-var g1 = [[2400, 140], [1e3, 65], [420, 28], [180, 12], [72, 5], [28, 2], [10, 0.8]];
-var L = [-380, 480];
-function I(i, e, t = 7) {
-  let s = (Math.imul(i, 2376512323) ^ Math.imul(e, 3625334849) ^ Math.imul(t, 3407524639)) >>> 0;
-  return s = Math.imul(s ^ s >>> 16, 2146121005) >>> 0, s = Math.imul(s ^ s >>> 15, 2221713035) >>> 0, ((s ^ s >>> 16) >>> 0) / 4294967295 * 2 - 1;
+var Te = [[2400, 140], [1e3, 65], [420, 28], [180, 12], [72, 5], [28, 2], [10, 0.8]];
+var K = [-380, 480];
+function V(a, e, t = 7) {
+  let i = (Math.imul(a, 2376512323) ^ Math.imul(e, 3625334849) ^ Math.imul(t, 3407524639)) >>> 0;
+  return i = Math.imul(i ^ i >>> 16, 2146121005) >>> 0, i = Math.imul(i ^ i >>> 15, 2221713035) >>> 0, ((i ^ i >>> 16) >>> 0) / 4294967295 * 2 - 1;
 }
-function y1(i, e, t) {
-  let s = Math.floor(i), r = Math.floor(e), n = i - s, o = e - r, a = n * n * (3 - 2 * n), c = o * o * (3 - 2 * o), x = 6 * n * (1 - n), l = 6 * o * (1 - o), u = I(s, r, t), f = I(s + 1, r, t), p = I(s, r + 1, t), h = I(s + 1, r + 1, t);
-  return [u + (f - u) * a + (p - u) * c + (u - f - p + h) * a * c, ((f - u) * (1 - c) + (h - p) * c) * x, ((p - u) * (1 - a) + (h - f) * a) * l];
+function Re(a, e, t) {
+  let i = Math.floor(a), r = Math.floor(e), s = a - i, o = e - r, l = s * s * (3 - 2 * s), n = o * o * (3 - 2 * o), f = 6 * s * (1 - s), c = 6 * o * (1 - o), u = V(i, r, t), p = V(i + 1, r, t), h = V(i, r + 1, t), d = V(i + 1, r + 1, t);
+  return [u + (p - u) * l + (h - u) * n + (u - p - h + d) * l * n, ((p - u) * (1 - n) + (d - h) * n) * f, ((h - u) * (1 - l) + (d - p) * l) * c];
 }
-function w1(i, e, t) {
-  let s = Math.floor(i), r = Math.floor(e), n = i - s, o = e - r, a = n * n * (3 - 2 * n), c = o * o * (3 - 2 * o), x = I(s, r, t), l = I(s + 1, r, t), u = I(s, r + 1, t), f = I(s + 1, r + 1, t);
-  return x + (l - x) * a + (u - x) * c + (x - l - u + f) * a * c;
+function qe(a, e, t) {
+  let i = Math.floor(a), r = Math.floor(e), s = a - i, o = e - r, l = s * s * (3 - 2 * s), n = o * o * (3 - 2 * o), f = V(i, r, t), c = V(i + 1, r, t), u = V(i, r + 1, t), p = V(i + 1, r + 1, t);
+  return f + (c - f) * l + (u - f) * n + (f - c - u + p) * l * n;
 }
-function Z(i, e, t = 7) {
-  let s = [25, 0, 0];
-  for (let a = 0; a < g1.length; a++) {
-    let [c, x] = g1[a], l = y1(i / c + 13.71, e / c - 8.29, t + a * 19);
-    s[0] += l[0] * x, s[1] += l[1] * x / c, s[2] += l[2] * x / c;
+function me(a, e, t = 7) {
+  let i = [25, 0, 0];
+  for (let l = 0; l < Te.length; l++) {
+    let [n, f] = Te[l], c = Re(a / n + 13.71, e / n - 8.29, t + l * 19);
+    i[0] += c[0] * f, i[1] += c[1] * f / n, i[2] += c[2] * f / n;
   }
-  let r = y1(i / 620 - 2.7, e / 620 + 4.1, t + 101), n = 1 - Math.abs(r[0]);
-  s[0] += n * n * 100 - 50;
-  let o = -2 * n * Math.sign(r[0]) * 100 / 620;
-  return s[1] += o * r[1], s[2] += o * r[2], s;
+  let r = Re(a / 620 - 2.7, e / 620 + 4.1, t + 101), s = 1 - Math.abs(r[0]);
+  i[0] += s * s * 100 - 50;
+  let o = -2 * s * Math.sign(r[0]) * 100 / 620;
+  return i[1] += o * r[1], i[2] += o * r[2], i;
 }
-function X(i) {
+function fe(a) {
   let e = 0;
-  for (let [t, s] of g1) e += s * Math.min(1, 2 * (i / t) ** 2);
-  return e + 100 * Math.min(1, i / 620) * 0.15;
+  for (let [t, i] of Te) e += i * Math.min(1, 2 * (a / t) ** 2);
+  return e + 100 * Math.min(1, a / 620) * 0.15;
 }
-function J(i, e, t = 7) {
-  let s = 25;
-  for (let n = 0; n < g1.length; n++) {
-    let [o, a] = g1[n];
-    s += w1(i / o + 13.71, e / o - 8.29, t + n * 19) * a;
+function he(a, e, t = 7) {
+  let i = 25;
+  for (let s = 0; s < Te.length; s++) {
+    let [o, l] = Te[s];
+    i += qe(a / o + 13.71, e / o - 8.29, t + s * 19) * l;
   }
-  let r = 1 - Math.abs(w1(i / 620 - 2.7, e / 620 + 4.1, t + 101));
-  return s + (r * r * 100 - 50);
+  let r = 1 - Math.abs(qe(a / 620 - 2.7, e / 620 + 4.1, t + 101));
+  return i + (r * r * 100 - 50);
 }
-var jt = { hash: I, heightGradient: Z, height: J, estimatedError: X, bounds: L, wgsl: Y };
-var z1 = {};
-F(z1, { EAST: () => t1, NORTH: () => s1, SOUTH: () => i1, WEST: () => e1, balance: () => P1, default: () => Yt, desiredLevel: () => ze, distanceTo: () => D, makeTiles: () => Y1, moveTiles: () => H1, neighbors: () => _e, relativePlanes: () => Q1, seams: () => _1, select: () => K1, shiftTileMap: () => M1, windowOffset: () => X1 });
-var e1 = 1;
-var t1 = 2;
-var s1 = 4;
-var i1 = 8;
-function Y1(i = 8192, e = 128) {
-  let t = i / e;
+var Wr = { hash: V, heightGradient: me, height: he, estimatedError: fe, bounds: K, wgsl: le };
+var Ge = {};
+F(Ge, { EAST: () => ge, NORTH: () => ve, SOUTH: () => ye, WEST: () => xe, balance: () => Ue, default: () => Yr, desiredLevel: () => Wt, distanceTo: () => O, makeTiles: () => nt, moveTiles: () => ft, neighbors: () => Ot, relativePlanes: () => ct, seams: () => Ne, select: () => ut, shiftTileMap: () => Ee, windowOffset: () => lt });
+var xe = 1;
+var ge = 2;
+var ve = 4;
+var ye = 8;
+function nt(a = 8192, e = 128) {
+  let t = a / e;
   if (!Number.isInteger(t) || t < 1) throw new Error("World size must be divisible by tile size");
-  let s = [];
-  for (let r = 0; r < t; r++) for (let n = 0; n < t; n++) {
-    let o = n * e - i / 2, a = r * e - i / 2;
-    s.push({ id: r * t + n, x: n, z: r, ox: o, oz: a, size: e, lo: [o, L[0], a], hi: [o + e, L[1], a + e] });
+  let i = [];
+  for (let r = 0; r < t; r++) for (let s = 0; s < t; s++) {
+    let o = s * e - a / 2, l = r * e - a / 2;
+    i.push({ id: r * t + s, x: s, z: r, ox: o, oz: l, size: e, lo: [o, K[0], l], hi: [o + e, K[1], l + e] });
   }
-  return { tiles: s, side: t };
+  return { tiles: i, side: t };
 }
-function _e(i, e) {
-  let t = i % e, s = Math.floor(i / e);
-  return [[t > 0 ? i - 1 : -1, e1], [t < e - 1 ? i + 1 : -1, t1], [s > 0 ? i - e : -1, s1], [s < e - 1 ? i + e : -1, i1]];
+function Ot(a, e) {
+  let t = a % e, i = Math.floor(a / e);
+  return [[t > 0 ? a - 1 : -1, xe], [t < e - 1 ? a + 1 : -1, ge], [i > 0 ? a - e : -1, ve], [i < e - 1 ? a + e : -1, ye]];
 }
-function X1(i, e, t) {
-  let s = t * Math.max(1, Math.floor(e / t / 8));
-  return [Math.round(i[0] / s) * s, Math.round(i[2] / s) * s];
+function lt(a, e, t) {
+  let i = t * Math.max(1, Math.floor(e / t / 8));
+  return [Math.round(a[0] / i) * i, Math.round(a[2] / i) * i];
 }
-function M1(i, e, t, s, r = () => {
+function Ee(a, e, t, i, r = () => {
 }) {
-  if (!Number.isInteger(t) || !Number.isInteger(s)) throw new Error("Window shifts must use whole tiles");
-  let n = /* @__PURE__ */ new Map();
-  for (let [o, a] of i) {
-    let c = o % e - t, x = Math.floor(o / e) - s;
-    c >= 0 && x >= 0 && c < e && x < e ? n.set(x * e + c, a) : r(a);
+  if (!Number.isInteger(t) || !Number.isInteger(i)) throw new Error("Window shifts must use whole tiles");
+  let s = /* @__PURE__ */ new Map();
+  for (let [o, l] of a) {
+    let n = o % e - t, f = Math.floor(o / e) - i;
+    n >= 0 && f >= 0 && n < e && f < e ? s.set(f * e + n, l) : r(l);
   }
-  return n;
+  return s;
 }
-function H1(i, e, t) {
-  for (let s of i) s.ox += e, s.oz += t, s.lo[0] += e, s.hi[0] += e, s.lo[2] += t, s.hi[2] += t;
+function ft(a, e, t) {
+  for (let i of a) i.ox += e, i.oz += t, i.lo[0] += e, i.hi[0] += e, i.lo[2] += t, i.hi[2] += t;
 }
-function Q1(i, e) {
-  return i.map((t) => [t[0], t[1], t[2], t[3] + t[0] * e[0] + t[2] * e[1]]);
+function ct(a, e) {
+  return a.map((t) => [t[0], t[1], t[2], t[3] + t[0] * e[0] + t[2] * e[1]]);
 }
-function D(i, e) {
+function O(a, e) {
   let t = 0;
-  for (let s = 0; s < 3; s++) {
-    let r = Math.max(i.lo[s] - e[s], 0, e[s] - i.hi[s]);
+  for (let i = 0; i < 3; i++) {
+    let r = Math.max(a.lo[i] - e[i], 0, e[i] - a.hi[i]);
     t += r * r;
   }
   return Math.sqrt(t);
 }
-function ze(i, e, t, s, r) {
-  let n = Math.max(1, D(i, e.position)), o = r ? 0 : e.height / (2 * Math.tan(e.fov / 2));
-  if (Math.hypot(Math.max(i.ox - e.player[0], 0, e.player[0] - i.ox - i.size), Math.max(i.oz - e.player[2], 0, e.player[2] - i.oz - i.size)) < t.nearRadius) return 0;
-  let c = (l) => (r ? r[l] : X(i.size / (t.maxDivs >> l)) * o) / n, x = 0;
-  for (; x < t.levels - 1 && c(x + 1) <= t.pixelError; ) x++;
-  if (s !== void 0 && s < t.levels) {
-    let l = c(s), u = s + 1 < t.levels ? c(s + 1) : 1 / 0;
-    if (l <= t.pixelError * 1.2 && u >= t.pixelError * 0.8) return s;
+function Wt(a, e, t, i, r) {
+  let s = Math.max(1, O(a, e.position)), o = r ? 0 : e.height / (2 * Math.tan(e.fov / 2));
+  if (Math.hypot(Math.max(a.ox - e.player[0], 0, e.player[0] - a.ox - a.size), Math.max(a.oz - e.player[2], 0, e.player[2] - a.oz - a.size)) < t.nearRadius) return 0;
+  let n = (c) => (r ? r[c] : fe(a.size / (t.maxDivs >> c)) * o) / s, f = 0;
+  for (; f < t.levels - 1 && n(f + 1) <= t.pixelError; ) f++;
+  if (i !== void 0 && i < t.levels) {
+    let c = n(i), u = i + 1 < t.levels ? n(i + 1) : 1 / 0;
+    if (c <= t.pixelError * 1.2 && u >= t.pixelError * 0.8) return i;
   }
-  return x;
+  return f;
 }
-function P1(i, e, t = "refine") {
-  let s = Array.from(i.keys()), r = (n, o) => {
-    let a = i.get(n), c = i.get(o);
-    if (c === void 0 || Math.abs(a - c) <= 1) return;
-    let x = t === "refine" ? a > c ? n : o : a < c ? n : o;
-    i.set(x, t === "refine" ? Math.min(a, c) + 1 : Math.max(a, c) - 1), s.push(x);
+function Ue(a, e, t = "refine") {
+  let i = Array.from(a.keys()), r = (s, o) => {
+    let l = a.get(s), n = a.get(o);
+    if (n === void 0 || Math.abs(l - n) <= 1) return;
+    let f = t === "refine" ? l > n ? s : o : l < n ? s : o;
+    a.set(f, t === "refine" ? Math.min(l, n) + 1 : Math.max(l, n) - 1), i.push(f);
   };
-  for (let n = 0; n < s.length; n++) {
-    let o = s[n], a = o % e;
-    a && r(o, o - 1), a < e - 1 && r(o, o + 1), o >= e && r(o, o - e), o + e < e * e && r(o, o + e);
+  for (let s = 0; s < i.length; s++) {
+    let o = i[s], l = o % e;
+    l && r(o, o - 1), l < e - 1 && r(o, o + 1), o >= e && r(o, o - e), o + e < e * e && r(o, o + e);
   }
-  return i;
+  return a;
 }
-function _1(i, e) {
+function Ne(a, e) {
   let t = /* @__PURE__ */ new Map();
-  for (let [s, r] of i) {
-    let n = 0;
-    for (let [o, a] of _e(s, e)) i.get(o) === r + 1 && (n |= a);
-    t.set(s, n);
+  for (let [i, r] of a) {
+    let s = 0;
+    for (let [o, l] of Ot(i, e)) a.get(o) === r + 1 && (s |= l);
+    t.set(i, s);
   }
   return t;
 }
-function K1(i, e, t, s, r, n = /* @__PURE__ */ new Map()) {
-  let o = /* @__PURE__ */ new Map(), a = s.height / (2 * Math.tan(s.fov / 2)), c = e.length ? Array.from({ length: r.levels }, (x, l) => X(i[e[0]].size / (r.maxDivs >> l)) * a) : [];
-  for (let x of e) o.set(x, r.uniform ? 0 : ze(i[x], s, r, n.get(x), c));
-  return P1(o, t), { levels: o, masks: _1(o, t) };
+function ut(a, e, t, i, r, s = /* @__PURE__ */ new Map()) {
+  let o = /* @__PURE__ */ new Map(), l = i.height / (2 * Math.tan(i.fov / 2)), n = e.length ? Array.from({ length: r.levels }, (f, c) => fe(a[e[0]].size / (r.maxDivs >> c)) * l) : [];
+  for (let f of e) o.set(f, r.uniform ? 0 : Wt(a[f], i, r, s.get(f), n));
+  return Ue(o, t), { levels: o, masks: Ne(o, t) };
 }
-var Yt = { makeTiles: Y1, neighbors: _e, windowOffset: X1, shiftTileMap: M1, moveTiles: H1, relativePlanes: Q1, distanceTo: D, desiredLevel: ze, balance: P1, seams: _1, select: K1, WEST: e1, EAST: t1, NORTH: s1, SOUTH: i1 };
-var ee = {};
-F(ee, { build: () => Z1, default: () => Ht, intersects: () => Se, query: () => J1 });
-function ke(i) {
-  let e = i & 1023;
+var Yr = { makeTiles: nt, neighbors: Ot, windowOffset: lt, shiftTileMap: Ee, moveTiles: ft, relativePlanes: ct, distanceTo: O, desiredLevel: Wt, balance: Ue, seams: Ne, select: ut, WEST: xe, EAST: ge, NORTH: ve, SOUTH: ye };
+var mt = {};
+F(mt, { build: () => pt, default: () => Hr, intersects: () => Xt, query: () => dt });
+function Yt(a) {
+  let e = a & 1023;
   return e = (e | e << 16) & 50331903, e = (e | e << 8) & 50393103, e = (e | e << 4) & 51130563, (e | e << 2) & 153391689;
 }
-function ot(i, e) {
-  return { lo: i.lo.map((t, s) => Math.min(t, e.lo[s])), hi: i.hi.map((t, s) => Math.max(t, e.hi[s])), left: i, right: e, id: -1 };
+function Ii(a, e) {
+  return { lo: a.lo.map((t, i) => Math.min(t, e.lo[i])), hi: a.hi.map((t, i) => Math.max(t, e.hi[i])), left: a, right: e, id: -1 };
 }
-function Xt(i) {
-  let e = i.hi.map((t, s) => Math.max(0, t - i.lo[s]));
+function Xr(a) {
+  let e = a.hi.map((t, i) => Math.max(0, t - a.lo[i]));
   return e[0] * e[1] + e[1] * e[2] + e[2] * e[0];
 }
-function Z1(i, e = 16) {
+function pt(a, e = 16) {
   if (!Number.isInteger(e) || e < 2) throw new Error("Treelet width must be at least two");
-  if (!i.length) return { bounds: new Float32Array(), escape: new Int32Array(), leaf: new Int32Array(), count: 0 };
-  let t = [1 / 0, 1 / 0, 1 / 0], s = [-1 / 0, -1 / 0, -1 / 0];
-  for (let u of i) for (let f = 0; f < 3; f++) {
-    if (!Number.isFinite(u.lo[f]) || !Number.isFinite(u.hi[f]) || u.hi[f] < u.lo[f]) throw new Error("Invalid terrain bounds");
-    t[f] = Math.min(t[f], u.lo[f]), s[f] = Math.max(s[f], u.hi[f]);
+  if (!a.length) return { bounds: new Float32Array(), escape: new Int32Array(), leaf: new Int32Array(), count: 0 };
+  let t = [1 / 0, 1 / 0, 1 / 0], i = [-1 / 0, -1 / 0, -1 / 0];
+  for (let u of a) for (let p = 0; p < 3; p++) {
+    if (!Number.isFinite(u.lo[p]) || !Number.isFinite(u.hi[p]) || u.hi[p] < u.lo[p]) throw new Error("Invalid terrain bounds");
+    t[p] = Math.min(t[p], u.lo[p]), i[p] = Math.max(i[p], u.hi[p]);
   }
-  let r = i.map((u) => {
-    let f = u.lo.map((p, h) => Math.min(1023, Math.max(0, Math.floor(((p + u.hi[h]) * 0.5 - t[h]) / Math.max(s[h] - t[h], 1e-9) * 1024))));
-    return { ...u, key: (ke(f[0]) << 2 | ke(f[1]) << 1 | ke(f[2])) >>> 0 };
-  }).sort((u, f) => u.key - f.key || u.id - f.id);
+  let r = a.map((u) => {
+    let p = u.lo.map((h, d) => Math.min(1023, Math.max(0, Math.floor(((h + u.hi[d]) * 0.5 - t[d]) / Math.max(i[d] - t[d], 1e-9) * 1024))));
+    return { ...u, key: (Yt(p[0]) << 2 | Yt(p[1]) << 1 | Yt(p[2])) >>> 0 };
+  }).sort((u, p) => u.key - p.key || u.id - p.id);
   for (; r.length > 1; ) {
     let u = [];
-    for (let f = 0; f < r.length; f += e) {
-      let p = r.slice(f, f + e);
-      for (; p.length > 1; ) {
-        let h = p.map((m, v) => {
-          let g = -1, y = 1 / 0;
-          for (let w = 0; w < p.length; w++) if (v !== w) {
-            let M = Xt(ot(m, p[w]));
-            (M < y || M === y && w < g) && (g = w, y = M);
+    for (let p = 0; p < r.length; p += e) {
+      let h = r.slice(p, p + e);
+      for (; h.length > 1; ) {
+        let d = h.map((v, g) => {
+          let y = -1, b = 1 / 0;
+          for (let z = 0; z < h.length; z++) if (g !== z) {
+            let w = Xr(Ii(v, h[z]));
+            (w < b || w === b && z < y) && (y = z, b = w);
           }
-          return g;
-        }), d = /* @__PURE__ */ new Set(), b = [];
-        for (let m = 0; m < p.length; m++) {
-          let v = h[m];
-          v > m && h[v] === m && (b.push(ot(p[m], p[v])), d.add(m), d.add(v));
+          return y;
+        }), m = /* @__PURE__ */ new Set(), x = [];
+        for (let v = 0; v < h.length; v++) {
+          let g = d[v];
+          g > v && d[g] === v && (x.push(Ii(h[v], h[g])), m.add(v), m.add(g));
         }
-        if (!d.size) throw new Error("PLOC clustering did not make progress");
-        p = p.filter((m, v) => !d.has(v)).concat(b);
+        if (!m.size) throw new Error("PLOC clustering did not make progress");
+        h = h.filter((v, g) => !m.has(g)).concat(x);
       }
-      u.push(p[0]);
+      u.push(h[0]);
     }
     r = u;
   }
-  let n = i.length * 2 - 1, o = new Float32Array(n * 6), a = new Int32Array(n), c = new Int32Array(n).fill(-1), x = 0;
-  function l(u) {
-    let f = x++;
-    o.set(u.lo, f * 6), o.set(u.hi, f * 6 + 3), c[f] = u.id, u.id < 0 && (l(u.left), l(u.right)), a[f] = x;
+  let s = a.length * 2 - 1, o = new Float32Array(s * 6), l = new Int32Array(s), n = new Int32Array(s).fill(-1), f = 0;
+  function c(u) {
+    let p = f++;
+    o.set(u.lo, p * 6), o.set(u.hi, p * 6 + 3), n[p] = u.id, u.id < 0 && (c(u.left), c(u.right)), l[p] = f;
   }
-  return l(r[0]), { bounds: o, escape: a, leaf: c, count: n };
+  return c(r[0]), { bounds: o, escape: l, leaf: n, count: s };
 }
-function Se(i, e, t) {
-  for (let s of t) {
-    let r = i[e + (s[0] >= 0 ? 3 : 0)], n = i[e + (s[1] >= 0 ? 4 : 1)], o = i[e + (s[2] >= 0 ? 5 : 2)];
-    if (s[0] * r + s[1] * n + s[2] * o + s[3] < 0) return false;
+function Xt(a, e, t) {
+  for (let i of t) {
+    let r = a[e + (i[0] >= 0 ? 3 : 0)], s = a[e + (i[1] >= 0 ? 4 : 1)], o = a[e + (i[2] >= 0 ? 5 : 2)];
+    if (i[0] * r + i[1] * s + i[2] * o + i[3] < 0) return false;
   }
   return true;
 }
-function J1(i, e) {
-  let t = [], s = 0, r = 0;
-  for (; s < i.count; ) {
-    if (r++, !Se(i.bounds, s * 6, e)) {
-      s = i.escape[s];
+function dt(a, e) {
+  let t = [], i = 0, r = 0;
+  for (; i < a.count; ) {
+    if (r++, !Xt(a.bounds, i * 6, e)) {
+      i = a.escape[i];
       continue;
     }
-    i.leaf[s] >= 0 && t.push(i.leaf[s]), s++;
+    a.leaf[i] >= 0 && t.push(a.leaf[i]), i++;
   }
   return { ids: t, visited: r };
 }
-var Ht = { build: Z1, query: J1, intersects: Se };
-var n1 = {};
-F(n1, { buildIndices: () => $, cellCorners: () => Be, default: () => Qt, lines: () => r1 });
-function Be(i) {
-  let e = V[i];
+var Hr = { build: pt, query: dt, intersects: Xt };
+var be = {};
+F(be, { buildIndices: () => Z, cellCorners: () => Ht, default: () => Zr, lines: () => re });
+function Ht(a) {
+  let e = ee[a];
   if (!e) throw new Error("Unknown terrain algorithm");
-  let t = Float32Array.from(e.corners, (a) => a[1] ? 1 : -1), s = 0;
-  t.forEach((a, c) => {
-    a < 0 && (s |= e.cornerBit(c));
+  let t = Float32Array.from(e.corners, (l) => l[1] ? 1 : -1), i = 0;
+  t.forEach((l, n) => {
+    l < 0 && (i |= e.cornerBit(n));
   });
-  let r = new Uint8Array(e.maxVertices), n = e.createPolygonizer()(t, s, r), o = [];
-  for (let a of r.slice(0, n)) {
-    if (a === 12) throw new Error("Heightfield template unexpectedly uses a center vertex");
-    let [c, x] = e.edges[a], l = e.corners[c], u = e.corners[x];
-    if (l[0] !== u[0] || l[2] !== u[2]) throw new Error("Heightfield crossing must be vertical");
-    o.push([l[0], l[2]]);
+  let r = new Uint8Array(e.maxVertices), s = e.createPolygonizer()(t, i, r), o = [];
+  for (let l of r.slice(0, s)) {
+    if (l === 12) throw new Error("Heightfield template unexpectedly uses a center vertex");
+    let [n, f] = e.edges[l], c = e.corners[n], u = e.corners[f];
+    if (c[0] !== u[0] || c[2] !== u[2]) throw new Error("Heightfield crossing must be vertical");
+    o.push([c[0], c[2]]);
   }
   return o;
 }
-function $(i, e = 0, t = "mc33") {
-  if (!Number.isInteger(i) || i < 2 || i & i - 1) throw new Error("Divisions must be a power of two of at least 2");
+function Z(a, e = 0, t = "mc33") {
+  if (!Number.isInteger(a) || a < 2 || a & a - 1) throw new Error("Divisions must be a power of two of at least 2");
   if (!Number.isInteger(e) || e < 0 || e > 15) throw new Error("Seam mask must be 0..15");
-  let s = i + 1, r = Be(t), n = new Uint32Array(i * i * 6), o = 0;
-  function a(x) {
-    let l = x.map((f) => [f % s, Math.floor(f / s)]), u = (l[1][0] - l[0][0]) * (l[2][1] - l[0][1]) - (l[1][1] - l[0][1]) * (l[2][0] - l[0][0]);
-    u !== 0 && (u > 0 && ([x[1], x[2]] = [x[2], x[1]]), n.set(x, o), o += 3);
+  let i = a + 1, r = Ht(t), s = new Uint32Array(a * a * 6), o = 0;
+  function l(f) {
+    let c = f.map((p) => [p % i, Math.floor(p / i)]), u = (c[1][0] - c[0][0]) * (c[2][1] - c[0][1]) - (c[1][1] - c[0][1]) * (c[2][0] - c[0][0]);
+    u !== 0 && (u > 0 && ([f[1], f[2]] = [f[2], f[1]]), s.set(f, o), o += 3);
   }
-  let c = [];
-  for (let x = 0; x < r.length; x += 3) {
-    let [l, u, f] = r.slice(x, x + 3), p = (u[0] - l[0]) * (f[1] - l[1]) - (u[1] - l[1]) * (f[0] - l[0]), h = [l[1] * s + l[0], u[1] * s + u[0], f[1] * s + f[0]];
-    p > 0 && ([h[1], h[2]] = [h[2], h[1]]), c.push(...h);
+  let n = [];
+  for (let f = 0; f < r.length; f += 3) {
+    let [c, u, p] = r.slice(f, f + 3), h = (u[0] - c[0]) * (p[1] - c[1]) - (u[1] - c[1]) * (p[0] - c[0]), d = [c[1] * i + c[0], u[1] * i + u[0], p[1] * i + p[0]];
+    h > 0 && ([d[1], d[2]] = [d[2], d[1]]), n.push(...d);
   }
-  for (let x = 0; x < i; x += 2) for (let l = 0; l < i; l += 2) if (l === 0 && e & 1 || l === i - 2 && e & 2 || x === 0 && e & 4 || x === i - 2 && e & 8) {
-    let f = [[0, 0], [1, 0], [2, 0], [2, 1], [2, 2], [1, 2], [0, 2], [0, 1]].map((h) => [l + h[0], x + h[1]]).filter(([h, d]) => {
-      let b = h === 0 && e & 1 || h === i && e & 2, m = d === 0 && e & 4 || d === i && e & 8;
-      return !(b && d & 1) && !(m && h & 1);
-    }).map(([h, d]) => d * s + h), p = (x + 1) * s + l + 1;
-    for (let h = 0; h < f.length; h++) a([p, f[h], f[(h + 1) % f.length]]);
-  } else for (let f = 0; f < 2; f++) for (let p = 0; p < 2; p++) for (let h = 0; h < c.length; h++) n[o++] = (x + f) * s + l + p + c[h];
-  return n.slice(0, o);
+  for (let f = 0; f < a; f += 2) for (let c = 0; c < a; c += 2) if (c === 0 && e & 1 || c === a - 2 && e & 2 || f === 0 && e & 4 || f === a - 2 && e & 8) {
+    let p = [[0, 0], [1, 0], [2, 0], [2, 1], [2, 2], [1, 2], [0, 2], [0, 1]].map((d) => [c + d[0], f + d[1]]).filter(([d, m]) => {
+      let x = d === 0 && e & 1 || d === a && e & 2, v = m === 0 && e & 4 || m === a && e & 8;
+      return !(x && m & 1) && !(v && d & 1);
+    }).map(([d, m]) => m * i + d), h = (f + 1) * i + c + 1;
+    for (let d = 0; d < p.length; d++) l([h, p[d], p[(d + 1) % p.length]]);
+  } else for (let p = 0; p < 2; p++) for (let h = 0; h < 2; h++) for (let d = 0; d < n.length; d++) s[o++] = (f + p) * i + c + h + n[d];
+  return s.slice(0, o);
 }
-function r1(i) {
+function re(a) {
   let e = /* @__PURE__ */ new Map();
-  for (let t = 0; t < i.length; t += 3) for (let s = 0; s < 3; s++) {
-    let r = i[t + s], n = i[t + (s + 1) % 3], o = r < n ? `${r},${n}` : `${n},${r}`;
-    e.has(o) || e.set(o, [r, n]);
+  for (let t = 0; t < a.length; t += 3) for (let i = 0; i < 3; i++) {
+    let r = a[t + i], s = a[t + (i + 1) % 3], o = r < s ? `${r},${s}` : `${s},${r}`;
+    e.has(o) || e.set(o, [r, s]);
   }
   return Uint32Array.from(Array.from(e.values()).flat());
 }
-var Qt = { buildIndices: $, lines: r1, cellCorners: Be };
-var ne = {};
-F(ne, { attachment: () => re, default: () => Kt, geometry: () => ie, level: () => se, trees: () => te });
-function te(i, e = 32, t = 7) {
-  let s = [], r = Math.round(i.ox / i.size), n = Math.round(i.oz / i.size);
+var Zr = { buildIndices: Z, lines: re, cellCorners: Ht };
+var yt = {};
+F(yt, { attachment: () => vt, default: () => jr, geometry: () => gt, level: () => xt, trees: () => ht });
+function ht(a, e = 32, t = 7) {
+  let i = [], r = Math.round(a.ox / a.size), s = Math.round(a.oz / a.size);
   for (let o = 0; o < e; o++) {
-    let a = (h) => (I(r * 53 + o, n * 71 - o, h + t - 7) + 1) * 0.5, c = 0.04 + a(307) * 0.92, x = 0.04 + a(619) * 0.92, l = i.ox + c * i.size, u = i.oz + x * i.size, f = Z(l, u, t), p = (I(Math.floor(l / 220), Math.floor(u / 220), 103 + t - 7) + 1) * 0.5;
-    f[0] < -6 || f[0] > 200 || Math.hypot(f[1], f[2]) > 0.65 || a(821) > 0.35 + p * 0.65 || s.push({ id: `${t}:${r}:${n}:${o}`, x: l, z: u, u: c, v: x, height: 11 + a(937) * 14, yaw: a(1223) * Math.PI * 2, tint: a(1549) });
+    let l = (d) => (V(r * 53 + o, s * 71 - o, d + t - 7) + 1) * 0.5, n = 0.04 + l(307) * 0.92, f = 0.04 + l(619) * 0.92, c = a.ox + n * a.size, u = a.oz + f * a.size, p = me(c, u, t), h = (V(Math.floor(c / 220), Math.floor(u / 220), 103 + t - 7) + 1) * 0.5;
+    p[0] < -6 || p[0] > 200 || Math.hypot(p[1], p[2]) > 0.65 || l(821) > 0.35 + h * 0.65 || i.push({ id: `${t}:${r}:${s}:${o}`, x: c, z: u, u: n, v: f, height: 11 + l(937) * 14, yaw: l(1223) * Math.PI * 2, tint: l(1549) });
   }
-  return s;
+  return i;
 }
-function se(i, e, t) {
-  let s = Math.max(1, Math.hypot(i.x - e.position[0], i.y + i.height * 0.5 - e.position[1], i.z - e.position[2])), r = i.height * e.height / (2 * Math.tan(e.fov / 2) * s), n = r > 42 ? 0 : r > 13 ? 1 : 2;
-  return t === 0 && r > 36 ? n = 0 : t === 1 && r > 11 && r < 48 ? n = 1 : t === 2 && r < 15 && (n = 2), n;
+function xt(a, e, t) {
+  let i = Math.max(1, Math.hypot(a.x - e.position[0], a.y + a.height * 0.5 - e.position[1], a.z - e.position[2])), r = a.height * e.height / (2 * Math.tan(e.fov / 2) * i), s = r > 42 ? 0 : r > 13 ? 1 : 2;
+  return t === 0 && r > 36 ? s = 0 : t === 1 && r > 11 && r < 48 ? s = 1 : t === 2 && r < 15 && (s = 2), s;
 }
-function ie(i) {
-  let e = [], t = (r, n, o) => e.push(...r, ...n, ...o);
-  function s(r, n, o, a, c, x = 0) {
-    for (let l = 0; l < a; l++) {
-      let u = l / a * Math.PI * 2, f = (l + 1) / a * Math.PI * 2, p = [Math.cos(u) * r, n, Math.sin(u) * r], h = [Math.cos(f) * r, n, Math.sin(f) * r], d = [Math.cos(u) * x, o, Math.sin(u) * x], b = [Math.cos(f) * x, o, Math.sin(f) * x], m = [Math.cos((u + f) / 2), r / (o - n), Math.sin((u + f) / 2)], v = Math.hypot(...m), g = m.map((y) => y / v);
-      t(p, g, c), t(d, g, c), t(h, g, c), x && (t(h, g, c), t(d, g, c), t(b, g, c)), t(h, [0, -1, 0], c), t([0, n, 0], [0, -1, 0], c), t(p, [0, -1, 0], c);
+function gt(a) {
+  let e = [], t = (r, s, o) => e.push(...r, ...s, ...o);
+  function i(r, s, o, l, n, f = 0) {
+    for (let c = 0; c < l; c++) {
+      let u = c / l * Math.PI * 2, p = (c + 1) / l * Math.PI * 2, h = [Math.cos(u) * r, s, Math.sin(u) * r], d = [Math.cos(p) * r, s, Math.sin(p) * r], m = [Math.cos(u) * f, o, Math.sin(u) * f], x = [Math.cos(p) * f, o, Math.sin(p) * f], v = [Math.cos((u + p) / 2), r / (o - s), Math.sin((u + p) / 2)], g = Math.hypot(...v), y = v.map((b) => b / g);
+      t(h, y, n), t(m, y, n), t(d, y, n), f && (t(d, y, n), t(m, y, n), t(x, y, n)), t(d, [0, -1, 0], n), t([0, s, 0], [0, -1, 0], n), t(h, [0, -1, 0], n);
     }
   }
-  if (i === 2) for (let r = 0; r < 2; r++) {
-    let n = r * Math.PI / 2, o = Math.cos(n), a = Math.sin(n), c = [-a, 0, o], x = [0.09, 0.26, 0.12];
-    for (let l of [[-0.24, 0.14], [0, 1], [0.24, 0.14]]) t([l[0] * o, l[1], l[0] * a], c, x);
-    for (let l of [[-0.025, 0], [-0.025, 0.2], [0.025, 0.2], [-0.025, 0], [0.025, 0.2], [0.025, 0]]) t([l[0] * o, l[1], l[0] * a], c, [0.23, 0.14, 0.07]);
+  if (a === 2) for (let r = 0; r < 2; r++) {
+    let s = r * Math.PI / 2, o = Math.cos(s), l = Math.sin(s), n = [-l, 0, o], f = [0.09, 0.26, 0.12];
+    for (let c of [[-0.24, 0.14], [0, 1], [0.24, 0.14]]) t([c[0] * o, c[1], c[0] * l], n, f);
+    for (let c of [[-0.025, 0], [-0.025, 0.2], [0.025, 0.2], [-0.025, 0], [0.025, 0.2], [0.025, 0]]) t([c[0] * o, c[1], c[0] * l], n, [0.23, 0.14, 0.07]);
   }
-  else s(0.026, 0, 0.76, i === 0 ? 8 : 5, [0.26, 0.16, 0.08], 0.012), i === 0 ? (s(0.25, 0.18, 0.68, 8, [0.08, 0.25, 0.12]), s(0.2, 0.38, 0.86, 8, [0.1, 0.29, 0.14]), s(0.14, 0.6, 1, 8, [0.13, 0.34, 0.17])) : (s(0.25, 0.18, 0.77, 5, [0.09, 0.27, 0.13]), s(0.16, 0.5, 1, 5, [0.12, 0.32, 0.16]));
+  else i(0.026, 0, 0.76, a === 0 ? 8 : 5, [0.26, 0.16, 0.08], 0.012), a === 0 ? (i(0.25, 0.18, 0.68, 8, [0.08, 0.25, 0.12]), i(0.2, 0.38, 0.86, 8, [0.1, 0.29, 0.14]), i(0.14, 0.6, 1, 8, [0.13, 0.34, 0.17])) : (i(0.25, 0.18, 0.77, 5, [0.09, 0.27, 0.13]), i(0.16, 0.5, 1, 5, [0.12, 0.32, 0.16]));
   return Float32Array.from(e);
 }
-var ct = /* @__PURE__ */ new Map();
-function re(i, e, t, s, r) {
-  let n = s * i, o = r * i, a = Math.min(i - 2, Math.floor(n / 2) * 2), c = Math.min(i - 2, Math.floor(o / 2) * 2), x = (a === 0 ? e & 1 : 0) | (a === i - 2 ? e & 2 : 0) | (c === 0 ? e & 4 : 0) | (c === i - 2 ? e & 8 : 0), l = `${t}:${x}`, u = ct.get(l);
+var Fi = /* @__PURE__ */ new Map();
+function vt(a, e, t, i, r) {
+  let s = i * a, o = r * a, l = Math.min(a - 2, Math.floor(s / 2) * 2), n = Math.min(a - 2, Math.floor(o / 2) * 2), f = (l === 0 ? e & 1 : 0) | (l === a - 2 ? e & 2 : 0) | (n === 0 ? e & 4 : 0) | (n === a - 2 ? e & 8 : 0), c = `${t}:${f}`, u = Fi.get(c);
   if (!u) {
-    let h = $(2, x, t);
+    let d = Z(2, f, t);
     u = [];
-    for (let d = 0; d < h.length; d += 3) u.push(Array.from(h.subarray(d, d + 3), (b) => [b % 3, Math.floor(b / 3)]));
-    ct.set(l, u);
+    for (let m = 0; m < d.length; m += 3) u.push(Array.from(d.subarray(m, m + 3), (x) => [x % 3, Math.floor(x / 3)]));
+    Fi.set(c, u);
   }
-  let f = n - a, p = o - c;
-  for (let h of u) {
-    let [d, b, m] = h, v = (b[1] - m[1]) * (d[0] - m[0]) + (m[0] - b[0]) * (d[1] - m[1]), g = ((b[1] - m[1]) * (f - m[0]) + (m[0] - b[0]) * (p - m[1])) / v, y = ((m[1] - d[1]) * (f - m[0]) + (d[0] - m[0]) * (p - m[1])) / v, w = 1 - g - y;
-    if (Math.min(g, y, w) >= -1e-6) return { ids: h.map(([M, P]) => (c + P) * (i + 1) + a + M), weights: [g, y, w] };
+  let p = s - l, h = o - n;
+  for (let d of u) {
+    let [m, x, v] = d, g = (x[1] - v[1]) * (m[0] - v[0]) + (v[0] - x[0]) * (m[1] - v[1]), y = ((x[1] - v[1]) * (p - v[0]) + (v[0] - x[0]) * (h - v[1])) / g, b = ((v[1] - m[1]) * (p - v[0]) + (m[0] - v[0]) * (h - v[1])) / g, z = 1 - y - b;
+    if (Math.min(y, b, z) >= -1e-6) return { ids: d.map(([w, P]) => (n + P) * (a + 1) + l + w), weights: [y, b, z] };
   }
   throw new Error("Tree root is outside its terrain triangle");
 }
-var Kt = { trees: te, level: se, geometry: ie, attachment: re };
-async function ae({ adapterOptions: i, requiredFeatures: e = [], requiredLimits: t, timestamps: s = true } = {}) {
+var jr = { trees: ht, level: xt, geometry: gt, attachment: vt };
+async function bt({ adapterOptions: a, requiredFeatures: e = [], requiredLimits: t, timestamps: i = true } = {}) {
   let r = globalThis.navigator?.gpu;
   if (!r) throw new Error("WebGPU is unavailable; use CPU extraction or a WebGPU browser over HTTPS.");
-  let n = await r.requestAdapter(i);
-  if (!n) throw new Error("No WebGPU adapter is available.");
+  let s = await r.requestAdapter(a);
+  if (!s) throw new Error("No WebGPU adapter is available.");
   let o = new Set(e);
-  return s && n.features.has("timestamp-query") && o.add("timestamp-query"), n.requestDevice({ requiredFeatures: [...o], requiredLimits: t });
+  return i && s.features.has("timestamp-query") && o.add("timestamp-query"), s.requestDevice({ requiredFeatures: [...o], requiredLimits: t });
 }
-async function a1(i) {
-  i.ownsDevice = !i.options.device, i.device = i.options.device || await ae();
-  let e = i.device;
-  i.onGPUError = (s) => i.errors.push(s.error.message), e.addEventListener("uncapturederror", i.onGPUError);
-  let t = new WeakRef(i);
-  if (e.lost.then((s) => {
+async function ae(a) {
+  a.ownsDevice = !a.options.device, a.device = a.options.device || await bt();
+  let e = a.device;
+  a.onGPUError = (i) => a.errors.push(i.error.message), e.addEventListener("uncapturederror", a.onGPUError);
+  let t = new WeakRef(a);
+  if (e.lost.then((i) => {
     let r = t.deref();
-    r && !r.disposed && r.errors.push(`GPU device lost: ${s.message}`);
-  }), i.context = i.canvas.getContext("webgpu"), !i.context) throw new Error("Canvas cannot create a WebGPU context.");
-  return i.format = i.options.format || globalThis.navigator.gpu.getPreferredCanvasFormat(), i.context.configure({ device: e, format: i.format, alphaMode: "opaque" }), e;
+    r && !r.disposed && r.errors.push(`GPU device lost: ${i.message}`);
+  }), a.context = a.canvas.getContext("webgpu"), !a.context) throw new Error("Canvas cannot create a WebGPU context.");
+  return a.format = a.options.format || globalThis.navigator.gpu.getPreferredCanvasFormat(), a.context.configure({ device: e, format: a.format, alphaMode: "opaque" }), e;
 }
-function o1(i) {
-  i.onGPUError && i.device?.removeEventListener("uncapturederror", i.onGPUError), i.context?.unconfigure(), i.ownsDevice && i.device?.destroy();
+function se(a) {
+  a.onGPUError && a.device?.removeEventListener("uncapturederror", a.onGPUError), a.context?.unconfigure(), a.ownsDevice && a.device?.destroy();
 }
-function c1(i, e = {}) {
+function oe(a, e = {}) {
   let t = e.pixelRatio ?? Math.min(globalThis.devicePixelRatio || 1, 1.5);
   if (!Number.isFinite(t) || t <= 0) throw new RangeError("pixelRatio must be positive and finite.");
-  return { ratio: t, width: Math.max(1, Math.round(i.clientWidth === void 0 ? i.width : i.clientWidth * t)), height: Math.max(1, Math.round(i.clientHeight === void 0 ? i.height : i.clientHeight * t)) };
+  return { ratio: t, width: Math.max(1, Math.round(a.clientWidth === void 0 ? a.width : a.clientWidth * t)), height: Math.max(1, Math.round(a.clientHeight === void 0 ? a.height : a.clientHeight * t)) };
 }
-function Ee(i, e) {
-  let t = i % e, s = Math.floor(i / e);
-  return (t === 0 ? e1 : 0) | (t === e - 1 ? t1 : 0) | (s === 0 ? s1 : 0) | (s === e - 1 ? i1 : 0);
+var Li = (a) => 2 << Math.min(a, 3);
+function Zt(a, e) {
+  let t = a % e, i = Math.floor(a / e);
+  return (t === 0 ? xe : 0) | (t === e - 1 ? ge : 0) | (i === 0 ? ve : 0) | (i === e - 1 ? ye : 0);
 }
-function Jt(i, e, t, s, r) {
-  let n = -i / 2, o = i / e, a = e, c = 0, x = t[0] / a, l = t[1] / a, u = x + o, f = l + o, p = [];
-  for (; Number.isFinite(a * 4) && (n + x * a > s[0] - r || n + u * a < s[0] + r || n + l * a > s[2] - r || n + f * a < s[2] + r); ) {
-    let v = function(g, y, w, M) {
-      for (let P = 0; P < M - w; P++) for (let _ = 0; _ < y - g; _++) {
-        let k = g + _, S = w + P, B = (k === h ? e1 : 0) | (k === d - 1 ? t1 : 0) | (S === b ? s1 : 0) | (S === m - 1 ? i1 : 0);
-        p.push({ x: n + k * a, z: n + S * a, size: a, grade: c, mask: B });
+function $r(a, e, t, i, r) {
+  let s = -a / 2, o = a / e, l = e, n = 0, f = t[0] / l, c = t[1] / l, u = f + o, p = c + o, h = [];
+  for (; Number.isFinite(l * 4) && (s + f * l > i[0] - r || s + u * l < i[0] + r || s + c * l > i[2] - r || s + p * l < i[2] + r); ) {
+    let g = function(y, b, z, w) {
+      for (let P = 0; P < w - z; P++) for (let _ = 0; _ < b - y; _++) {
+        let S = y + _, D = z + P, C = n < 3 ? 0 : (S === d ? xe : 0) | (S === m - 1 ? ge : 0) | (D === x ? ve : 0) | (D === v - 1 ? ye : 0);
+        h.push({ x: s + S * l, z: s + D * l, size: l, grade: n, mask: C });
       }
-    }, h = Math.floor((x - 1) / 2) * 2, d = Math.ceil((u + 1) / 2) * 2, b = Math.floor((l - 1) / 2) * 2, m = Math.ceil((f + 1) / 2) * 2;
-    v(h, d, b, l), v(h, d, f, m), v(h, x, l, f), v(u, d, l, f), [x, u, l, f] = [h / 2, d / 2, b / 2, m / 2], a *= 2, c++;
+    }, d = Math.floor((f - 1) / 2) * 2, m = Math.ceil((u + 1) / 2) * 2, x = Math.floor((c - 1) / 2) * 2, v = Math.ceil((p + 1) / 2) * 2;
+    g(d, m, x, c), g(d, m, p, v), g(d, f, c, p), g(u, m, c, p), [f, u, c, p] = [d / 2, m / 2, x / 2, v / 2], l *= 2, n++;
   }
-  return p;
+  return h;
 }
-function xt(i, e, t, s, r) {
-  let [n, o, a] = s.position, c = Math.max(L[0] - o, 0, o - L[1]), x = s.far ** 2 - c ** 2;
-  return x < 0 ? [] : Jt(i, e, t, s.position, s.far).filter(({ x: l, z: u, size: f }) => {
-    let p = Math.max(l - n, 0, n - l - f), h = Math.max(u - a, 0, a - u - f);
-    return p ** 2 + h ** 2 > x ? false : r.every(([d, b, m, v]) => d * (d > 0 ? l + f : l) + b * L[b > 0 ? 1 : 0] + m * (m > 0 ? u + f : u) + v >= 0);
+function Vi(a, e, t, i, r) {
+  let [s, o, l] = i.position, n = Math.max(K[0] - o, 0, o - K[1]), f = i.far ** 2 - n ** 2;
+  return f < 0 ? [] : $r(a, e, t, i.position, i.far).filter(({ x: c, z: u, size: p }) => {
+    let h = Math.max(c - s, 0, s - c - p), d = Math.max(u - l, 0, l - u - p);
+    return h ** 2 + d ** 2 > f ? false : r.every(([m, x, v, g]) => m * (m > 0 ? c + p : c) + x * K[x > 0 ? 1 : 0] + v * (v > 0 ? u + p : u) + g >= 0);
   });
 }
-var lt = `struct Vertex { position:vec4<f32>, normal:vec4<f32> }
+var Oi = `struct Vertex { position:vec4<f32>, normal:vec4<f32> }
 struct Tree { centerScale:vec4<f32>, style:vec4<f32>, samples:vec4<u32>, weights:vec4<f32> }
 struct Frame { vp:mat4x4<f32>, camera:vec4<f32>, sun:vec4<f32>, pad:vec4<f32>, settings:vec4<f32> }
 @group(0) @binding(0) var<storage,read> terrain:array<Vertex>;
@@ -24432,99 +24438,99 @@ struct Out { @builtin(position) clip:vec4<f32>, @location(0) normal:vec3<f32>, @
  return vec4<f32>(pow(color*light,vec3<f32>(1.0/2.2)),1);
 }
 `;
-var t0 = lt;
-var k1 = class {
+var Jr = Oi;
+var Ie = class {
   constructor(e) {
     this.terrain = e, this.enabled = true, this.distance = 1400, this.limit = 16e3, this.cache = /* @__PURE__ */ new Map(), this.previous = /* @__PURE__ */ new Map(), this.data = new ArrayBuffer(this.limit * 64), this.lastPlan = null, this.lastView = "", this.stats = { trees: 0, triangles: 0, draws: 0 };
   }
   async initialize() {
     let e = this.terrain, t = e.device;
     this.buffer = t.createBuffer({ size: this.data.byteLength, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
-    let s = t.createBindGroupLayout({ entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: "read-only-storage" } }, { binding: 1, visibility: GPUShaderStage.VERTEX, buffer: { type: "read-only-storage" } }, { binding: 2, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: "uniform" } }] });
-    this.group = t.createBindGroup({ layout: s, entries: [{ binding: 0, resource: { buffer: e.atlas } }, { binding: 1, resource: { buffer: this.buffer } }, { binding: 2, resource: { buffer: e.frameParams } }] });
-    let r = t.createShaderModule({ code: t0 }), n = await r.getCompilationInfo();
-    if (n.messages.some((o) => o.type === "error")) throw new Error(n.messages.map((o) => o.message).join(`
+    let i = t.createBindGroupLayout({ entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: "read-only-storage" } }, { binding: 1, visibility: GPUShaderStage.VERTEX, buffer: { type: "read-only-storage" } }, { binding: 2, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: "uniform" } }] });
+    this.group = t.createBindGroup({ layout: i, entries: [{ binding: 0, resource: { buffer: e.atlas } }, { binding: 1, resource: { buffer: this.buffer } }, { binding: 2, resource: { buffer: e.frameParams } }] });
+    let r = t.createShaderModule({ code: Jr }), s = await r.getCompilationInfo();
+    if (s.messages.some((o) => o.type === "error")) throw new Error(s.messages.map((o) => o.message).join(`
 `));
-    return this.pipeline = await t.createRenderPipelineAsync({ layout: t.createPipelineLayout({ bindGroupLayouts: [s] }), vertex: { module: r, entryPoint: "vertex", buffers: [{ arrayStride: 36, attributes: [{ shaderLocation: 0, offset: 0, format: "float32x3" }, { shaderLocation: 1, offset: 12, format: "float32x3" }, { shaderLocation: 2, offset: 24, format: "float32x3" }] }] }, fragment: { module: r, entryPoint: "fragment", targets: [{ format: e.format }] }, primitive: { topology: "triangle-list", cullMode: "none" }, depthStencil: { format: "depth24plus", depthWriteEnabled: true, depthCompare: "less" } }), this.meshes = [0, 1, 2].map((o) => {
-      let a = ie(o), c = t.createBuffer({ size: a.byteLength, usage: GPUBufferUsage.VERTEX, mappedAtCreation: true });
-      return new Float32Array(c.getMappedRange()).set(a), c.unmap(), { buffer: c, count: a.length / 9 };
+    return this.pipeline = await t.createRenderPipelineAsync({ layout: t.createPipelineLayout({ bindGroupLayouts: [i] }), vertex: { module: r, entryPoint: "vertex", buffers: [{ arrayStride: 36, attributes: [{ shaderLocation: 0, offset: 0, format: "float32x3" }, { shaderLocation: 1, offset: 12, format: "float32x3" }, { shaderLocation: 2, offset: 24, format: "float32x3" }] }] }, fragment: { module: r, entryPoint: "fragment", targets: [{ format: e.format }] }, primitive: { topology: "triangle-list", cullMode: "none" }, depthStencil: { format: "depth24plus", depthWriteEnabled: true, depthCompare: "less" } }), this.meshes = [0, 1, 2].map((o) => {
+      let l = gt(o), n = t.createBuffer({ size: l.byteLength, usage: GPUBufferUsage.VERTEX, mappedAtCreation: true });
+      return new Float32Array(n.getMappedRange()).set(l), n.unmap(), { buffer: n, count: l.length / 9 };
     }), this;
   }
   tileTrees(e, t) {
-    let s = `${this.terrain.seed}:${e.ox}:${e.oz}`, r = this.cache.get(s);
+    let i = `${this.terrain.seed}:${e.ox}:${e.oz}`, r = this.cache.get(i);
     if (!r) {
-      r = { trees: te(e, 32, this.terrain.seed), time: t };
-      for (let n of r.trees) n.y = J(n.x, n.z, this.terrain.seed);
-      this.cache.set(s, r);
+      r = { trees: ht(e, 32, this.terrain.seed), time: t };
+      for (let s of r.trees) s.y = he(s.x, s.z, this.terrain.seed);
+      this.cache.set(i, r);
     }
     if (r.time = t, this.cache.size > 512) {
-      let n;
-      for (let o of this.cache) o[0] !== s && (!n || o[1].time < n[1].time) && (n = o);
-      n && this.cache.delete(n[0]);
+      let s;
+      for (let o of this.cache) o[0] !== i && (!s || o[1].time < s[1].time) && (s = o);
+      s && this.cache.delete(s[0]);
     }
     return r;
   }
   prefetch(e, t) {
-    let s = this.terrain, r = Math.min(this.distance, e.far);
-    (this.warmSelection !== s.selected || this.warmDistance !== r || this.warmSeed !== s.seed) && (this.warmSelection = s.selected, this.warmDistance = r, this.warmSeed = s.seed, this.warmTiles = Array.from(s.prefetchIds || []).map((o) => ({ tile: s.tiles[o], distance: D(s.tiles[o], e.position) })).filter((o) => o.distance <= r).sort((o, a) => o.distance - a.distance).slice(0, 512), this.warmAt = 0);
-    let n = 0;
-    for (; this.warmAt < this.warmTiles.length && n < 2; ) {
+    let i = this.terrain, r = Math.min(this.distance, e.far);
+    (this.warmSelection !== i.selected || this.warmDistance !== r || this.warmSeed !== i.seed) && (this.warmSelection = i.selected, this.warmDistance = r, this.warmSeed = i.seed, this.warmTiles = Array.from(i.prefetchIds || []).map((o) => ({ tile: i.tiles[o], distance: O(i.tiles[o], e.position) })).filter((o) => o.distance <= r).sort((o, l) => o.distance - l.distance).slice(0, 512), this.warmAt = 0);
+    let s = 0;
+    for (; this.warmAt < this.warmTiles.length && s < 2; ) {
       let { tile: o } = this.warmTiles[this.warmAt++];
-      this.cache.has(`${s.seed}:${o.ox}:${o.oz}`) || (this.tileTrees(o, t), n++);
+      this.cache.has(`${i.seed}:${o.ox}:${o.oz}`) || (this.tileTrees(o, t), s++);
     }
   }
-  prepare(e, t, s) {
+  prepare(e, t, i) {
     if (!this.enabled) {
       (!this.draws || this.draws.length) && (this.stats = { trees: 0, triangles: 0, draws: 0 }, this.draws = []), this.lastPlan = null;
       return;
     }
-    this.prefetch(e, s);
+    this.prefetch(e, i);
     let r = this.terrain;
-    if (this.lastPlan === r.drawPlan && s - this.lastTime < 100) return;
-    let n = [...e.position, e.height, e.fov, e.far, this.distance, ...t.flat()].join(",");
-    if (this.lastPlan === r.drawPlan && n === this.lastView) return;
-    this.lastPlan = r.drawPlan, this.lastView = n, this.lastTime = s;
-    let o = [], a = Math.min(this.distance, e.far), c = r.lastMasks;
-    for (let d of r.visibleIds) {
-      let b = r.lastActual.get(d);
-      if (b === void 0) continue;
-      let m = r.tiles[d];
-      if (D(m, e.position) > a) continue;
-      let v = this.tileTrees(m, s);
-      for (let g of v.trees) {
-        let y = g.y + g.height * 0.5, w = Math.hypot(g.x - e.position[0], y - e.position[1], g.z - e.position[2]);
-        w > a || t.some((M) => M[0] * g.x + M[1] * y + M[2] * g.z + M[3] < -g.height * 0.6) || o.push({ tree: g, id: d, level: b, distance: w });
+    if (this.lastPlan === r.drawPlan && i - this.lastTime < 100) return;
+    let s = [...e.position, e.height, e.fov, e.far, this.distance, ...t.flat()].join(",");
+    if (this.lastPlan === r.drawPlan && s === this.lastView) return;
+    this.lastPlan = r.drawPlan, this.lastView = s, this.lastTime = i;
+    let o = [], l = Math.min(this.distance, e.far), n = r.lastMasks;
+    for (let m of r.visibleIds) {
+      let x = r.lastActual.get(m);
+      if (x === void 0) continue;
+      let v = r.tiles[m];
+      if (O(v, e.position) > l) continue;
+      let g = this.tileTrees(v, i);
+      for (let y of g.trees) {
+        let b = y.y + y.height * 0.5, z = Math.hypot(y.x - e.position[0], b - e.position[1], y.z - e.position[2]);
+        z > l || t.some((w) => w[0] * y.x + w[1] * b + w[2] * y.z + w[3] < -y.height * 0.6) || o.push({ tree: y, id: m, level: x, distance: z });
       }
     }
-    o.sort((d, b) => d.distance - b.distance);
-    let x = [[], [], []], l = /* @__PURE__ */ new Map();
-    for (let d of o.slice(0, this.limit)) {
-      let b = se(d.tree, e, this.previous.get(d.tree.id));
-      x[b].push(d), l.set(d.tree.id, b);
+    o.sort((m, x) => m.distance - x.distance);
+    let f = [[], [], []], c = /* @__PURE__ */ new Map();
+    for (let m of o.slice(0, this.limit)) {
+      let x = xt(m.tree, e, this.previous.get(m.tree.id));
+      f[x].push(m), c.set(m.tree.id, x);
     }
-    this.previous = l;
-    let u = new Float32Array(this.data), f = new Uint32Array(this.data), p = 0, h = 0;
+    this.previous = c;
+    let u = new Float32Array(this.data), p = new Uint32Array(this.data), h = 0, d = 0;
     this.draws = [];
-    for (let d = 0; d < 3; d++) {
-      let b = p;
-      for (let { tree: m, id: v, level: g, distance: y } of x[d]) {
-        let w = r.drawEntries.get(v), M = r.options.maxDivs >> g, P = r.options.maxDivs >> w.lod, _ = P / M, k = re(M, c.get(v), r.algorithm, m.u, m.v), S = p++ * 16;
-        u[S] = m.x, u[S + 1] = 0, u[S + 2] = m.z, u[S + 3] = m.height, u[S + 4] = m.yaw, u[S + 5] = m.tint, u[S + 6] = Math.min(1, (a - y) / (a * 0.15)), u[S + 7] = d;
-        for (let B = 0; B < 3; B++) {
-          let z = k.ids[B];
-          f[S + 8 + B] = w.base + Math.floor(z / (M + 1)) * _ * (P + 1) + z % (M + 1) * _, u[S + 12 + B] = k.weights[B];
+    for (let m = 0; m < 3; m++) {
+      let x = h;
+      for (let { tree: v, id: g, level: y, distance: b } of f[m]) {
+        let z = r.drawEntries.get(g), w = r.options.maxDivs >> y, P = r.options.maxDivs >> z.lod, _ = P / w, S = vt(w, n.get(g), r.algorithm, v.u, v.v), D = h++ * 16;
+        u[D] = v.x, u[D + 1] = 0, u[D + 2] = v.z, u[D + 3] = v.height, u[D + 4] = v.yaw, u[D + 5] = v.tint, u[D + 6] = Math.min(1, (l - b) / (l * 0.15)), u[D + 7] = m;
+        for (let C = 0; C < 3; C++) {
+          let M = S.ids[C];
+          p[D + 8 + C] = z.base + Math.floor(M / (w + 1)) * _ * (P + 1) + M % (w + 1) * _, u[D + 12 + C] = S.weights[C];
         }
       }
-      p > b && (this.draws.push({ lod: d, first: b, instances: p - b }), h += (p - b) * this.meshes[d].count / 3);
+      h > x && (this.draws.push({ lod: m, first: x, instances: h - x }), d += (h - x) * this.meshes[m].count / 3);
     }
-    p && r.device.queue.writeBuffer(this.buffer, 0, this.data, 0, p * 64), this.stats = { trees: p, triangles: h, draws: this.draws.length, cachedTiles: this.cache.size, lods: x.map((d) => d.length), limited: o.length > this.limit };
+    h && r.device.queue.writeBuffer(this.buffer, 0, this.data, 0, h * 64), this.stats = { trees: h, triangles: d, draws: this.draws.length, cachedTiles: this.cache.size, lods: f.map((m) => m.length), limited: o.length > this.limit };
   }
   render(e) {
     if (!(!this.enabled || !this.draws?.length)) {
       e.setPipeline(this.pipeline), e.setBindGroup(0, this.group);
       for (let t of this.draws) {
-        let s = this.meshes[t.lod];
-        e.setVertexBuffer(0, s.buffer), e.draw(s.count, t.instances, 0, t.first);
+        let i = this.meshes[t.lod];
+        e.setVertexBuffer(0, i.buffer), e.draw(i.count, t.instances, 0, t.first);
       }
     }
   }
@@ -24533,13 +24539,13 @@ var k1 = class {
     for (let e of this.meshes || []) e.buffer.destroy();
   }
 };
-function S1(i, e, t = 0.12) {
-  return i.map((s, r) => r < 4 ? [s[0], s[1], s[2], s[3] + e * t] : s);
+function Fe(a, e, t = 0.12) {
+  return a.map((i, r) => r < 4 ? [i[0], i[1], i[2], i[3] + e * t] : i);
 }
-function oe(i, e, t = 0.08) {
-  return i.length !== e?.length || i.slice(0, 4).some((s, r) => s.slice(0, 3).reduce((n, o, a) => n + (o - e[r][a]) ** 2, 0) > t ** 2);
+function wt(a, e, t = 0.08) {
+  return a.length !== e?.length || a.slice(0, 4).some((i, r) => i.slice(0, 3).reduce((s, o, l) => s + (o - e[r][l]) ** 2, 0) > t ** 2);
 }
-var ut = `struct Vertex { position: vec4<f32>, normal: vec4<f32> }
+var Wi = `struct Vertex { position: vec4<f32>, normal: vec4<f32> }
 struct BuildParams { origin: vec2<f32>, size: f32, divs: u32, base: u32, stride: u32, seed: u32, pad: u32 }
 @group(0) @binding(0) var<storage,read_write> buildVertices: array<Vertex>;
 @group(0) @binding(1) var<uniform> build: BuildParams;
@@ -24592,7 +24598,8 @@ fn vertex_main(@builtin(vertex_index) vertex:u32,@builtin(instance_index) instan
 @vertex
 fn vertex_horizon(@builtin(vertex_index) vertex:u32,@builtin(instance_index) instance:u32)->Varying {
   let tile=horizon[instance];
-  let xz=tile.origin+vec2<f32>(f32(vertex%3u),f32(vertex/3u))*(tile.size*0.5);
+  let divs=2u<<min(tile.grade,3u);let row=divs+1u;
+  let xz=tile.origin+vec2<f32>(f32(vertex%row),f32(vertex/row))*(tile.size/f32(divs));
   let h=terrain_height_gradient(xz,bitcast<u32>(frame.settings.x));
   let world=vec3<f32>(xz.x,h.x,xz.y);
   var clip=frame.viewProjection*vec4<f32>(world,1);
@@ -24609,230 +24616,243 @@ fn lod_color(level:u32)->vec3<f32> {
 }
 @fragment
 fn fragment_main(input:Varying)->@location(0) vec4<f32> {
-  let n=normalize(input.normal);
-  let grass=mix(vec3<f32>(.13,.24,.12),vec3<f32>(.36,.43,.23),smoothstep(-50.0,180.0,input.world.y));
+  let xz=input.world.xz;
+  let footprint=max(length(dpdx(xz)),length(dpdy(xz)));
+  let dist=length(input.world-frame.camera.xyz);
+  if(dist>frame.settings.w){discard;}
+  let detail=smoothstep(1200.0,3500.0,dist);
+  var height=input.world.y;
+  var n=normalize(input.normal);
+  if(detail>0.0 && frame.settings.y<0.5 && frame.settings.z<0.5){
+    let field=terrain_filtered_gradient(xz,bitcast<u32>(frame.settings.x),footprint);
+    height=mix(height,field.x,detail);
+    n=normalize(mix(n,normalize(vec3<f32>(-field.y,1,-field.z)),detail));
+  }
+  let grass=mix(vec3<f32>(.13,.24,.12),vec3<f32>(.36,.43,.23),smoothstep(-50.0,180.0,height));
   let stone=vec3<f32>(.42,.40,.36);
   var color=mix(grass,stone,smoothstep(.25,.62,1.0-n.y));
-  color=mix(color,vec3<f32>(.77,.79,.77),smoothstep(140.0,250.0,input.world.y)*smoothstep(.4,.85,n.y));
-  color=mix(vec3<f32>(.09,.21,.28),color,smoothstep(-30.0,-8.0,input.world.y));
+  color=mix(color,vec3<f32>(.77,.79,.77),smoothstep(140.0,250.0,height)*smoothstep(.4,.85,n.y));
+  color=mix(vec3<f32>(.09,.21,.28),color,smoothstep(-30.0,-8.0,height));
   if(frame.settings.y>0.5){color=lod_color(input.lod);}
   if(frame.settings.z>0.5){color=mix(lod_color(input.lod),vec3<f32>(.85),.35);}
   let light=.35+max(dot(n,normalize(frame.sun.xyz)),0.0)*.85;
-  if(length(input.world-frame.camera.xyz)>frame.settings.w){discard;}
   return vec4<f32>(pow(color*light,vec3<f32>(1.0/2.2)),1);
 }
 `;
-var i0 = Y + ut;
-var B1 = class {
+var ta = le + Wi;
+var Le = class {
   constructor(e, t = {}) {
     if (this.canvas = e, this.options = { worldSize: 8192, tileSize: 128, maxDivs: 64, memoryMB: 64, buildsPerFrame: 8, ...t }, !Number.isInteger(this.options.maxDivs) || this.options.maxDivs < 4 || this.options.maxDivs > 128 || this.options.maxDivs & this.options.maxDivs - 1) throw new Error("Terrain maxDivs must be a power of two from 4 to 128");
-    let { worldSize: s, tileSize: r, memoryMB: n, buildsPerFrame: o } = this.options, a = (l) => Number.isFinite(l) && l >= 1 && Number.isInteger(Math.log2(l));
-    if (!a(s) || !a(r) || r > s || s / r > 512 || !Number.isFinite(n) || n <= 0 || !Number.isInteger(o) || o < 1 || o > 32) throw new RangeError("Use power-of-two world/tile sizes (up to 512 tiles per side), positive memoryMB and 1\u201332 builds per frame.");
-    let c = Y1(this.options.worldSize, this.options.tileSize);
-    this.tiles = c.tiles, this.side = c.side, this.levels = Math.log2(this.options.maxDivs);
-    let x = performance.now();
-    this.tree = Z1(this.tiles), this.treeBuildMs = performance.now() - x, this.settings = { maxDivs: this.options.maxDivs, levels: this.levels, pixelError: 2.5, nearRadius: 110, uniform: false, infinite: false }, this.origin = [0, 0], this.entries = /* @__PURE__ */ new Map(), this.free = [], this.templates = /* @__PURE__ */ new Map(), this.previous = /* @__PURE__ */ new Map(), this.selected = /* @__PURE__ */ new Map(), this.detailSelected = /* @__PURE__ */ new Map(), this.visibleIds = [], this.horizonTiles = [], this.horizonPlan = [], this.needsSelection = true, this.lastSelect = -1 / 0, this.generation = 0, this.seed = 7, this.algorithm = "mc33", this.stats = { generated: 0, samples: 0, cacheHits: 0, evicted: 0, windowShifts: 0, gpuMs: null, treeBuildMs: this.treeBuildMs }, this.errors = [], this.disposed = false, this.drawPlan = null, this.planAlgorithm = null, this.viewState = [], this.frameData = new Float32Array(32), this.frameWords = new Uint32Array(this.frameData.buffer);
+    let { worldSize: i, tileSize: r, memoryMB: s, buildsPerFrame: o } = this.options, l = (c) => Number.isFinite(c) && c >= 1 && Number.isInteger(Math.log2(c));
+    if (!l(i) || !l(r) || r > i || i / r > 512 || !Number.isFinite(s) || s <= 0 || !Number.isInteger(o) || o < 1 || o > 32) throw new RangeError("Use power-of-two world/tile sizes (up to 512 tiles per side), positive memoryMB and 1\u201332 builds per frame.");
+    let n = nt(this.options.worldSize, this.options.tileSize);
+    this.tiles = n.tiles, this.side = n.side, this.levels = Math.log2(this.options.maxDivs);
+    let f = performance.now();
+    this.tree = pt(this.tiles), this.treeBuildMs = performance.now() - f, this.settings = { maxDivs: this.options.maxDivs, levels: this.levels, pixelError: 2.5, nearRadius: 110, uniform: false, infinite: false }, this.origin = [0, 0], this.entries = /* @__PURE__ */ new Map(), this.free = [], this.templates = /* @__PURE__ */ new Map(), this.previous = /* @__PURE__ */ new Map(), this.selected = /* @__PURE__ */ new Map(), this.detailSelected = /* @__PURE__ */ new Map(), this.visibleIds = [], this.horizonTiles = [], this.horizonPlan = [], this.needsSelection = true, this.lastSelect = -1 / 0, this.generation = 0, this.seed = 7, this.algorithm = "mc33", this.stats = { generated: 0, samples: 0, cacheHits: 0, evicted: 0, windowShifts: 0, gpuMs: null, treeBuildMs: this.treeBuildMs }, this.errors = [], this.disposed = false, this.drawPlan = null, this.planAlgorithm = null, this.viewState = [], this.frameData = new Float32Array(32), this.frameWords = new Uint32Array(this.frameData.buffer);
   }
   async initialize() {
-    let e = await a1(this);
+    let e = await ae(this);
     this.stride = (this.options.maxDivs + 1) ** 2;
-    let t = this.stride * 32, s = Math.min(e.limits.maxStorageBufferBindingSize, e.limits.maxBufferSize, this.options.memoryMB * 1024 ** 2);
-    if (this.coverageBytes = this.tiles.length * 9 * 32, this.capacity = Math.min(1024, Math.floor((s - this.coverageBytes) / t)), this.capacity < 16) throw new Error("GPU memory budget is too small for map coverage and 16 detail patches");
-    this.coverageBase = this.capacity * this.stride, this.coverageGeneration = -1, this.coverageOrigin = [], this.coverageEntries = this.tiles.map((f) => ({ id: f.id, base: this.coverageBase + f.id * 9, lod: this.levels - 1, ready: true })), this.atlas = e.createBuffer({ label: "Resident terrain samples", size: this.capacity * t + this.coverageBytes, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC }), this.free = Array.from({ length: this.capacity }, (f, p) => this.capacity - p - 1), this.buildBudget = this.options.buildsPerFrame, this.buildParams = e.createBuffer({ size: (this.buildBudget + 1) * 256, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST }), this.frameParams = e.createBuffer({ size: 128, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST }), this.instanceBuffer = e.createBuffer({ size: this.tiles.length * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
-    let r = e.createShaderModule({ label: "Terrain field, generation and render", code: i0 }), n = await r.getCompilationInfo(), o = n.messages.filter((f) => f.type === "error");
-    if (o.length) throw new Error(o.map((f) => `${f.lineNum}: ${f.message}`).join(`
+    let t = this.stride * 32, i = Math.min(e.limits.maxStorageBufferBindingSize, e.limits.maxBufferSize, this.options.memoryMB * 1024 ** 2);
+    if (this.coverageBytes = this.tiles.length * 9 * 32, this.capacity = Math.min(1024, Math.floor((i - this.coverageBytes) / t)), this.capacity < 16) throw new Error("GPU memory budget is too small for map coverage and 16 detail patches");
+    this.coverageBase = this.capacity * this.stride, this.coverageGeneration = -1, this.coverageOrigin = [], this.coverageEntries = this.tiles.map((p) => ({ id: p.id, base: this.coverageBase + p.id * 9, lod: this.levels - 1, ready: true })), this.atlas = e.createBuffer({ label: "Resident terrain samples", size: this.capacity * t + this.coverageBytes, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC }), this.free = Array.from({ length: this.capacity }, (p, h) => this.capacity - h - 1), this.buildBudget = this.options.buildsPerFrame, this.buildParams = e.createBuffer({ size: (this.buildBudget + 1) * 256, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST }), this.frameParams = e.createBuffer({ size: 128, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST }), this.instanceBuffer = e.createBuffer({ size: this.tiles.length * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+    let r = e.createShaderModule({ label: "Terrain field, generation and render", code: ta }), s = await r.getCompilationInfo(), o = s.messages.filter((p) => p.type === "error");
+    if (o.length) throw new Error(o.map((p) => `${p.lineNum}: ${p.message}`).join(`
 `));
-    let a = e.createBindGroupLayout({ entries: [{ binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } }, { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: "uniform", hasDynamicOffset: true, minBindingSize: 32 } }] });
-    this.compute = await e.createComputePipelineAsync({ layout: e.createPipelineLayout({ bindGroupLayouts: [a] }), compute: { module: r, entryPoint: "generate" } }), this.coverageCompute = await e.createComputePipelineAsync({ layout: e.createPipelineLayout({ bindGroupLayouts: [a] }), compute: { module: r, entryPoint: "generate_coverage" } }), this.buildGroup = e.createBindGroup({ layout: a, entries: [{ binding: 0, resource: { buffer: this.atlas } }, { binding: 1, resource: { buffer: this.buildParams, size: 32 } }] });
-    let c = e.createBindGroupLayout({ entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: "read-only-storage" } }, { binding: 1, visibility: GPUShaderStage.VERTEX, buffer: { type: "read-only-storage" } }, { binding: 2, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: "uniform" } }] }), l = { layout: e.createPipelineLayout({ bindGroupLayouts: [c] }), vertex: { module: r, entryPoint: "vertex_main" }, fragment: { module: r, entryPoint: "fragment_main", targets: [{ format: this.format }] }, depthStencil: { format: "depth24plus", depthWriteEnabled: true, depthCompare: "less" } };
-    this.renderPipeline = await e.createRenderPipelineAsync({ ...l, primitive: { topology: "triangle-list", cullMode: "back" } }), this.linePipeline = await e.createRenderPipelineAsync({ ...l, primitive: { topology: "line-list" } });
-    let u = { ...l, vertex: { module: r, entryPoint: "vertex_horizon" } };
-    if ([this.horizonPipeline, this.horizonLines] = await Promise.all([e.createRenderPipelineAsync({ ...u, primitive: { topology: "triangle-list", cullMode: "back" } }), e.createRenderPipelineAsync({ ...u, primitive: { topology: "line-list" } })]), this.renderLayout = c, this.renderGroup = e.createBindGroup({ layout: c, entries: [{ binding: 0, resource: { buffer: this.atlas } }, { binding: 1, resource: { buffer: this.instanceBuffer } }, { binding: 2, resource: { buffer: this.frameParams } }] }), this.stats.atlasBytes = this.capacity * t + this.coverageBytes, this.stats.coverageBytes = this.coverageBytes, this.stats.coverageTiles = this.tiles.length, this.timers = [], e.features.has("timestamp-query")) for (let f = 0; f < 3; f++) this.timers.push({ busy: false, queries: e.createQuerySet({ type: "timestamp", count: 4 }), resolve: e.createBuffer({ size: 32, usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC }), read: e.createBuffer({ size: 32, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ }) });
-    return this.frameIndex = 0, this.resize(), this.vegetation = await new k1(this).initialize(), this;
+    let l = e.createBindGroupLayout({ entries: [{ binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } }, { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: "uniform", hasDynamicOffset: true, minBindingSize: 32 } }] });
+    this.compute = await e.createComputePipelineAsync({ layout: e.createPipelineLayout({ bindGroupLayouts: [l] }), compute: { module: r, entryPoint: "generate" } }), this.coverageCompute = await e.createComputePipelineAsync({ layout: e.createPipelineLayout({ bindGroupLayouts: [l] }), compute: { module: r, entryPoint: "generate_coverage" } }), this.buildGroup = e.createBindGroup({ layout: l, entries: [{ binding: 0, resource: { buffer: this.atlas } }, { binding: 1, resource: { buffer: this.buildParams, size: 32 } }] });
+    let n = e.createBindGroupLayout({ entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: "read-only-storage" } }, { binding: 1, visibility: GPUShaderStage.VERTEX, buffer: { type: "read-only-storage" } }, { binding: 2, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: "uniform" } }] }), c = { layout: e.createPipelineLayout({ bindGroupLayouts: [n] }), vertex: { module: r, entryPoint: "vertex_main" }, fragment: { module: r, entryPoint: "fragment_main", targets: [{ format: this.format }] }, depthStencil: { format: "depth24plus", depthWriteEnabled: true, depthCompare: "less" } };
+    this.renderPipeline = await e.createRenderPipelineAsync({ ...c, primitive: { topology: "triangle-list", cullMode: "back" } }), this.linePipeline = await e.createRenderPipelineAsync({ ...c, primitive: { topology: "line-list" } });
+    let u = { ...c, vertex: { module: r, entryPoint: "vertex_horizon" } };
+    if ([this.horizonPipeline, this.horizonLines] = await Promise.all([e.createRenderPipelineAsync({ ...u, primitive: { topology: "triangle-list", cullMode: "back" } }), e.createRenderPipelineAsync({ ...u, primitive: { topology: "line-list" } })]), this.renderLayout = n, this.renderGroup = e.createBindGroup({ layout: n, entries: [{ binding: 0, resource: { buffer: this.atlas } }, { binding: 1, resource: { buffer: this.instanceBuffer } }, { binding: 2, resource: { buffer: this.frameParams } }] }), this.stats.atlasBytes = this.capacity * t + this.coverageBytes, this.stats.coverageBytes = this.coverageBytes, this.stats.coverageTiles = this.tiles.length, this.timers = [], e.features.has("timestamp-query")) for (let p = 0; p < 3; p++) this.timers.push({ busy: false, queries: e.createQuerySet({ type: "timestamp", count: 4 }), resolve: e.createBuffer({ size: 32, usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC }), read: e.createBuffer({ size: 32, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ }) });
+    return this.frameIndex = 0, this.resize(), this.vegetation = await new Ie(this).initialize(), this;
   }
   resize() {
-    let { width: e, height: t } = c1(this.canvas, this.options);
+    let { width: e, height: t } = oe(this.canvas, this.options);
     this.canvas.width === e && this.canvas.height === t && this.depth || (this.canvas.width = e, this.canvas.height = t, this.depth?.destroy(), this.depth = this.device.createTexture({ size: [e, t], format: "depth24plus", usage: GPUTextureUsage.RENDER_ATTACHMENT }), this.needsSelection = true);
   }
   configure(e) {
     Object.assign(this.settings, e), this.previous.clear(), this.needsSelection = true;
   }
   updateWindow(e) {
-    let t = this.settings.infinite ? X1(e.position, this.options.worldSize, this.options.tileSize) : [0, 0], s = t[0] - this.origin[0], r = t[1] - this.origin[1];
-    if (!s && !r) return;
-    let n = s / this.options.tileSize, o = r / this.options.tileSize;
-    H1(this.tiles, s, r), this.entries = M1(this.entries, this.side, n, o, (a) => {
-      this.free.push(a.slot), this.stats.evicted++;
+    let t = this.settings.infinite ? lt(e.position, this.options.worldSize, this.options.tileSize) : [0, 0], i = t[0] - this.origin[0], r = t[1] - this.origin[1];
+    if (!i && !r) return;
+    let s = i / this.options.tileSize, o = r / this.options.tileSize;
+    ft(this.tiles, i, r), this.entries = Ee(this.entries, this.side, s, o, (l) => {
+      this.free.push(l.slot), this.stats.evicted++;
     });
-    for (let [a, c] of this.entries) c.id = a;
-    this.previous = M1(this.previous, this.side, n, o), this.selected.clear(), this.visibleIds = [], this.lastActual = /* @__PURE__ */ new Map(), this.origin = t, this.needsSelection = true, this.stats.windowShifts++;
+    for (let [l, n] of this.entries) n.id = l;
+    this.previous = Ee(this.previous, this.side, s, o), this.selected.clear(), this.visibleIds = [], this.lastActual = /* @__PURE__ */ new Map(), this.origin = t, this.needsSelection = true, this.stats.windowShifts++;
   }
-  select(e, t, s) {
-    let r = performance.now(), n = J1(this.tree, Q1(S1(t, Math.min(e.far, this.options.tileSize * 8)), this.origin));
-    n.ids = n.ids.filter((h) => D(this.tiles[h], e.position) <= e.far);
-    let o = new Set(n.ids), a = Math.floor((e.player[0] - this.origin[0] + this.options.worldSize / 2) / this.options.tileSize), c = Math.floor((e.player[2] - this.origin[1] + this.options.worldSize / 2) / this.options.tileSize), x = Math.min(e.far, this.options.tileSize * Math.sqrt(this.capacity * 0.35 / Math.PI)), l = Math.ceil(x / this.options.tileSize);
+  select(e, t, i) {
+    let r = performance.now(), s = dt(this.tree, ct(Fe(t, Math.min(e.far, this.options.tileSize * 8)), this.origin));
+    s.ids = s.ids.filter((d) => O(this.tiles[d], e.position) <= e.far);
+    let o = new Set(s.ids), l = Math.floor((e.player[0] - this.origin[0] + this.options.worldSize / 2) / this.options.tileSize), n = Math.floor((e.player[2] - this.origin[1] + this.options.worldSize / 2) / this.options.tileSize), f = Math.min(e.far, this.options.tileSize * Math.sqrt(this.capacity * 0.35 / Math.PI)), c = Math.ceil(f / this.options.tileSize);
     this.prefetchIds = /* @__PURE__ */ new Set();
-    for (let h = c - l; h <= c + l; h++) for (let d = a - l; d <= a + l; d++) d >= 0 && h >= 0 && d < this.side && h < this.side && D(this.tiles[h * this.side + d], e.player) <= x && (o.add(h * this.side + d), this.prefetchIds.add(h * this.side + d));
-    let u = Array.from(o), f = K1(this.tiles, u, this.side, e, this.settings, this.previous), p = u.filter((h) => f.levels.get(h) < this.levels - 1);
-    this.stats.capacityLimited = p.length > this.capacity, p.length > this.capacity && p.sort((h, d) => D(this.tiles[h], e.position) - D(this.tiles[d], e.position)), this.detailSelected = new Map(p.slice(0, this.capacity).map((h) => [h, f.levels.get(h)])), this.visibleIds = n.ids, this.horizonTiles = this.settings.infinite ? xt(this.options.worldSize, this.options.tileSize, this.origin, e, S1(t, e.far)) : [], this.selected = f.levels, this.previous = new Map(f.levels), this.stats.selectionMs = performance.now() - r, this.stats.visited = n.visited, this.stats.visible = n.ids.length, this.stats.requested = u.length, this.stats.prefetchRadius = x, this.stats.prefetched = f.levels.size - this.visibleIds.length, this.lastSelect = s, this.selectionPlanes = t.map((h) => h.slice()), this.needsSelection = false, this.drawDirty = true;
+    for (let d = n - c; d <= n + c; d++) for (let m = l - c; m <= l + c; m++) m >= 0 && d >= 0 && m < this.side && d < this.side && O(this.tiles[d * this.side + m], e.player) <= f && (o.add(d * this.side + m), this.prefetchIds.add(d * this.side + m));
+    let u = Array.from(o), p = ut(this.tiles, u, this.side, e, this.settings, this.previous), h = u.filter((d) => p.levels.get(d) < this.levels - 1);
+    this.stats.capacityLimited = h.length > this.capacity, h.length > this.capacity && h.sort((d, m) => O(this.tiles[d], e.position) - O(this.tiles[m], e.position)), this.detailSelected = new Map(h.slice(0, this.capacity).map((d) => [d, p.levels.get(d)])), this.visibleIds = s.ids, this.horizonTiles = this.settings.infinite ? Vi(this.options.worldSize, this.options.tileSize, this.origin, e, Fe(t, e.far)) : [], this.selected = p.levels, this.previous = new Map(p.levels), this.stats.selectionMs = performance.now() - r, this.stats.visited = s.visited, this.stats.visible = s.ids.length, this.stats.requested = u.length, this.stats.prefetchRadius = f, this.stats.prefetched = p.levels.size - this.visibleIds.length, this.lastSelect = i, this.selectionPlanes = t.map((d) => d.slice()), this.needsSelection = false, this.drawDirty = true;
   }
   getTemplate(e, t) {
-    let s = `${this.algorithm}:${e}:${t}`;
-    if (this.templates.has(s)) return this.templates.get(s);
-    let r = $(e, t, this.algorithm), n = r1(r), o = this.device;
-    function a(x, l) {
-      let u = o.createBuffer({ size: x.byteLength, usage: GPUBufferUsage.INDEX, mappedAtCreation: true, label: l });
-      return new Uint32Array(u.getMappedRange()).set(x), u.unmap(), u;
+    let i = `${this.algorithm}:${e}:${t}`;
+    if (this.templates.has(i)) return this.templates.get(i);
+    let r = Z(e, t, this.algorithm), s = re(r), o = this.device;
+    function l(f, c) {
+      let u = o.createBuffer({ size: f.byteLength, usage: GPUBufferUsage.INDEX, mappedAtCreation: true, label: c });
+      return new Uint32Array(u.getMappedRange()).set(f), u.unmap(), u;
     }
-    let c = { triangles: r.length / 3, indexCount: r.length, lineCount: n.length, index: a(r, "Terrain topology"), line: a(n, "Terrain wire topology") };
-    return this.templates.set(s, c), c;
+    let n = { triangles: r.length / 3, indexCount: r.length, lineCount: s.length, index: l(r, "Terrain topology"), line: l(s, "Terrain wire topology") };
+    return this.templates.set(i, n), n;
   }
-  allocate(e, t, s) {
+  allocate(e, t, i) {
     if (!this.free.length) {
-      let n = null;
-      for (let o of this.entries.values()) !t.has(o.id) && (!n || o.touched < n.touched) && (n = o);
-      if (!n) return null;
-      this.entries.delete(n.id), this.free.push(n.slot), this.stats.evicted++;
+      let s = null;
+      for (let o of this.entries.values()) !t.has(o.id) && (!s || o.touched < s.touched) && (s = o);
+      if (!s) return null;
+      this.entries.delete(s.id), this.free.push(s.slot), this.stats.evicted++;
     }
-    let r = { id: e, slot: this.free.pop(), lod: this.levels - 1, touched: s, ready: false, generation: this.generation };
+    let r = { id: e, slot: this.free.pop(), lod: this.levels - 1, touched: i, ready: false, generation: this.generation };
     return r.base = r.slot * this.stride, this.entries.set(e, r), r;
   }
   planBuilds(e, t) {
     if (this.stats.pending === 0 && !this.drawDirty && this.drawPlan && this.planGeneration === this.generation) return [];
-    let s = new Set(this.detailSelected.keys()), r = [], n = [];
-    for (let [x, l] of this.detailSelected) {
-      let u = this.entries.get(x), f = D(this.tiles[x], e.position);
-      u && (u.touched = t), !u || !u.ready || u.generation !== this.generation ? r.push({ id: x, lod: l, distance: f }) : u.lod > l ? n.push({ id: x, lod: l, distance: f, refine: true }) : this.stats.cacheHits++;
+    let i = new Set(this.detailSelected.keys()), r = [], s = [];
+    for (let [f, c] of this.detailSelected) {
+      let u = this.entries.get(f), p = O(this.tiles[f], e.position);
+      u && (u.touched = t), !u || !u.ready || u.generation !== this.generation ? r.push({ id: f, lod: c, distance: p }) : u.lod > c ? s.push({ id: f, lod: c, distance: p, refine: true }) : this.stats.cacheHits++;
     }
-    r.sort((x, l) => x.distance - l.distance), n.sort((x, l) => Number(l.refine) - Number(x.refine) || x.distance - l.distance);
-    let o = new Set(this.visibleIds), a = [], c = [r, n].flatMap((x) => x.filter((l) => o.has(l.id)).concat(x.filter((l) => !o.has(l.id))));
-    for (let x of c) {
-      if (a.length >= this.buildBudget) break;
-      let l = this.entries.get(x.id) || this.allocate(x.id, s, t);
-      l && a.push({ entry: l, lod: x.lod });
+    r.sort((f, c) => f.distance - c.distance), s.sort((f, c) => Number(c.refine) - Number(f.refine) || f.distance - c.distance);
+    let o = new Set(this.visibleIds), l = [], n = [r, s].flatMap((f) => f.filter((c) => o.has(c.id)).concat(f.filter((c) => !o.has(c.id))));
+    for (let f of n) {
+      if (l.length >= this.buildBudget) break;
+      let c = this.entries.get(f.id) || this.allocate(f.id, i, t);
+      c && l.push({ entry: c, lod: f.lod });
     }
-    return this.stats.pending = r.length + n.length - a.length, a;
+    return this.stats.pending = r.length + s.length - l.length, l;
   }
   viewChanged(e, t) {
-    let s = 0, r = false, n = (o) => {
-      this.viewState[s] !== o && (r = true), this.viewState[s++] = o;
+    let i = 0, r = false, s = (o) => {
+      this.viewState[i] !== o && (r = true), this.viewState[i++] = o;
     };
-    e.position.forEach(n), e.player.forEach(n), [e.height, e.fov, e.far].forEach(n);
-    for (let o of t) o.forEach(n);
+    e.position.forEach(s), e.player.forEach(s), [e.height, e.fov, e.far].forEach(s);
+    for (let o of t) o.forEach(s);
     return r;
   }
   prepareDrawPlan() {
     let e = /* @__PURE__ */ new Map(), t = /* @__PURE__ */ new Map();
-    for (let [h, d] of this.selected) {
-      let b = this.entries.get(h), m = b?.ready && b.generation === this.generation ? b : this.coverageEntries[h], v = this.horizonTiles.length && Ee(h, this.side) ? this.levels - 2 : 0;
-      e.set(h, Math.max(d, m.lod, v)), t.set(h, m);
+    for (let [d, m] of this.selected) {
+      let x = this.entries.get(d), v = x?.ready && x.generation === this.generation ? x : this.coverageEntries[d], g = this.horizonTiles.length && Zt(d, this.side) ? this.levels - 2 : 0;
+      e.set(d, Math.max(m, v.lod, g)), t.set(d, v);
     }
-    P1(e, this.side, "coarsen");
-    let s = _1(e, this.side), r = /* @__PURE__ */ new Map();
-    if (this.horizonTiles.length) for (let [h, d] of e) d === this.levels - 2 && s.set(h, s.get(h) | Ee(h, this.side));
-    this.lastActual = e, this.lastMasks = s, this.drawEntries = t, this.drawDirty = false;
-    let n = new Uint32Array(this.visibleIds.length * 4);
-    for (let h = 0; h < this.visibleIds.length; h++) {
-      let d = this.visibleIds[h], b = t.get(d), m = h * 4;
-      n[m] = d, n[m + 1] = b.base, n[m + 2] = b.lod, n[m + 3] = e.get(d) << 4 | s.get(d);
+    Ue(e, this.side, "coarsen");
+    let i = Ne(e, this.side), r = /* @__PURE__ */ new Map();
+    if (this.horizonTiles.length) for (let [d, m] of e) m === this.levels - 2 && i.set(d, i.get(d) | Zt(d, this.side));
+    this.lastActual = e, this.lastMasks = i, this.drawEntries = t, this.drawDirty = false;
+    let s = new Uint32Array(this.visibleIds.length * 4);
+    for (let d = 0; d < this.visibleIds.length; d++) {
+      let m = this.visibleIds[d], x = t.get(m), v = d * 4;
+      s[v] = m, s[v + 1] = x.base, s[v + 2] = x.lod, s[v + 3] = e.get(m) << 4 | i.get(m);
     }
-    if (this.drawPlan && this.drawState?.length === n.length && n.every((h, d) => this.drawState[d] === h) && this.planAlgorithm === this.algorithm && this.planGeneration === this.generation) {
+    if (this.drawPlan && this.drawState?.length === s.length && s.every((d, m) => this.drawState[m] === d) && this.planAlgorithm === this.algorithm && this.planGeneration === this.generation) {
       this.stats.planReuses = (this.stats.planReuses || 0) + 1;
       return;
     }
-    this.drawState = n;
-    let o = new Array(this.levels).fill(0), a = 0, c = 0, x = 0, l = 0;
-    for (let h of this.visibleIds) {
-      let d = e.get(h);
-      if (d === void 0) continue;
-      let b = t.get(h), m = this.options.maxDivs >> d, v = s.get(h), g = `${m}:${v}`;
-      b.base >= this.coverageBase && c++, r.has(g) || r.set(g, { divs: m, mask: v, entries: [] }), r.get(g).entries.push({ entry: b, level: d }), o[d]++, x += (m + 1) ** 2, v && l++;
+    this.drawState = s;
+    let o = new Array(this.levels).fill(0), l = 0, n = 0, f = 0, c = 0;
+    for (let d of this.visibleIds) {
+      let m = e.get(d);
+      if (m === void 0) continue;
+      let x = t.get(d), v = this.options.maxDivs >> m, g = i.get(d), y = `${v}:${g}`;
+      x.base >= this.coverageBase && n++, r.has(y) || r.set(y, { divs: v, mask: g, entries: [] }), r.get(y).entries.push({ entry: x, level: m }), o[m]++, f += (v + 1) ** 2, g && c++;
     }
-    let u = new Uint32Array(this.visibleIds.length * 4), f = [], p = 0;
-    for (let h of r.values()) {
-      let d = this.getTemplate(h.divs, h.mask), b = p;
-      for (let { entry: m, level: v } of h.entries) u.set([m.base, this.options.maxDivs >> m.lod, h.divs, v], p * 4), p++;
-      f.push({ template: d, base: b, count: h.entries.length }), a += d.triangles * h.entries.length;
+    let u = new Uint32Array(this.visibleIds.length * 4), p = [], h = 0;
+    for (let d of r.values()) {
+      let m = this.getTemplate(d.divs, d.mask), x = h;
+      for (let { entry: v, level: g } of d.entries) u.set([v.base, this.options.maxDivs >> v.lod, d.divs, g], h * 4), h++;
+      p.push({ template: m, base: x, count: d.entries.length }), l += m.triangles * d.entries.length;
     }
-    p && this.device.queue.writeBuffer(this.instanceBuffer, 0, u, 0, p * 4), Object.assign(this.stats, { nearTriangles: a, coarseDrawn: c, nearDrawCalls: f.length, nearDrawn: p, histogram: o, seams: l, activeSamples: x, uniformSamples: p * (this.options.maxDivs + 1) ** 2 }), this.drawPlan = f, this.planAlgorithm = this.algorithm, this.planGeneration = this.generation, this.stats.planBuilds = (this.stats.planBuilds || 0) + 1;
+    h && this.device.queue.writeBuffer(this.instanceBuffer, 0, u, 0, h * 4), Object.assign(this.stats, { nearTriangles: l, coarseDrawn: n, nearDrawCalls: p.length, nearDrawn: h, histogram: o, seams: c, activeSamples: f, uniformSamples: h * (this.options.maxDivs + 1) ** 2 }), this.drawPlan = p, this.planAlgorithm = this.algorithm, this.planGeneration = this.generation, this.stats.planBuilds = (this.stats.planBuilds || 0) + 1;
   }
   prepareHorizon() {
     let e = this.horizonTiles, t = this.horizonPlannedTiles;
-    if (e === t && this.horizonAlgorithm === this.algorithm || (this.horizonPlannedTiles = e, this.horizonAlgorithm === this.algorithm && t?.length === e.length && e.every((c, x) => {
-      let l = t[x];
-      return c.x === l.x && c.z === l.z && c.size === l.size && c.mask === l.mask && c.grade === l.grade;
+    if (e === t && this.horizonAlgorithm === this.algorithm || (this.horizonPlannedTiles = e, this.horizonAlgorithm === this.algorithm && t?.length === e.length && e.every((n, f) => {
+      let c = t[f];
+      return n.x === c.x && n.z === c.z && n.size === c.size && n.mask === c.mask && n.grade === c.grade;
     })) || (this.horizonAlgorithm = this.algorithm, this.horizonPlan = [], this.stats.horizonDrawn = e.length, this.stats.horizonTriangles = 0, this.stats.horizonGrades = [], !e.length)) return;
     if (!this.horizonBuffer || e.length * 16 > this.horizonBuffer.size) {
-      let c = 16 * 2 ** Math.ceil(Math.log2(e.length));
-      this.horizonBuffer?.destroy(), this.horizonBuffer = this.device.createBuffer({ label: "Terrain horizon patch instances", size: c, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST }), this.horizonGroup = this.device.createBindGroup({ layout: this.renderLayout, entries: [{ binding: 0, resource: { buffer: this.atlas } }, { binding: 1, resource: { buffer: this.horizonBuffer } }, { binding: 2, resource: { buffer: this.frameParams } }] }), this.stats.horizonBytes = c;
+      let n = 16 * 2 ** Math.ceil(Math.log2(e.length));
+      this.horizonBuffer?.destroy(), this.horizonBuffer = this.device.createBuffer({ label: "Terrain horizon patch instances", size: n, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST }), this.horizonGroup = this.device.createBindGroup({ layout: this.renderLayout, entries: [{ binding: 0, resource: { buffer: this.atlas } }, { binding: 1, resource: { buffer: this.horizonBuffer } }, { binding: 2, resource: { buffer: this.frameParams } }] }), this.stats.horizonBytes = n;
     }
-    let s = /* @__PURE__ */ new Map();
-    for (let c of e) s.has(c.mask) || s.set(c.mask, []), s.get(c.mask).push(c), this.stats.horizonGrades[c.grade] = (this.stats.horizonGrades[c.grade] || 0) + 1;
-    let r = new ArrayBuffer(e.length * 16), n = new Float32Array(r), o = new Uint32Array(r), a = 0;
-    for (let [c, x] of s) {
-      let l = this.getTemplate(2, c), u = a / 4;
-      for (let { x: f, z: p, size: h, grade: d } of x) n[a] = f, n[a + 1] = p, n[a + 2] = h, o[a + 3] = d, a += 4;
-      this.horizonPlan.push({ template: l, base: u, count: x.length }), this.stats.horizonTriangles += l.triangles * x.length;
+    let i = /* @__PURE__ */ new Map();
+    for (let n of e) {
+      let f = Li(n.grade) * 16 + n.mask;
+      i.has(f) || i.set(f, []), i.get(f).push(n), this.stats.horizonGrades[n.grade] = (this.stats.horizonGrades[n.grade] || 0) + 1;
+    }
+    let r = new ArrayBuffer(e.length * 16), s = new Float32Array(r), o = new Uint32Array(r), l = 0;
+    for (let [n, f] of i) {
+      let c = this.getTemplate(n >> 4, n & 15), u = l / 4;
+      for (let { x: p, z: h, size: d, grade: m } of f) s[l] = p, s[l + 1] = h, s[l + 2] = d, o[l + 3] = m, l += 4;
+      this.horizonPlan.push({ template: c, base: u, count: f.length }), this.stats.horizonTriangles += c.triangles * f.length;
     }
     this.device.queue.writeBuffer(this.horizonBuffer, 0, r);
   }
-  render(e, t, s, { lodColors: r = false, wireframe: n = false } = {}) {
+  render(e, t, i, { lodColors: r = false, wireframe: s = false } = {}) {
     let o = performance.now();
-    this.resize(), this.updateWindow(e), (this.needsSelection || oe(t, this.selectionPlanes) || s - this.lastSelect >= 100 && this.viewChanged(e, t)) && (this.select(e, t, s), this.viewChanged(e, t));
-    let a = this.planBuilds(e, s), c = this.device, x = c.createCommandEncoder({ label: "Adaptive terrain frame" }), l = this.frameIndex++ % 20 === 0 ? this.timers.find((d) => !d.busy) : null;
-    l && (l.busy = true);
-    let u = this.coverageGeneration !== this.generation || this.coverageSeed !== this.seed || this.origin.some((d, b) => d !== this.coverageOrigin[b]);
-    if (a.length || u) {
-      let d = new ArrayBuffer((this.buildBudget + 1) * 256), b = new Float32Array(d), m = new Uint32Array(d);
-      if (a.forEach(({ entry: g, lod: y }, w) => {
-        let M = this.tiles[g.id], P = w * 64, _ = this.options.maxDivs >> y;
-        b[P] = M.ox, b[P + 1] = M.oz, b[P + 2] = M.size, m[P + 3] = _, m[P + 4] = g.base, m[P + 5] = this.stride, m[P + 6] = this.seed, g.lod = y, g.ready = true, g.generation = this.generation, this.stats.generated++, this.stats.samples += (_ + 1) ** 2;
+    this.resize(), this.updateWindow(e), (this.needsSelection || wt(t, this.selectionPlanes) || i - this.lastSelect >= 100 && this.viewChanged(e, t)) && (this.select(e, t, i), this.viewChanged(e, t));
+    let l = this.planBuilds(e, i), n = this.device, f = n.createCommandEncoder({ label: "Adaptive terrain frame" }), c = this.frameIndex++ % 20 === 0 ? this.timers.find((m) => !m.busy) : null;
+    c && (c.busy = true);
+    let u = this.coverageGeneration !== this.generation || this.coverageSeed !== this.seed || this.origin.some((m, x) => m !== this.coverageOrigin[x]);
+    if (l.length || u) {
+      let m = new ArrayBuffer((this.buildBudget + 1) * 256), x = new Float32Array(m), v = new Uint32Array(m);
+      if (l.forEach(({ entry: y, lod: b }, z) => {
+        let w = this.tiles[y.id], P = z * 64, _ = this.options.maxDivs >> b;
+        x[P] = w.ox, x[P + 1] = w.oz, x[P + 2] = w.size, v[P + 3] = _, v[P + 4] = y.base, v[P + 5] = this.stride, v[P + 6] = this.seed, y.lod = b, y.ready = true, y.generation = this.generation, this.stats.generated++, this.stats.samples += (_ + 1) ** 2;
       }), u) {
-        let g = this.buildBudget * 64;
-        b[g] = this.origin[0] - this.options.worldSize / 2, b[g + 1] = this.origin[1] - this.options.worldSize / 2, b[g + 2] = this.options.tileSize, m[g + 4] = this.coverageBase, m[g + 6] = this.seed, m[g + 7] = this.side, this.coverageOrigin = this.origin.slice(), this.coverageSeed = this.seed, this.coverageGeneration = this.generation, this.stats.coverageBuilds = (this.stats.coverageBuilds || 0) + 1;
+        let y = this.buildBudget * 64;
+        x[y] = this.origin[0] - this.options.worldSize / 2, x[y + 1] = this.origin[1] - this.options.worldSize / 2, x[y + 2] = this.options.tileSize, v[y + 4] = this.coverageBase, v[y + 6] = this.seed, v[y + 7] = this.side, this.coverageOrigin = this.origin.slice(), this.coverageSeed = this.seed, this.coverageGeneration = this.generation, this.stats.coverageBuilds = (this.stats.coverageBuilds || 0) + 1;
       }
-      c.queue.writeBuffer(this.buildParams, 0, d);
-      let v = x.beginComputePass(l ? { timestampWrites: { querySet: l.queries, beginningOfPassWriteIndex: 0, endOfPassWriteIndex: 1 } } : {});
-      v.setPipeline(this.compute), a.forEach(({ entry: g }, y) => {
-        let w = this.options.maxDivs >> g.lod;
-        v.setBindGroup(0, this.buildGroup, [y * 256]), v.dispatchWorkgroups(Math.ceil((w + 1) / 8), Math.ceil((w + 1) / 8));
-      }), u && (v.setPipeline(this.coverageCompute), v.setBindGroup(0, this.buildGroup, [this.buildBudget * 256]), v.dispatchWorkgroups(Math.ceil(this.side * 3 / 8), Math.ceil(this.side * 3 / 8))), v.end();
+      n.queue.writeBuffer(this.buildParams, 0, m);
+      let g = f.beginComputePass(c ? { timestampWrites: { querySet: c.queries, beginningOfPassWriteIndex: 0, endOfPassWriteIndex: 1 } } : {});
+      g.setPipeline(this.compute), l.forEach(({ entry: y }, b) => {
+        let z = this.options.maxDivs >> y.lod;
+        g.setBindGroup(0, this.buildGroup, [b * 256]), g.dispatchWorkgroups(Math.ceil((z + 1) / 8), Math.ceil((z + 1) / 8));
+      }), u && (g.setPipeline(this.coverageCompute), g.setBindGroup(0, this.buildGroup, [this.buildBudget * 256]), g.dispatchWorkgroups(Math.ceil(this.side * 3 / 8), Math.ceil(this.side * 3 / 8))), g.end();
     }
-    if ((!this.drawPlan || this.drawDirty || a.length || this.planAlgorithm !== this.algorithm) && this.prepareDrawPlan(), this.prepareHorizon(), this.vegetation?.prepare(e, t, s), this.bundlePlan !== this.drawPlan || this.bundleHorizon !== this.horizonPlan || this.bundleTrees !== this.vegetation?.draws || this.bundleWire !== n) {
-      let d = c.createRenderBundleEncoder({ colorFormats: [this.format], depthStencilFormat: "depth24plus" });
-      d.setPipeline(n ? this.linePipeline : this.renderPipeline), d.setBindGroup(0, this.renderGroup);
-      for (let b of this.drawPlan) d.setIndexBuffer(n ? b.template.line : b.template.index, "uint32"), d.drawIndexed(n ? b.template.lineCount : b.template.indexCount, b.count, 0, 0, b.base);
+    if ((!this.drawPlan || this.drawDirty || l.length || this.planAlgorithm !== this.algorithm) && this.prepareDrawPlan(), this.prepareHorizon(), this.vegetation?.prepare(e, t, i), this.bundlePlan !== this.drawPlan || this.bundleHorizon !== this.horizonPlan || this.bundleTrees !== this.vegetation?.draws || this.bundleWire !== s) {
+      let m = n.createRenderBundleEncoder({ colorFormats: [this.format], depthStencilFormat: "depth24plus" });
+      m.setPipeline(s ? this.linePipeline : this.renderPipeline), m.setBindGroup(0, this.renderGroup);
+      for (let x of this.drawPlan) m.setIndexBuffer(s ? x.template.line : x.template.index, "uint32"), m.drawIndexed(s ? x.template.lineCount : x.template.indexCount, x.count, 0, 0, x.base);
       if (this.horizonPlan.length) {
-        d.setPipeline(n ? this.horizonLines : this.horizonPipeline), d.setBindGroup(0, this.horizonGroup);
-        for (let b of this.horizonPlan) d.setIndexBuffer(n ? b.template.line : b.template.index, "uint32"), d.drawIndexed(n ? b.template.lineCount : b.template.indexCount, b.count, 0, 0, b.base);
+        m.setPipeline(s ? this.horizonLines : this.horizonPipeline), m.setBindGroup(0, this.horizonGroup);
+        for (let x of this.horizonPlan) m.setIndexBuffer(s ? x.template.line : x.template.index, "uint32"), m.drawIndexed(s ? x.template.lineCount : x.template.indexCount, x.count, 0, 0, x.base);
       }
-      this.vegetation?.render(d), this.renderBundle = d.finish(), this.bundlePlan = this.drawPlan, this.bundleHorizon = this.horizonPlan, this.bundleTrees = this.vegetation?.draws, this.bundleWire = n, this.stats.bundleBuilds = (this.stats.bundleBuilds || 0) + 1;
+      this.vegetation?.render(m), this.renderBundle = m.finish(), this.bundlePlan = this.drawPlan, this.bundleHorizon = this.horizonPlan, this.bundleTrees = this.vegetation?.draws, this.bundleWire = s, this.stats.bundleBuilds = (this.stats.bundleBuilds || 0) + 1;
     }
-    let f = this.frameData;
-    f.set(e.viewProjection, 0), f.set([...e.position, 1], 16), f.set([0.5, 0.85, 0.35, 0], 20), f.set([0, Number(r), Number(n), e.far], 28), this.frameWords[28] = this.seed, c.queue.writeBuffer(this.frameParams, 0, f);
-    let p = { colorAttachments: [{ view: this.context.getCurrentTexture().createView(), clearValue: { r: 0.71, g: 0.78, b: 0.82, a: 1 }, loadOp: "clear", storeOp: "store" }], depthStencilAttachment: { view: this.depth.createView(), depthClearValue: 1, depthLoadOp: "clear", depthStoreOp: "discard" } };
-    l && (p.timestampWrites = { querySet: l.queries, beginningOfPassWriteIndex: 2, endOfPassWriteIndex: 3 });
-    let h = x.beginRenderPass(p);
-    if (h.executeBundles([this.renderBundle]), h.end(), l) {
-      let d = a.length || u, b = d ? 0 : 2, m = d ? 4 : 2;
-      x.resolveQuerySet(l.queries, b, m, l.resolve, 0), x.copyBufferToBuffer(l.resolve, 0, l.read, 0, m * 8);
+    let p = this.frameData;
+    p.set(e.viewProjection, 0), p.set([...e.position, 1], 16), p.set([0.5, 0.85, 0.35, 0], 20), p.set([0, Number(r), Number(s), e.far], 28), this.frameWords[28] = this.seed, n.queue.writeBuffer(this.frameParams, 0, p);
+    let h = { colorAttachments: [{ view: this.context.getCurrentTexture().createView(), clearValue: { r: 0.71, g: 0.78, b: 0.82, a: 1 }, loadOp: "clear", storeOp: "store" }], depthStencilAttachment: { view: this.depth.createView(), depthClearValue: 1, depthLoadOp: "clear", depthStoreOp: "discard" } };
+    c && (h.timestampWrites = { querySet: c.queries, beginningOfPassWriteIndex: 2, endOfPassWriteIndex: 3 });
+    let d = f.beginRenderPass(h);
+    if (d.executeBundles([this.renderBundle]), d.end(), c) {
+      let m = l.length || u, x = m ? 0 : 2, v = m ? 4 : 2;
+      f.resolveQuerySet(c.queries, x, v, c.resolve, 0), f.copyBufferToBuffer(c.resolve, 0, c.read, 0, v * 8);
     }
-    return c.queue.submit([x.finish()]), l && l.read.mapAsync(GPUMapMode.READ).then(() => {
-      let d = new BigUint64Array(l.read.getMappedRange()), b = a.length || u ? Number(d[1] - d[0]) / 1e6 : 0, m = a.length || u ? Number(d[3] - d[2]) / 1e6 : Number(d[1] - d[0]) / 1e6;
-      this.stats.gpuMs = m, this.stats.generationGpuMs = b, l.read.unmap(), l.busy = false;
-    }).catch((d) => {
-      l.busy = false, this.disposed || this.errors.push(d.message);
-    }), this.stats.cpuMs = performance.now() - o, this.stats.drawn = this.stats.nearDrawn + this.stats.horizonDrawn, this.stats.triangles = this.stats.nearTriangles + this.stats.horizonTriangles, this.stats.drawCalls = this.stats.nearDrawCalls + this.horizonPlan.length, this.stats.resident = this.entries.size, this.stats.builtThisFrame = a.length, this.stats.vegetation = this.vegetation?.stats, this.stats;
+    return n.queue.submit([f.finish()]), c && c.read.mapAsync(GPUMapMode.READ).then(() => {
+      let m = new BigUint64Array(c.read.getMappedRange()), x = l.length || u ? Number(m[1] - m[0]) / 1e6 : 0, v = l.length || u ? Number(m[3] - m[2]) / 1e6 : Number(m[1] - m[0]) / 1e6;
+      this.stats.gpuMs = v, this.stats.generationGpuMs = x, c.read.unmap(), c.busy = false;
+    }).catch((m) => {
+      c.busy = false, this.disposed || this.errors.push(m.message);
+    }), this.stats.cpuMs = performance.now() - o, this.stats.drawn = this.stats.nearDrawn + this.stats.horizonDrawn, this.stats.triangles = this.stats.nearTriangles + this.stats.horizonTriangles, this.stats.drawCalls = this.stats.nearDrawCalls + this.horizonPlan.length, this.stats.resident = this.entries.size, this.stats.builtThisFrame = l.length, this.stats.vegetation = this.vegetation?.stats, this.stats;
   }
   async readPatch(e) {
-    let t = this.entries.get(e), s = t?.ready && t.generation === this.generation ? t : this.drawEntries?.get(e);
-    if (!s?.ready) throw new Error("Patch is not ready");
-    let r = this.options.maxDivs >> s.lod, n = (r + 1) ** 2, o = this.device.createBuffer({ size: n * 32, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+    let t = this.entries.get(e), i = t?.ready && t.generation === this.generation ? t : this.drawEntries?.get(e);
+    if (!i?.ready) throw new Error("Patch is not ready");
+    let r = this.options.maxDivs >> i.lod, s = (r + 1) ** 2, o = this.device.createBuffer({ size: s * 32, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
     try {
-      let a = this.device.createCommandEncoder();
-      a.copyBufferToBuffer(this.atlas, s.base * 32, o, 0, n * 32), this.device.queue.submit([a.finish()]), await o.mapAsync(GPUMapMode.READ);
-      let c = new Float32Array(o.getMappedRange()).slice();
-      return o.unmap(), { data: c, divs: r };
+      let l = this.device.createCommandEncoder();
+      l.copyBufferToBuffer(this.atlas, i.base * 32, o, 0, s * 32), this.device.queue.submit([l.finish()]), await o.mapAsync(GPUMapMode.READ);
+      let n = new Float32Array(o.getMappedRange()).slice();
+      return o.unmap(), { data: n, divs: r };
     } finally {
       o.destroy();
     }
@@ -24843,211 +24863,211 @@ var B1 = class {
       for (let e of this.templates.values()) e.index.destroy(), e.line.destroy();
       for (let e of this.timers || []) e.queries.destroy(), e.resolve.destroy(), e.read.destroy();
       for (let e of [this.atlas, this.buildParams, this.frameParams, this.instanceBuffer, this.horizonBuffer]) e?.destroy();
-      this.depth?.destroy(), o1(this);
+      this.depth?.destroy(), se(this);
     }
   }
 };
-var U1 = {};
-F(U1, { cellSize: () => r0, chooseLOD: () => he, chunk: () => ce, default: () => o0, field: () => O, gradient: () => ue, hash: () => Ae, heroes: () => Te, maxRadius: () => n0, meshColors: () => ht, meshDivisions: () => fe, meshLevels: () => C, pointColors: () => dt, pointTiers: () => R, random: () => E1, sectors: () => le, visibleSphere: () => xe });
-var r0 = 2400;
-var n0 = 900;
-function Ae(i, e, t, s = 0) {
-  let r = (Math.imul(i, 73856093) ^ Math.imul(e, 19349663) ^ Math.imul(t, 83492791) ^ Math.imul(s + 31, 1597334677)) >>> 0;
+var Oe = {};
+F(Oe, { cellSize: () => ia, chooseLOD: () => Dt, chunk: () => zt, default: () => sa, field: () => Y, gradient: () => Pt, hash: () => Kt, heroes: () => $t, maxRadius: () => ra, meshColors: () => Xi, meshDivisions: () => St, meshLevels: () => L, pointColors: () => Hi, pointTiers: () => W, random: () => Ve, sectors: () => Mt, visibleSphere: () => _t });
+var ia = 2400;
+var ra = 900;
+function Kt(a, e, t, i = 0) {
+  let r = (Math.imul(a, 73856093) ^ Math.imul(e, 19349663) ^ Math.imul(t, 83492791) ^ Math.imul(i + 31, 1597334677)) >>> 0;
   return r = Math.imul(r ^ r >>> 16, 2146121005) >>> 0, r = Math.imul(r ^ r >>> 15, 2221713035) >>> 0, (r ^ r >>> 16) >>> 0;
 }
-function E1(i) {
-  let e = i >>> 0;
+function Ve(a) {
+  let e = a >>> 0;
   return () => {
     e = e + 1831565813 >>> 0;
     let t = Math.imul(e ^ e >>> 15, e | 1);
     return t ^= t + Math.imul(t ^ t >>> 7, t | 61), ((t ^ t >>> 14) >>> 0) / 4294967296;
   };
 }
-function a0(i) {
-  let e = i(), t = i() * Math.PI * 2, s = i() * Math.PI * 2;
-  return [Math.sqrt(1 - e) * Math.sin(t), Math.sqrt(1 - e) * Math.cos(t), Math.sqrt(e) * Math.sin(s), Math.sqrt(e) * Math.cos(s)];
+function aa(a) {
+  let e = a(), t = a() * Math.PI * 2, i = a() * Math.PI * 2;
+  return [Math.sqrt(1 - e) * Math.sin(t), Math.sqrt(1 - e) * Math.cos(t), Math.sqrt(e) * Math.sin(i), Math.sqrt(e) * Math.cos(i)];
 }
-var Te = [{ id: "island", kind: 2, variant: 0, position: [420, -70, -250], radius: 440, rotation: [0, 0, 0, 1], tint: [0.68, 0.87, 0.78] }, { id: "planet", kind: 1, variant: 0, position: [-1300, 430, -1900], radius: 880, rotation: [0.25, 0.08, 0.14, Math.sqrt(1 - 0.25 ** 2 - 0.08 ** 2 - 0.14 ** 2)], tint: [0.45, 0.72, 0.91] }, { id: "asteroid", kind: 0, variant: 2, position: [-230, 100, 500], radius: 185, rotation: [0.16, 0.34, 0.11, Math.sqrt(1 - 0.16 ** 2 - 0.34 ** 2 - 0.11 ** 2)], tint: [0.63, 0.51, 0.39] }];
-function ce(i, e, t) {
-  let s = E1(Ae(i, e, t)), r = [];
-  for (let n = 0; n < 7; n++) {
-    let o = s(), a = o < 0.07 ? 1 : o < 0.17 ? 2 : 0;
-    r.push({ id: `${i}:${e}:${t}:${n}`, kind: a, variant: Math.floor(s() * 4), position: [(i + s()) * 2400, (e + s()) * 2400, (t + s()) * 2400], radius: a === 1 ? 350 + s() * 500 : a === 2 ? 180 + s() * 300 : 35 + s() * 125, rotation: a0(s), tint: a === 0 ? [0.42 + s() * 0.3, 0.36 + s() * 0.2, 0.3 + s() * 0.2] : [0.4 + s() * 0.3, 0.65 + s() * 0.2, 0.7 + s() * 0.25] });
+var $t = [{ id: "island", kind: 2, variant: 0, position: [420, -70, -250], radius: 440, rotation: [0, 0, 0, 1], tint: [0.68, 0.87, 0.78] }, { id: "planet", kind: 1, variant: 0, position: [-1300, 430, -1900], radius: 880, rotation: [0.25, 0.08, 0.14, Math.sqrt(1 - 0.25 ** 2 - 0.08 ** 2 - 0.14 ** 2)], tint: [0.45, 0.72, 0.91] }, { id: "asteroid", kind: 0, variant: 2, position: [-230, 100, 500], radius: 185, rotation: [0.16, 0.34, 0.11, Math.sqrt(1 - 0.16 ** 2 - 0.34 ** 2 - 0.11 ** 2)], tint: [0.63, 0.51, 0.39] }];
+function zt(a, e, t) {
+  let i = Ve(Kt(a, e, t)), r = [];
+  for (let s = 0; s < 7; s++) {
+    let o = i(), l = o < 0.07 ? 1 : o < 0.17 ? 2 : 0;
+    r.push({ id: `${a}:${e}:${t}:${s}`, kind: l, variant: Math.floor(i() * 4), position: [(a + i()) * 2400, (e + i()) * 2400, (t + i()) * 2400], radius: l === 1 ? 350 + i() * 500 : l === 2 ? 180 + i() * 300 : 35 + i() * 125, rotation: aa(i), tint: l === 0 ? [0.42 + i() * 0.3, 0.36 + i() * 0.2, 0.3 + i() * 0.2] : [0.4 + i() * 0.3, 0.65 + i() * 0.2, 0.7 + i() * 0.25] });
   }
-  for (let n of Te) n.position.every((o, a) => Math.floor(o / 2400) === [i, e, t][a]) && r.push({ ...n, position: n.position.slice(), rotation: n.rotation.slice(), tint: n.tint.slice() });
+  for (let s of $t) s.position.every((o, l) => Math.floor(o / 2400) === [a, e, t][l]) && r.push({ ...s, position: s.position.slice(), rotation: s.rotation.slice(), tint: s.tint.slice() });
   return r;
 }
-function xe(i, e, t) {
-  return t.every((s) => s[0] * i[0] + s[1] * i[1] + s[2] * i[2] + s[3] >= -e);
+function _t(a, e, t) {
+  return t.every((i) => i[0] * a[0] + i[1] * a[1] + i[2] * a[2] + i[3] >= -e);
 }
-function le(i, e, t, s = 2048) {
-  let r = i.map((x) => Math.floor(x / 2400)), n = Math.ceil((t + 900) / 2400), o = [], a = 0, c = Math.sqrt(3) * 2400 / 2 + 900;
-  for (let x = -n; x <= n; x++) {
-    let l = r[2] + x, u = (l + 0.5) * 2400 - i[2], f = Math.max(0, Math.abs(u) - 2400 / 2);
-    for (let p = -n; p <= n; p++) {
-      let h = r[1] + p, d = (h + 0.5) * 2400 - i[1], b = Math.max(0, Math.abs(d) - 2400 / 2);
-      for (let m = -n; m <= n; m++) {
-        a++;
-        let v = r[0] + m, g = (v + 0.5) * 2400 - i[0], y = Math.max(0, Math.abs(g) - 2400 / 2), w = Math.hypot(y, b, f);
-        if (w > t + 900) continue;
-        let M = true;
-        for (let P of e) if (P[0] * g + P[1] * d + P[2] * u + P[3] < -c) {
-          M = false;
+function Mt(a, e, t, i = 2048) {
+  let r = a.map((f) => Math.floor(f / 2400)), s = Math.ceil((t + 900) / 2400), o = [], l = 0, n = Math.sqrt(3) * 2400 / 2 + 900;
+  for (let f = -s; f <= s; f++) {
+    let c = r[2] + f, u = (c + 0.5) * 2400 - a[2], p = Math.max(0, Math.abs(u) - 2400 / 2);
+    for (let h = -s; h <= s; h++) {
+      let d = r[1] + h, m = (d + 0.5) * 2400 - a[1], x = Math.max(0, Math.abs(m) - 2400 / 2);
+      for (let v = -s; v <= s; v++) {
+        l++;
+        let g = r[0] + v, y = (g + 0.5) * 2400 - a[0], b = Math.max(0, Math.abs(y) - 2400 / 2), z = Math.hypot(b, x, p);
+        if (z > t + 900) continue;
+        let w = true;
+        for (let P of e) if (P[0] * y + P[1] * m + P[2] * u + P[3] < -n) {
+          w = false;
           break;
         }
-        M && o.push({ key: `${v}:${h}:${l}`, cell: [v, h, l], distance: w });
+        w && o.push({ key: `${g}:${d}:${c}`, cell: [g, d, c], distance: z });
       }
     }
   }
-  return o.sort((x, l) => x.distance - l.distance || x.key.localeCompare(l.key)), { cells: o.slice(0, s), examined: a, requested: o.length, limited: o.length > s };
+  return o.sort((f, c) => f.distance - c.distance || f.key.localeCompare(c.key)), { cells: o.slice(0, i), examined: l, requested: o.length, limited: o.length > i };
 }
-function O(i, e, t, s, r, { caves: n = false } = {}) {
-  let o = e * 1.713, a = Math.sin(t * 5.3 + o) * Math.cos(s * 4.1 - o) * Math.sin(r * 6.2 + 1.3);
-  if (i === 0) {
-    let p = Math.hypot(t / 1.05, s / 0.87, r / 0.96), h = 0.055 * a + 0.025 * Math.sin(t * 13 + o) * Math.sin(s * 11) * Math.cos(r * 9), d = 0.07 * Math.exp(-65 * ((t - 0.46) ** 2 + (s - 0.22) ** 2 + (r - 0.35) ** 2));
-    return p - 0.67 - h + d;
+function Y(a, e, t, i, r, { caves: s = false } = {}) {
+  let o = e * 1.713, l = Math.sin(t * 5.3 + o) * Math.cos(i * 4.1 - o) * Math.sin(r * 6.2 + 1.3);
+  if (a === 0) {
+    let h = Math.hypot(t / 1.05, i / 0.87, r / 0.96), d = 0.055 * l + 0.025 * Math.sin(t * 13 + o) * Math.sin(i * 11) * Math.cos(r * 9), m = 0.07 * Math.exp(-65 * ((t - 0.46) ** 2 + (i - 0.22) ** 2 + (r - 0.35) ** 2));
+    return h - 0.67 - d + m;
   }
-  if (i === 1) {
-    let p = e % 2 === 0, h = Math.hypot(t, s, r), d = h - (p ? 0.6 : 0.75) - 0.025 * a - 0.012 * Math.sin(t * 17 + o) * Math.cos(r * 13);
-    return p ? Math.min(d, Math.hypot(Math.hypot(t, r) - 0.82, s) - 0.055) : d;
+  if (a === 1) {
+    let h = e % 2 === 0, d = Math.hypot(t, i, r), m = d - (h ? 0.6 : 0.75) - 0.025 * l - 0.012 * Math.sin(t * 17 + o) * Math.cos(r * 13);
+    return h ? Math.min(m, Math.hypot(Math.hypot(t, r) - 0.82, i) - 0.055) : m;
   }
-  let c = Math.hypot(t, r), x = 0.7 + 0.05 * Math.sin(t * 8 + o) * Math.cos(r * 7), l = 0.23 + 0.09 * Math.sin(t * 5 + o) * Math.cos(r * 6), u = -0.78 + 0.8 * Math.pow(c, 1.1) + 0.035 * a, f = Math.max(c - x, s - l, u - s);
-  return n ? Math.max(f, 0.235 - Math.hypot(t - 0.48, s + 0.1, r - 0.04)) : f;
+  let n = Math.hypot(t, r), f = 0.7 + 0.05 * Math.sin(t * 8 + o) * Math.cos(r * 7), c = 0.23 + 0.09 * Math.sin(t * 5 + o) * Math.cos(r * 6), u = -0.78 + 0.8 * Math.pow(n, 1.1) + 0.035 * l, p = Math.max(n - f, i - c, u - i);
+  return s ? Math.max(p, 0.235 - Math.hypot(t - 0.48, i + 0.1, r - 0.04)) : p;
 }
-function ue(i, e, t, s, r, n) {
-  let a = [O(i, e, t + 15e-4, s, r, n) - O(i, e, t - 15e-4, s, r, n), O(i, e, t, s + 15e-4, r, n) - O(i, e, t, s - 15e-4, r, n), O(i, e, t, s, r + 15e-4, n) - O(i, e, t, s, r - 15e-4, n)], c = Math.hypot(...a) || 1;
-  return a.map((x) => x / c);
+function Pt(a, e, t, i, r, s) {
+  let l = [Y(a, e, t + 15e-4, i, r, s) - Y(a, e, t - 15e-4, i, r, s), Y(a, e, t, i + 15e-4, r, s) - Y(a, e, t, i - 15e-4, r, s), Y(a, e, t, i, r + 15e-4, s) - Y(a, e, t, i, r - 15e-4, s)], n = Math.hypot(...l) || 1;
+  return l.map((f) => f / n);
 }
-var fe = [[48, 36, 28, 20, 16, 10, 6, 4, 3, 2], [64, 48, 36, 28, 24, 16, 12, 8, 6, 4], [64, 48, 32, 24, 16, 10, 6, 4, 3, 2]];
-var C = 10;
-var ht = ["#ff4d30", "#ffa52e", "#ebd948", "#43b879", "#288fff", "#36cbd9", "#8276ff", "#bd70e8", "#da91b6", "#b7bac9"];
-var dt = ["#43ebd9", "#7178ff", "#b855fa", "#d9a6ff", "#f09dc8", "#beb8e8", "#9aa9cc", "#778399"];
-var R = [8192, 2048, 512, 128, 32, 8, 2, 1];
-var Ue = [0.12, 0.25, 0.5, 1, 1.5, 2, 3, 4, 6];
-var ft = [[5e-3, 9e-3, 0.016, 0.027, 0.05, 0.08, 0.14, 0.25, 0.34, 0.5], [3e-3, 5e-3, 0.01, 0.018, 0.028, 0.04, 0.065, 0.12, 0.18, 0.3], [3e-3, 6e-3, 0.013, 0.024, 0.045, 0.08, 0.14, 0.25, 0.34, 0.5]];
-function he(i, e, t, { mode: s = "mesh", quality: r = 3, uniform: n = false, pointSize: o = 2, lodDistance: a = 4e3, nearRadius: c = 250, maxMeshLevel: x = C - 1 }, l) {
-  let u = Math.hypot(i.position[0] - e[0], i.position[1] - e[1], i.position[2] - e[2]), f = Math.max(0, u - i.radius), p = Math.max(1, u - i.radius * 0.45), h = 2 * i.radius * 0.8 * t / p, d = s === "mesh" || s === "hybrid" && (n || h > (l?.representation === "mesh" ? 30 : 42)), b;
-  if (d) {
-    let m = ft[i.kind] || ft[0], v = (_) => m[_] * h / 2, g = Math.max(1, a), y = Math.max(0, Math.min(C - 1, x)), w = 0;
-    for (; w < y && v(w + 1) <= r * 0.35; ) w++;
-    let M = 0;
-    for (; M < y && f > Ue[M] * g; ) M++;
-    let P = n || f <= c ? 0 : Math.min(M, w);
-    if (!n && f > c && l?.representation === "mesh") {
-      let _ = l.level, k = _ === 0 ? 0 : Ue[_ - 1] * g * 0.85, S = _ === C - 1 ? 1 / 0 : Ue[_] * g * 1.15;
-      _ <= y && v(_) <= r * 0.42 && f >= k && f <= S && (_ === y || v(_ + 1) >= r * 0.28 || _ === M) && (P = _);
+var St = [[48, 36, 28, 20, 16, 10, 6, 4, 3, 2], [64, 48, 36, 28, 24, 16, 12, 8, 6, 4], [64, 48, 32, 24, 16, 10, 6, 4, 3, 2]];
+var L = 10;
+var Xi = ["#ff4d30", "#ffa52e", "#ebd948", "#43b879", "#288fff", "#36cbd9", "#8276ff", "#bd70e8", "#da91b6", "#b7bac9"];
+var Hi = ["#43ebd9", "#7178ff", "#b855fa", "#d9a6ff", "#f09dc8", "#beb8e8", "#9aa9cc", "#778399"];
+var W = [8192, 2048, 512, 128, 32, 8, 2, 1];
+var jt = [0.12, 0.25, 0.5, 1, 1.5, 2, 3, 4, 6];
+var Yi = [[5e-3, 9e-3, 0.016, 0.027, 0.05, 0.08, 0.14, 0.25, 0.34, 0.5], [3e-3, 5e-3, 0.01, 0.018, 0.028, 0.04, 0.065, 0.12, 0.18, 0.3], [3e-3, 6e-3, 0.013, 0.024, 0.045, 0.08, 0.14, 0.25, 0.34, 0.5]];
+function Dt(a, e, t, { mode: i = "mesh", quality: r = 3, uniform: s = false, pointSize: o = 2, lodDistance: l = 4e3, nearRadius: n = 250, maxMeshLevel: f = L - 1 }, c) {
+  let u = Math.hypot(a.position[0] - e[0], a.position[1] - e[1], a.position[2] - e[2]), p = Math.max(0, u - a.radius), h = Math.max(1, u - a.radius * 0.45), d = 2 * a.radius * 0.8 * t / h, m = i === "mesh" || i === "hybrid" && (s || d > (c?.representation === "mesh" ? 30 : 42)), x;
+  if (m) {
+    let v = Yi[a.kind] || Yi[0], g = (_) => v[_] * d / 2, y = Math.max(1, l), b = Math.max(0, Math.min(L - 1, f)), z = 0;
+    for (; z < b && g(z + 1) <= r * 0.35; ) z++;
+    let w = 0;
+    for (; w < b && p > jt[w] * y; ) w++;
+    let P = s || p <= n ? 0 : Math.min(w, z);
+    if (!s && p > n && c?.representation === "mesh") {
+      let _ = c.level, S = _ === 0 ? 0 : jt[_ - 1] * y * 0.85, D = _ === L - 1 ? 1 / 0 : jt[_] * y * 1.15;
+      _ <= b && g(_) <= r * 0.42 && p >= S && p <= D && (_ === b || g(_ + 1) >= r * 0.28 || _ === w) && (P = _);
     }
-    b = { representation: "mesh", level: P, rank: P, pixels: h };
+    x = { representation: "mesh", level: P, rank: P, pixels: d };
   } else {
-    let m = s === "hybrid" ? Math.min(r, o * 0.7) : r, v = n ? 8192 : Math.PI * (h / (2 * m)) ** 2, g = R.length - 1;
-    for (; g > 0 && R[g] < v; ) g--;
-    !n && l?.representation === "points" && R[l.level] >= v * 0.8 && (l.level === R.length - 1 || R[l.level + 1] < v * 1.2) && (g = l.level), b = { representation: "points", level: g, rank: g + C, pixels: h };
+    let v = i === "hybrid" ? Math.min(r, o * 0.7) : r, g = s ? 8192 : Math.PI * (d / (2 * v)) ** 2, y = W.length - 1;
+    for (; y > 0 && W[y] < g; ) y--;
+    !s && c?.representation === "points" && W[c.level] >= g * 0.8 && (c.level === W.length - 1 || W[c.level + 1] < g * 1.2) && (y = c.level), x = { representation: "points", level: y, rank: y + L, pixels: d };
   }
-  return b;
+  return x;
 }
-var o0 = { cellSize: 2400, maxRadius: 900, hash: Ae, random: E1, chunk: ce, heroes: Te, visibleSphere: xe, sectors: le, field: O, gradient: ue, meshDivisions: fe, meshLevels: C, meshColors: ht, pointColors: dt, pointTiers: R, chooseLOD: he };
-var Ge = {};
-F(Ge, { build: () => pt, default: () => l0, pointCloud: () => bt });
-function c0(i, e) {
-  let t = [], s = e / 2, r = i % 2 === 0;
-  function n(a, c) {
-    let x = [Math.sin(a) * Math.cos(c), Math.cos(a), Math.sin(a) * Math.sin(c)], l = r ? 0.5 : 0.66, u = r ? 0.69 : 0.84;
-    for (let f = 0; f < 14; f++) {
-      let p = (l + u) / 2;
-      O(1, i, ...x.map((h) => h * p)) < 0 ? l = p : u = p;
+var sa = { cellSize: 2400, maxRadius: 900, hash: Kt, random: Ve, chunk: zt, heroes: $t, visibleSphere: _t, sectors: Mt, field: Y, gradient: Pt, meshDivisions: St, meshLevels: L, meshColors: Xi, pointColors: Hi, pointTiers: W, chooseLOD: Dt };
+var Qt = {};
+F(Qt, { build: () => Zi, default: () => la, pointCloud: () => ji });
+function oa(a, e) {
+  let t = [], i = e / 2, r = a % 2 === 0;
+  function s(l, n) {
+    let f = [Math.sin(l) * Math.cos(n), Math.cos(l), Math.sin(l) * Math.sin(n)], c = r ? 0.5 : 0.66, u = r ? 0.69 : 0.84;
+    for (let p = 0; p < 14; p++) {
+      let h = (c + u) / 2;
+      Y(1, a, ...f.map((d) => d * h)) < 0 ? c = h : u = h;
     }
-    return x.map((f) => f * (l + u) / 2);
+    return f.map((p) => p * (c + u) / 2);
   }
-  function o(a, c, x) {
-    t.push(...a, ...c, ...x);
+  function o(l, n, f) {
+    t.push(...l, ...n, ...f);
   }
-  for (let a = 0; a < s; a++) for (let c = 0; c < e; c++) {
-    let x = a * Math.PI / s, l = (a + 1) * Math.PI / s, u = c * 2 * Math.PI / e, f = (c + 1) % e * 2 * Math.PI / e, p = n(x, u), h = n(x, f), d = n(l, f), b = n(l, u);
-    a > 0 && o(p, h, b), a < s - 1 && o(h, d, b);
+  for (let l = 0; l < i; l++) for (let n = 0; n < e; n++) {
+    let f = l * Math.PI / i, c = (l + 1) * Math.PI / i, u = n * 2 * Math.PI / e, p = (n + 1) % e * 2 * Math.PI / e, h = s(f, u), d = s(f, p), m = s(c, p), x = s(c, u);
+    l > 0 && o(h, d, x), l < i - 1 && o(d, m, x);
   }
   if (r) {
-    let c = (x, l) => {
-      let u = 0.82 + 0.055 * Math.cos(l);
-      return [u * Math.cos(x), 0.055 * Math.sin(l), u * Math.sin(x)];
+    let n = (f, c) => {
+      let u = 0.82 + 0.055 * Math.cos(c);
+      return [u * Math.cos(f), 0.055 * Math.sin(c), u * Math.sin(f)];
     };
-    for (let x = 0; x < e; x++) for (let l = 0; l < 4; l++) {
-      let u = x * 2 * Math.PI / e, f = (x + 1) % e * 2 * Math.PI / e, p = l * 2 * Math.PI / 4, h = (l + 1) % 4 * 2 * Math.PI / 4, d = c(u, p), b = c(f, p), m = c(f, h), v = c(u, h);
-      o(d, v, b), o(b, v, m);
+    for (let f = 0; f < e; f++) for (let c = 0; c < 4; c++) {
+      let u = f * 2 * Math.PI / e, p = (f + 1) % e * 2 * Math.PI / e, h = c * 2 * Math.PI / 4, d = (c + 1) % 4 * 2 * Math.PI / 4, m = n(u, h), x = n(p, h), v = n(p, d), g = n(u, d);
+      o(m, g, x), o(x, g, v);
     }
   }
-  return Float32Array.from(t, (a) => (a + 1) / 2);
+  return Float32Array.from(t, (l) => (l + 1) / 2);
 }
-function x0(i, e) {
-  let t = /* @__PURE__ */ new Map(), s = (r) => r.every((n) => Math.abs(n * e - Math.floor(n * e) - 0.5) < 1e-5);
-  for (let r = 0; r < i.length; r += 9) {
-    let n = [0, 1, 2].map((o) => Array.from(i.subarray(r + o * 3, r + o * 3 + 3)));
-    for (let o = 0; o < 3; o++) if (s(n[o])) {
-      let a = n[o].join(",");
-      t.has(a) || t.set(a, { boundary: /* @__PURE__ */ new Map(), offsets: [] });
-      let c = t.get(a);
-      c.offsets.push(r + o * 3);
-      for (let x = 0; x < 3; x++) x !== o && c.boundary.set(n[x].join(","), n[x]);
+function na(a, e) {
+  let t = /* @__PURE__ */ new Map(), i = (r) => r.every((s) => Math.abs(s * e - Math.floor(s * e) - 0.5) < 1e-5);
+  for (let r = 0; r < a.length; r += 9) {
+    let s = [0, 1, 2].map((o) => Array.from(a.subarray(r + o * 3, r + o * 3 + 3)));
+    for (let o = 0; o < 3; o++) if (i(s[o])) {
+      let l = s[o].join(",");
+      t.has(l) || t.set(l, { boundary: /* @__PURE__ */ new Map(), offsets: [] });
+      let n = t.get(l);
+      n.offsets.push(r + o * 3);
+      for (let f = 0; f < 3; f++) f !== o && n.boundary.set(s[f].join(","), s[f]);
     }
   }
   for (let r of t.values()) {
-    let n = [0, 0, 0];
-    for (let o of r.boundary.values()) for (let a = 0; a < 3; a++) n[a] += o[a] / r.boundary.size;
-    for (let o of r.offsets) i.set(n, o);
+    let s = [0, 0, 0];
+    for (let o of r.boundary.values()) for (let l = 0; l < 3; l++) s[l] += o[l] / r.boundary.size;
+    for (let o of r.offsets) a.set(s, o);
   }
   return t.size;
 }
-function pt(i, e, t, s = "mc33", r = {}) {
-  let n = fe[i]?.[t];
-  if (!n) throw new Error("Invalid body mesh level");
-  let o = i === 1 && t >= 5, a;
-  if (o) a = c0(e, n);
+function Zi(a, e, t, i = "mc33", r = {}) {
+  let s = St[a]?.[t];
+  if (!s) throw new Error("Invalid body mesh level");
+  let o = a === 1 && t >= 5, l;
+  if (o) l = oa(e, s);
   else {
-    let f = n + 1, p = { x: f, y: f, z: f }, h = new Float32Array(f * f * f);
-    for (let d = 0; d < f; d++) for (let b = 0; b < f; b++) for (let m = 0; m < f; m++) h[(d * f + b) * f + m] = O(i, e, m / n * 2 - 1, b / n * 2 - 1, d / n * 2 - 1, r);
-    a = q(h, p, 0, s);
+    let p = s + 1, h = { x: p, y: p, z: p }, d = new Float32Array(p * p * p);
+    for (let m = 0; m < p; m++) for (let x = 0; x < p; x++) for (let v = 0; v < p; v++) d[(m * p + x) * p + v] = Y(a, e, v / s * 2 - 1, x / s * 2 - 1, m / s * 2 - 1, r);
+    l = te(d, h, 0, i);
   }
-  let c = new Float32Array(a.length / 3 * 8), x = 0, l = 0, u = !o && s === "mc33" ? x0(a, n) : 0;
-  for (let f = 0; f < a.length; f += 9) {
-    let p = [], h = [];
-    for (let v = 0; v < 3; v++) {
-      let g = [0, 1, 2].map((y) => a[f + v * 3 + y] * 2 - 1);
-      p.push(g), h.push(ue(i, e, ...g, r));
+  let n = new Float32Array(l.length / 3 * 8), f = 0, c = 0, u = !o && i === "mc33" ? na(l, s) : 0;
+  for (let p = 0; p < l.length; p += 9) {
+    let h = [], d = [];
+    for (let g = 0; g < 3; g++) {
+      let y = [0, 1, 2].map((b) => l[p + g * 3 + b] * 2 - 1);
+      h.push(y), d.push(Pt(a, e, ...y, r));
     }
-    let d = p[1].map((v, g) => v - p[0][g]), b = p[2].map((v, g) => v - p[0][g]), m = [d[1] * b[2] - d[2] * b[1], d[2] * b[0] - d[0] * b[2], d[0] * b[1] - d[1] * b[0]];
-    if (!(Math.hypot(...m) < 1e-12)) {
-      l += m.reduce((v, g, y) => v + g * (h[0][y] + h[1][y] + h[2][y]), 0);
-      for (let v = 0; v < 3; v++) {
-        let g = x++ * 8;
-        c.set([...p[v], 1, ...h[v], 0], g);
+    let m = h[1].map((g, y) => g - h[0][y]), x = h[2].map((g, y) => g - h[0][y]), v = [m[1] * x[2] - m[2] * x[1], m[2] * x[0] - m[0] * x[2], m[0] * x[1] - m[1] * x[0]];
+    if (!(Math.hypot(...v) < 1e-12)) {
+      c += v.reduce((g, y, b) => g + y * (d[0][b] + d[1][b] + d[2][b]), 0);
+      for (let g = 0; g < 3; g++) {
+        let y = f++ * 8;
+        n.set([...h[g], 1, ...d[g], 0], y);
       }
     }
   }
-  if (l < 0) for (let f = 0; f < x * 8; f += 24) for (let p = 0; p < 8; p++) {
-    let h = c[f + 8 + p];
-    c[f + 8 + p] = c[f + 16 + p], c[f + 16 + p] = h;
+  if (c < 0) for (let p = 0; p < f * 8; p += 24) for (let h = 0; h < 8; h++) {
+    let d = n[p + 8 + h];
+    n[p + 8 + h] = n[p + 16 + h], n[p + 16 + h] = d;
   }
-  return { vertices: c.slice(0, x * 8), count: x, divisions: n, interiorVertices: u, proxy: o };
+  return { vertices: n.slice(0, f * 8), count: f, divisions: s, interiorVertices: u, proxy: o };
 }
-function bt(i, e = 8192, t = 7) {
-  let s = /* @__PURE__ */ new Map();
-  for (let c = 0; c < i.length; c += 8) {
-    let x = [i[c], i[c + 1], i[c + 2]].map((l) => Math.round(l * 1e6)).join(":");
-    s.has(x) || s.set(x, c);
+function ji(a, e = 8192, t = 7) {
+  let i = /* @__PURE__ */ new Map();
+  for (let n = 0; n < a.length; n += 8) {
+    let f = [a[n], a[n + 1], a[n + 2]].map((c) => Math.round(c * 1e6)).join(":");
+    i.has(f) || i.set(f, n);
   }
-  let r = Array.from(s.values()), n = E1(t);
-  for (let c = r.length - 1; c > 0; c--) {
-    let x = Math.floor(n() * (c + 1));
-    [r[c], r[x]] = [r[x], r[c]];
+  let r = Array.from(i.values()), s = Ve(t);
+  for (let n = r.length - 1; n > 0; n--) {
+    let f = Math.floor(s() * (n + 1));
+    [r[n], r[f]] = [r[f], r[n]];
   }
-  let o = Math.min(e, r.length), a = new Float32Array(o * 8);
-  return r.slice(0, o).forEach((c, x) => a.set(i.subarray(c, c + 8), x * 8)), { vertices: a, count: o };
+  let o = Math.min(e, r.length), l = new Float32Array(o * 8);
+  return r.slice(0, o).forEach((n, f) => l.set(a.subarray(n, n + 8), f * 8)), { vertices: l, count: o };
 }
-var l0 = { build: pt, pointCloud: bt };
-var u0 = '(()=>{function I(n){let a=n>>>0;return()=>{a=a+1831565813>>>0;let x=Math.imul(a^a>>>15,a|1);return x^=x+Math.imul(x^x>>>7,x|61),((x^x>>>14)>>>0)/4294967296}}var e1=[{id:"island",kind:2,variant:0,position:[420,-70,-250],radius:440,rotation:[0,0,0,1],tint:[.68,.87,.78]},{id:"planet",kind:1,variant:0,position:[-1300,430,-1900],radius:880,rotation:[.25,.08,.14,Math.sqrt(1-.25**2-.08**2-.14**2)],tint:[.45,.72,.91]},{id:"asteroid",kind:0,variant:2,position:[-230,100,500],radius:185,rotation:[.16,.34,.11,Math.sqrt(1-.16**2-.34**2-.11**2)],tint:[.63,.51,.39]}];function g(n,a,x,c,e,{caves:s=!1}={}){let i=a*1.713,o=Math.sin(x*5.3+i)*Math.cos(c*4.1-i)*Math.sin(e*6.2+1.3);if(n===0){let f=Math.hypot(x/1.05,c/.87,e/.96),u=.055*o+.025*Math.sin(x*13+i)*Math.sin(c*11)*Math.cos(e*9),d=.07*Math.exp(-65*((x-.46)**2+(c-.22)**2+(e-.35)**2));return f-.67-u+d}if(n===1){let f=a%2===0,u=Math.hypot(x,c,e),d=u-(f?.6:.75)-.025*o-.012*Math.sin(x*17+i)*Math.cos(e*13);return f?Math.min(d,Math.hypot(Math.hypot(x,e)-.82,c)-.055):d}let r=Math.hypot(x,e),t=.7+.05*Math.sin(x*8+i)*Math.cos(e*7),l=.23+.09*Math.sin(x*5+i)*Math.cos(e*6),h=-.78+.8*Math.pow(r,1.1)+.035*o,b=Math.max(r-t,c-l,h-c);return s?Math.max(b,.235-Math.hypot(x-.48,c+.1,e-.04)):b}function G(n,a,x,c,e,s){let o=[g(n,a,x+.0015,c,e,s)-g(n,a,x-.0015,c,e,s),g(n,a,x,c+.0015,e,s)-g(n,a,x,c-.0015,e,s),g(n,a,x,c,e+.0015,s)-g(n,a,x,c,e-.0015,s)],r=Math.hypot(...o)||1;return o.map(t=>t/r)}var F=[[48,36,28,20,16,10,6,4,3,2],[64,48,36,28,24,16,12,8,6,4],[64,48,32,24,16,10,6,4,3,2]],R=10;var W=[[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]],j=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]],L=[[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,8,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,1,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,8,3,9,8,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,2,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,8,3,1,2,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,2,10,0,2,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[2,8,3,2,10,8,10,9,8,-1,-1,-1,-1,-1,-1,-1],[3,11,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,11,2,8,11,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,9,0,2,3,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,11,2,1,9,11,9,8,11,-1,-1,-1,-1,-1,-1,-1],[3,10,1,11,10,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,10,1,0,8,10,8,11,10,-1,-1,-1,-1,-1,-1,-1],[3,9,0,3,11,9,11,10,9,-1,-1,-1,-1,-1,-1,-1],[9,8,10,10,8,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,7,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,3,0,7,3,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,1,9,8,4,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,1,9,4,7,1,7,3,1,-1,-1,-1,-1,-1,-1,-1],[1,2,10,8,4,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,4,7,3,0,4,1,2,10,-1,-1,-1,-1,-1,-1,-1],[9,2,10,9,0,2,8,4,7,-1,-1,-1,-1,-1,-1,-1],[2,10,9,2,9,7,2,7,3,7,9,4,-1,-1,-1,-1],[8,4,7,3,11,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[11,4,7,11,2,4,2,0,4,-1,-1,-1,-1,-1,-1,-1],[9,0,1,8,4,7,2,3,11,-1,-1,-1,-1,-1,-1,-1],[4,7,11,9,4,11,9,11,2,9,2,1,-1,-1,-1,-1],[3,10,1,3,11,10,7,8,4,-1,-1,-1,-1,-1,-1,-1],[1,11,10,1,4,11,1,0,4,7,11,4,-1,-1,-1,-1],[4,7,8,9,0,11,9,11,10,11,0,3,-1,-1,-1,-1],[4,7,11,4,11,9,9,11,10,-1,-1,-1,-1,-1,-1,-1],[9,5,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,5,4,0,8,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,5,4,1,5,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[8,5,4,8,3,5,3,1,5,-1,-1,-1,-1,-1,-1,-1],[1,2,10,9,5,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,0,8,1,2,10,9,5,4,-1,-1,-1,-1,-1,-1,-1],[5,2,10,5,4,2,4,0,2,-1,-1,-1,-1,-1,-1,-1],[2,10,5,3,2,5,3,5,4,3,4,8,-1,-1,-1,-1],[9,5,4,2,3,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,11,2,0,8,11,4,9,5,-1,-1,-1,-1,-1,-1,-1],[0,5,4,0,1,5,2,3,11,-1,-1,-1,-1,-1,-1,-1],[2,1,5,2,5,8,2,8,11,4,8,5,-1,-1,-1,-1],[10,3,11,10,1,3,9,5,4,-1,-1,-1,-1,-1,-1,-1],[4,9,5,0,8,1,8,10,1,8,11,10,-1,-1,-1,-1],[5,4,0,5,0,11,5,11,10,11,0,3,-1,-1,-1,-1],[5,4,8,5,8,10,10,8,11,-1,-1,-1,-1,-1,-1,-1],[9,7,8,5,7,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,3,0,9,5,3,5,7,3,-1,-1,-1,-1,-1,-1,-1],[0,7,8,0,1,7,1,5,7,-1,-1,-1,-1,-1,-1,-1],[1,5,3,3,5,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,7,8,9,5,7,10,1,2,-1,-1,-1,-1,-1,-1,-1],[10,1,2,9,5,0,5,3,0,5,7,3,-1,-1,-1,-1],[8,0,2,8,2,5,8,5,7,10,5,2,-1,-1,-1,-1],[2,10,5,2,5,3,3,5,7,-1,-1,-1,-1,-1,-1,-1],[7,9,5,7,8,9,3,11,2,-1,-1,-1,-1,-1,-1,-1],[9,5,7,9,7,2,9,2,0,2,7,11,-1,-1,-1,-1],[2,3,11,0,1,8,1,7,8,1,5,7,-1,-1,-1,-1],[11,2,1,11,1,7,7,1,5,-1,-1,-1,-1,-1,-1,-1],[9,5,8,8,5,7,10,1,3,10,3,11,-1,-1,-1,-1],[5,7,0,5,0,9,7,11,0,1,0,10,11,10,0,-1],[11,10,0,11,0,3,10,5,0,8,0,7,5,7,0,-1],[11,10,5,7,11,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[10,6,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,8,3,5,10,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,0,1,5,10,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,8,3,1,9,8,5,10,6,-1,-1,-1,-1,-1,-1,-1],[1,6,5,2,6,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,6,5,1,2,6,3,0,8,-1,-1,-1,-1,-1,-1,-1],[9,6,5,9,0,6,0,2,6,-1,-1,-1,-1,-1,-1,-1],[5,9,8,5,8,2,5,2,6,3,2,8,-1,-1,-1,-1],[2,3,11,10,6,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[11,0,8,11,2,0,10,6,5,-1,-1,-1,-1,-1,-1,-1],[0,1,9,2,3,11,5,10,6,-1,-1,-1,-1,-1,-1,-1],[5,10,6,1,9,2,9,11,2,9,8,11,-1,-1,-1,-1],[6,3,11,6,5,3,5,1,3,-1,-1,-1,-1,-1,-1,-1],[0,8,11,0,11,5,0,5,1,5,11,6,-1,-1,-1,-1],[3,11,6,0,3,6,0,6,5,0,5,9,-1,-1,-1,-1],[6,5,9,6,9,11,11,9,8,-1,-1,-1,-1,-1,-1,-1],[5,10,6,4,7,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,3,0,4,7,3,6,5,10,-1,-1,-1,-1,-1,-1,-1],[1,9,0,5,10,6,8,4,7,-1,-1,-1,-1,-1,-1,-1],[10,6,5,1,9,7,1,7,3,7,9,4,-1,-1,-1,-1],[6,1,2,6,5,1,4,7,8,-1,-1,-1,-1,-1,-1,-1],[1,2,5,5,2,6,3,0,4,3,4,7,-1,-1,-1,-1],[8,4,7,9,0,5,0,6,5,0,2,6,-1,-1,-1,-1],[7,3,9,7,9,4,3,2,9,5,9,6,2,6,9,-1],[3,11,2,7,8,4,10,6,5,-1,-1,-1,-1,-1,-1,-1],[5,10,6,4,7,2,4,2,0,2,7,11,-1,-1,-1,-1],[0,1,9,4,7,8,2,3,11,5,10,6,-1,-1,-1,-1],[9,2,1,9,11,2,9,4,11,7,11,4,5,10,6,-1],[8,4,7,3,11,5,3,5,1,5,11,6,-1,-1,-1,-1],[5,1,11,5,11,6,1,0,11,7,11,4,0,4,11,-1],[0,5,9,0,6,5,0,3,6,11,6,3,8,4,7,-1],[6,5,9,6,9,11,4,7,9,7,11,9,-1,-1,-1,-1],[10,4,9,6,4,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,10,6,4,9,10,0,8,3,-1,-1,-1,-1,-1,-1,-1],[10,0,1,10,6,0,6,4,0,-1,-1,-1,-1,-1,-1,-1],[8,3,1,8,1,6,8,6,4,6,1,10,-1,-1,-1,-1],[1,4,9,1,2,4,2,6,4,-1,-1,-1,-1,-1,-1,-1],[3,0,8,1,2,9,2,4,9,2,6,4,-1,-1,-1,-1],[0,2,4,4,2,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[8,3,2,8,2,4,4,2,6,-1,-1,-1,-1,-1,-1,-1],[10,4,9,10,6,4,11,2,3,-1,-1,-1,-1,-1,-1,-1],[0,8,2,2,8,11,4,9,10,4,10,6,-1,-1,-1,-1],[3,11,2,0,1,6,0,6,4,6,1,10,-1,-1,-1,-1],[6,4,1,6,1,10,4,8,1,2,1,11,8,11,1,-1],[9,6,4,9,3,6,9,1,3,11,6,3,-1,-1,-1,-1],[8,11,1,8,1,0,11,6,1,9,1,4,6,4,1,-1],[3,11,6,3,6,0,0,6,4,-1,-1,-1,-1,-1,-1,-1],[6,4,8,11,6,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[7,10,6,7,8,10,8,9,10,-1,-1,-1,-1,-1,-1,-1],[0,7,3,0,10,7,0,9,10,6,7,10,-1,-1,-1,-1],[10,6,7,1,10,7,1,7,8,1,8,0,-1,-1,-1,-1],[10,6,7,10,7,1,1,7,3,-1,-1,-1,-1,-1,-1,-1],[1,2,6,1,6,8,1,8,9,8,6,7,-1,-1,-1,-1],[2,6,9,2,9,1,6,7,9,0,9,3,7,3,9,-1],[7,8,0,7,0,6,6,0,2,-1,-1,-1,-1,-1,-1,-1],[7,3,2,6,7,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[2,3,11,10,6,8,10,8,9,8,6,7,-1,-1,-1,-1],[2,0,7,2,7,11,0,9,7,6,7,10,9,10,7,-1],[1,8,0,1,7,8,1,10,7,6,7,10,2,3,11,-1],[11,2,1,11,1,7,10,6,1,6,7,1,-1,-1,-1,-1],[8,9,6,8,6,7,9,1,6,11,6,3,1,3,6,-1],[0,9,1,11,6,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[7,8,0,7,0,6,3,11,0,11,6,0,-1,-1,-1,-1],[7,11,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[7,6,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,0,8,11,7,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,1,9,11,7,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[8,1,9,8,3,1,11,7,6,-1,-1,-1,-1,-1,-1,-1],[10,1,2,6,11,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,2,10,3,0,8,6,11,7,-1,-1,-1,-1,-1,-1,-1],[2,9,0,2,10,9,6,11,7,-1,-1,-1,-1,-1,-1,-1],[6,11,7,2,10,3,10,8,3,10,9,8,-1,-1,-1,-1],[7,2,3,6,2,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[7,0,8,7,6,0,6,2,0,-1,-1,-1,-1,-1,-1,-1],[2,7,6,2,3,7,0,1,9,-1,-1,-1,-1,-1,-1,-1],[1,6,2,1,8,6,1,9,8,8,7,6,-1,-1,-1,-1],[10,7,6,10,1,7,1,3,7,-1,-1,-1,-1,-1,-1,-1],[10,7,6,1,7,10,1,8,7,1,0,8,-1,-1,-1,-1],[0,3,7,0,7,10,0,10,9,6,10,7,-1,-1,-1,-1],[7,6,10,7,10,8,8,10,9,-1,-1,-1,-1,-1,-1,-1],[6,8,4,11,8,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,6,11,3,0,6,0,4,6,-1,-1,-1,-1,-1,-1,-1],[8,6,11,8,4,6,9,0,1,-1,-1,-1,-1,-1,-1,-1],[9,4,6,9,6,3,9,3,1,11,3,6,-1,-1,-1,-1],[6,8,4,6,11,8,1,2,10,-1,-1,-1,-1,-1,-1,-1],[1,2,10,3,0,11,0,6,11,0,4,6,-1,-1,-1,-1],[4,11,8,4,6,11,0,2,9,2,10,9,-1,-1,-1,-1],[10,9,3,10,3,2,9,4,3,11,3,6,4,6,3,-1],[8,2,3,8,4,2,4,6,2,-1,-1,-1,-1,-1,-1,-1],[0,4,2,4,6,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,9,0,2,3,4,2,4,6,4,3,8,-1,-1,-1,-1],[1,9,4,1,4,2,2,4,6,-1,-1,-1,-1,-1,-1,-1],[8,1,3,8,4,1,4,6,1,6,10,1,-1,-1,-1,-1],[10,1,0,10,0,6,6,0,4,-1,-1,-1,-1,-1,-1,-1],[4,6,3,4,3,8,6,10,3,0,3,9,10,9,3,-1],[10,9,4,6,10,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,9,5,7,6,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,8,3,4,9,5,11,7,6,-1,-1,-1,-1,-1,-1,-1],[5,0,1,5,4,0,7,6,11,-1,-1,-1,-1,-1,-1,-1],[11,7,6,8,3,4,3,5,4,3,1,5,-1,-1,-1,-1],[9,5,4,10,1,2,7,6,11,-1,-1,-1,-1,-1,-1,-1],[6,11,7,1,2,10,0,8,3,4,9,5,-1,-1,-1,-1],[7,6,11,5,4,10,4,2,10,4,0,2,-1,-1,-1,-1],[3,4,8,3,5,4,3,2,5,10,5,2,11,7,6,-1],[7,2,3,7,6,2,5,4,9,-1,-1,-1,-1,-1,-1,-1],[9,5,4,0,8,6,0,6,2,6,8,7,-1,-1,-1,-1],[3,6,2,3,7,6,1,5,0,5,4,0,-1,-1,-1,-1],[6,2,8,6,8,7,2,1,8,4,8,5,1,5,8,-1],[9,5,4,10,1,6,1,7,6,1,3,7,-1,-1,-1,-1],[1,6,10,1,7,6,1,0,7,8,7,0,9,5,4,-1],[4,0,10,4,10,5,0,3,10,6,10,7,3,7,10,-1],[7,6,10,7,10,8,5,4,10,4,8,10,-1,-1,-1,-1],[6,9,5,6,11,9,11,8,9,-1,-1,-1,-1,-1,-1,-1],[3,6,11,0,6,3,0,5,6,0,9,5,-1,-1,-1,-1],[0,11,8,0,5,11,0,1,5,5,6,11,-1,-1,-1,-1],[6,11,3,6,3,5,5,3,1,-1,-1,-1,-1,-1,-1,-1],[1,2,10,9,5,11,9,11,8,11,5,6,-1,-1,-1,-1],[0,11,3,0,6,11,0,9,6,5,6,9,1,2,10,-1],[11,8,5,11,5,6,8,0,5,10,5,2,0,2,5,-1],[6,11,3,6,3,5,2,10,3,10,5,3,-1,-1,-1,-1],[5,8,9,5,2,8,5,6,2,3,8,2,-1,-1,-1,-1],[9,5,6,9,6,0,0,6,2,-1,-1,-1,-1,-1,-1,-1],[1,5,8,1,8,0,5,6,8,3,8,2,6,2,8,-1],[1,5,6,2,1,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,3,6,1,6,10,3,8,6,5,6,9,8,9,6,-1],[10,1,0,10,0,6,9,5,0,5,6,0,-1,-1,-1,-1],[0,3,8,5,6,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[10,5,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[11,5,10,7,5,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[11,5,10,11,7,5,8,3,0,-1,-1,-1,-1,-1,-1,-1],[5,11,7,5,10,11,1,9,0,-1,-1,-1,-1,-1,-1,-1],[10,11,7,10,7,5,9,8,1,8,3,1,-1,-1,-1,-1],[11,1,2,11,7,1,7,5,1,-1,-1,-1,-1,-1,-1,-1],[0,8,3,1,2,7,1,7,5,7,2,11,-1,-1,-1,-1],[9,7,5,9,2,7,9,0,2,2,11,7,-1,-1,-1,-1],[7,5,2,7,2,11,5,9,2,3,2,8,9,8,2,-1],[2,5,10,2,3,5,3,7,5,-1,-1,-1,-1,-1,-1,-1],[8,2,0,8,5,2,8,7,5,10,2,5,-1,-1,-1,-1],[9,0,1,5,10,3,5,3,7,3,10,2,-1,-1,-1,-1],[9,8,2,9,2,1,8,7,2,10,2,5,7,5,2,-1],[1,3,5,3,7,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,8,7,0,7,1,1,7,5,-1,-1,-1,-1,-1,-1,-1],[9,0,3,9,3,5,5,3,7,-1,-1,-1,-1,-1,-1,-1],[9,8,7,5,9,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[5,8,4,5,10,8,10,11,8,-1,-1,-1,-1,-1,-1,-1],[5,0,4,5,11,0,5,10,11,11,3,0,-1,-1,-1,-1],[0,1,9,8,4,10,8,10,11,10,4,5,-1,-1,-1,-1],[10,11,4,10,4,5,11,3,4,9,4,1,3,1,4,-1],[2,5,1,2,8,5,2,11,8,4,5,8,-1,-1,-1,-1],[0,4,11,0,11,3,4,5,11,2,11,1,5,1,11,-1],[0,2,5,0,5,9,2,11,5,4,5,8,11,8,5,-1],[9,4,5,2,11,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[2,5,10,3,5,2,3,4,5,3,8,4,-1,-1,-1,-1],[5,10,2,5,2,4,4,2,0,-1,-1,-1,-1,-1,-1,-1],[3,10,2,3,5,10,3,8,5,4,5,8,0,1,9,-1],[5,10,2,5,2,4,1,9,2,9,4,2,-1,-1,-1,-1],[8,4,5,8,5,3,3,5,1,-1,-1,-1,-1,-1,-1,-1],[0,4,5,1,0,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[8,4,5,8,5,3,9,0,5,0,3,5,-1,-1,-1,-1],[9,4,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,11,7,4,9,11,9,10,11,-1,-1,-1,-1,-1,-1,-1],[0,8,3,4,9,7,9,11,7,9,10,11,-1,-1,-1,-1],[1,10,11,1,11,4,1,4,0,7,4,11,-1,-1,-1,-1],[3,1,4,3,4,8,1,10,4,7,4,11,10,11,4,-1],[4,11,7,9,11,4,9,2,11,9,1,2,-1,-1,-1,-1],[9,7,4,9,11,7,9,1,11,2,11,1,0,8,3,-1],[11,7,4,11,4,2,2,4,0,-1,-1,-1,-1,-1,-1,-1],[11,7,4,11,4,2,8,3,4,3,2,4,-1,-1,-1,-1],[2,9,10,2,7,9,2,3,7,7,4,9,-1,-1,-1,-1],[9,10,7,9,7,4,10,2,7,8,7,0,2,0,7,-1],[3,7,10,3,10,2,7,4,10,1,10,0,4,0,10,-1],[1,10,2,8,7,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,9,1,4,1,7,7,1,3,-1,-1,-1,-1,-1,-1,-1],[4,9,1,4,1,7,0,8,1,8,7,1,-1,-1,-1,-1],[4,0,3,7,4,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,8,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,10,8,10,11,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,0,9,3,9,11,11,9,10,-1,-1,-1,-1,-1,-1,-1],[0,1,10,0,10,8,8,10,11,-1,-1,-1,-1,-1,-1,-1],[3,1,10,11,3,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,2,11,1,11,9,9,11,8,-1,-1,-1,-1,-1,-1,-1],[3,0,9,3,9,11,1,2,9,2,11,9,-1,-1,-1,-1],[0,2,11,8,0,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,2,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[2,3,8,2,8,10,10,8,9,-1,-1,-1,-1,-1,-1,-1],[9,10,2,0,9,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[2,3,8,2,8,10,0,1,8,1,10,8,-1,-1,-1,-1],[1,10,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,3,8,9,1,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,9,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,3,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]],V=Uint32Array.from(L.flat(),n=>n>>>0),Y={name:"Bourke",corners:W,edges:j,maxVertices:15,table:V,cornerBit:n=>1<<n,createPolygonizer(){return(n,a,x)=>{let c=L[a],e=0;for(;e<15&&c[e]>=0;)x[e]=c[e],e++;return e}}};var $=Y;var z=new Uint32Array([0,2181,2182,2197,2179,6166,2205,2371,2180,2199,6164,2326,2193,2380,2335,1167,2178,2203,6152,2356,10243,14359,14356,1317,6158,2344,18434,1181,14357,1345,24580,272,2177,6154,2201,2338,6150,18432,2323,1177,10242,14350,14353,1341,14349,24578,1313,269,2187,2374,2359,1171,14355,24579,1349,302,14351,1329,24586,284,20481,12289,12297,135,2176,10241,6148,14343,2191,14347,2347,1337,6146,14342,18438,24577,2341,1309,1173,266,6162,14346,18437,24585,14358,20482,24584,12304,18433,24576,28672,16387,24582,12292,16391,4112,2185,14344,2362,1325,2377,24581,1169,305,14348,20480,24587,12306,1353,12290,281,141,2311,1333,1185,317,1321,12293,320,147,24583,12288,16388,4096,12291,8192,4108,127,896,265,538,2866,2373,1864,1974,1701,4489,312,4762,146,6970,794,4784,2944,4165,261,6517,2439,4928,884,7077,1973,5254,2920,5653,534,5926,1842,5226,2378,6469,56,4361,1864,5797,265,6469,538,5797,811,6070,538,6070,56,6962,1864,4634,56,6962,265,5797,2164,6469,1974,6405,4149,5203,2115,6516,6423,6257,129,5637,6480,4458,262,6725,6466,4682,402,5029,6998,4906,2869,4518,6066,4631,1649,6022,6150,7008,944,6196,4900,5954,2930,4666,5002,4520,24,4393,4793,4251,779,5285,6790,5258,1896,7013,6036,6073,1435,5797,896,6070,265,4634,1864,6469,2866,4261,6149,6243,5765,5795,928,6038,4534,4457,6512,6064,177,5962,6050,6258,6721,5249,386,4789,6964,6467,5556,5522,659,7066,6448,2483,6154,4122,2954,6299,6930,2961,4746,4994,2472,4678,5145,1057,6309,5253,2984,4134,4199,120,6213,5432,309,5994,6791,2442,5909,4530,379,4469,5896,1808,5158,6194,584,4202,5216,266,4425,4468,881,5163,5963,36,4773,5426,1845,5685,4971,339,5781,5641,518,6453,5008,1875,5046,4960,1030,6586,6068,2964,6054,5914,791,6693,4677,66,6501,6582,2233,5226,6804,896,5797,4489,312,5797,6155,43,7077,5499,56,5653,5665,2051,5797,4148,884,6326,5704,265,7077,6069,265,4762,6070,146,6070,4489,312,5926,5938,265,4165,6070,261,4762,4617,1864,6517,4634,2169,5254,4634,2230,4890,6970,2164,4634,4980,1027,5653,4630,2164,6469,4784,2944,6469,6970,794,5226,6474,811,6517,6535,691,4165,5392,2866,6469,5926,1842,4970,6410,4244,6148,5764,4998,928,6293,4517,4970,5521,5025,6243,2134,4261,6838,4138,6699,6251,5480,88,4261,6021,6267,5003,6715,4154,88,5765,4662,4897,4145,5377,6149,2147,4261,5206,4982,5748,4180,5024,2614,5270,6472,4248,6920,4363,5659,361,6037,4517,4538,6421,4247,6919,177,6566,5794,7010,4274,6064,6512,1942,6038,4411,6968,6072,6520,4457,438,6038,5936,4146,4354,5650,6422,2416,4453,5957,5974,5892,7009,4273,2823,5274,4616,6153,5257,5962,4730,1832,6565,5978,4521,6169,4632,5928,634,5286,6322,4790,6694,4516,6164,386,5146,7034,6067,6259,4483,5249,1191,5146,4116,4355,4627,5923,6695,1191,5701,5141,5958,4726,6258,4482,2068,6437,7044,5248,6464,4752,6994,1460,6565,4889,6426,7002,5211,4939,1081,7018,6982,4794,6442,4905,5177,843,4789,5016,4999,6967,5559,6437,659,6981,4389,4624,4896,5168,6964,2898,4709,5492,5479,4935,6467,4755,2341,4970,6410,5024,5764,902,5765,4970,6293,4410,2147,4261,6230,4138,6251,88,4261,6021,4184,6715,58,5765,4662,6243,5377,2053,4261,6710,4180,4982,928,5270,4457,6920,4363,1563,6037,4538,4273,4247,2823,6566,6038,4274,6064,2416,6038,4411,5659,6520,361,6038,4390,5936,6512,2326,4453,5892,6919,7009,177,5274,4616,5928,5962,634,6773,4730,6169,4632,1832,5286,6322,4482,4516,2068,5962,7034,4483,5249,2625,5146,4116,5923,6695,1191,5141,4726,6164,6258,386,6437,7044,5556,4752,2898,6837,4889,5177,5211,843,6982,6442,4939,4905,1081,4789,5016,4755,5559,2341,4789,4389,5168,6964,1460,4709,6437,5940,6467,659,6469,4634,1974,4787,6260,265,5797,6962,2164,6469,4634,56,6469,6070,56,5797,6962,265,5797,4361,1864,4634,6070,896,7013,6581,4634,6036,2967,7058,6260,6960,6576,2322,5285,6790,6962,6262,2212,6469,5002,6145,6785,2595,7013,4992,6036,7063,2485,5797,4393,7058,6960,2480,5285,6262,4361,6308,2694,6070,4666,6307,6145,2689,6725,6070,4682,4633,1065,4361,5251,4675,4791,1063,5797,4724,4791,5251,579,6725,4152,4633,5161,586,6469,6150,5752,4155,1547,5637,4245,4458,4907,97,5637,4245,4458,5960,97,6022,4634,4155,5643,104,6469,4518,5910,6066,370,4907,5961,4360,5912,377,5029,6998,5960,4955,810,6405,4634,4944,4996,1332,6405,5428,6070,4996,848,5029,6998,4361,4906,859,5797,5961,4473,4360,1816,4518,4992,6066,4466,1814,7269,7258,6084,7291,7316,7193,7201,7330,3254,7284,7351,7211,4553,7186,7177,7216,7299,3144,7333,7274,7218,7299,7240,7252,7286,7351,3115,6853,7224,7203,7330,7237,7316,7193,7169,3200,7269,6597,7350,7227,7171,7296,6084,7288,3220,5829,7274,7317,7177,7216,7347,7211,7186,3233,7317,7274,7184,7329,7240,7286,7303,7252,3081,7194,6086,7169,7296,7288,7350,7227,7203,3234,7269,7334,7257,4546,7346,6084,7291,7316,3098,7211,4553,7186,7241,7284,7303,7176,7216,3251,7333,7252,7286,7240,7210,7218,7347,7275,3207,7237,4810,7300,7224,7203,7257,7194,7169,3216,7269,7171,7312,7257,7350,6084,7291,7300,3128,7333,7254,7177,7216,7347,7275,7210,7186,3217,7333,7274,7252,7286,7303,7176,4553,7184,3145,7334,6086,7194,7169,7296,7224,7203,7346,3195,6853,7334,7316,7193,7201,7346,7291,7271,3141,7211,4553,7241,7284,7351,7218,7299,7176,3088,7333,7254,7210,7218,7299,7240,7284,7351,3179,6853,4810,7237,7300,7224,7171,7312,7193,3105,7237,7350,7227,7171,7312,7257,7300,7288,3175,5829,7210,5067,7275,7317,7177,7184,7329,3122,5829,7274,7317,7284,6088,7176,7184,7329,3145,7334,7296,7288,7271,7194,7201,7346,7227,3075,6757,5145,4530,6068,1201,5963,4425,4785,4532,2096,4773,5253,7030,6194,1410,6693,4664,5208,5416,25,6501,5008,7011,5779,1924,5781,4394,4243,6966,918,5269,5994,4362,6256,1952,6054,6016,4512,6768,946,5221,5209,4634,6834,7078,6070,5238,5537,2385,4228,5960,6327,7043,4787,4361,4400,4387,2308,5797,4907,7043,6260,6327,5494,5447,5810,2658,6469,4442,4152,4131,4609,6689,5401,6408,1176,5221,4992,6288,6532,5524,5703,7015,6019,2931,5797,6805,6561,4241,4882,4865,6962,4774,2854,5797,4361,6561,6805,5972,5989,6260,5264,2112,7078,4992,4984,5947,5755,6834,4514,4656,288,7066,2488,5158,36,4981,309,6054,4480,6017,2673,6978,4393,5266,1207,6709,5026,6227,1412,6501,5040,4278,105,5226,6474,4136,2091,6053,4489,4993,1978,5669,4928,5955,1313,6214,6410,6251,42,6037,4538,6025,945,4117,4662,5440,1891,4714,4137,4777,7010,5816,5224,5257,2057,6565,6025,6487,4521,6675,7075,6967,903,5125,5974,4117,4129,4896,4663,5671,1861,5226,6804,6404,5128,7040,6914,6834,2667,7077,4489,4408,5048,6327,5499,4442,405,5221,4438,5665,4657,4400,5123,5175,1607,6602,6854,6412,4140,4796,6347,6220,1132,7317,7354,7291,7255,6600,7224,7187,458,7189,4806,7201,5317,7286,6083,7171,3136,7238,7210,7316,7337,4800,7296,7352,3014,7333,6085,7354,7227,4553,5057,7305,2247,5829,4806,4668,5964,4988,4292,4124,348,5813,7040,5552,336,6022,4489,4390,1665,4762,6516,6034,882,5285,5050,5028,832,6517,6402,6439,1835,4458,6214,6241,2067,5994,6800,6048,880,6938,4416,4532,1867,4389,4741,4792,1112,5781,4662,5014,905,5270,4409,4969,1595,4773,6021,6181,2050,4678,4498,5161,56,6469,6170,4480,2954,5797,4393,7058,2203,5797,5961,4473,881,4666,6070,6307,2472,5797,4724,5931,36,5909,6066,4466,896,6586,6036,7063,2051,5126,4634,4155,1547,6405,4634,4944,1875,4933,6070,4996,309,6469,6022,4200,608,4678,4996,4930,400,6725,5288,6315,25,5813,5561,4394,2488,5269,4458,5655,1811,6022,5770,6793,571,5285,7030,6722,576,5909,4480,6167,2851,6586,5040,4281,1924,4518,4448,4196,946,6709,4666,5431,25,7013,6995,4945,1924,4197,6405,5634,1924,6214,6472,6528,6401,6243,4962,4402,259,6837,4441,4517,4496,5556,5304,4168,148,5765,4714,5513,4517,4790,5816,4769,345,6565,6710,6426,6675,6484,5687,5223,1110,4714,5944,4987,6025,5042,6038,5786,694,4261,7018,5957,5974,5440,5995,6658,2978,4117,4354,4611,4667,4184,6231,7047,2872,5050,6020,4987,5944,5024,4265,5129,1152,7018,7074,6756,6947,6721,4416,4880,801,6565,4896,4129,4663,4121,4730,6773,2330,4453,5206,5223,5240,5659,6931,6323,2171,4709,6153,6292,6402,6215,6437,5974,1861,6470,4882,4115,5665,6147,6497,5272,2312,6469,4442,4228,6404,7040,4528,6833,405,5797,4501,6677,6289,4737,7042,6950,678,5797,5988,5446,4980,6452,4409,4506,2394,4774,6950,6562,6070,5010,6291,6199,951,5797,6954,5818,4139,5972,5899,5127,1893,6949,6027,5048,5499,4152,4434,4384,560,6474,5264,6208,4992,6052,7079,7027,1923,7078,4400,4657,5123,6689,6979,5707,2858,6805,4506,5977,4634,4217,4976,4866,18,5221,5048,6027,4408,5755,5144,5396,1142,6469,5989,5972,4711,6183,4136,4233,2121,4806,7193,4544,5058,6156,6339,6476,1132,6853,4508,5321,5212,6844,4296,7052,448,7333,5484,4780,5820,7052,4553,6300,705,7333,6854,5317,5831,4988,4553,4412,2500,4810,7350,5052,6028,5756,6300,6572,962,7333,5452,5996,6854,5132,7106,4140,1995,7189,4668,4124,6339,6156,7111,5500,715,7354,7224,6084,7111,7300,7312,7337,960,5834,4546,7171,4811,7227,7232,7268,2753,6853,7193,4546,5056,4297,7223,7285,714,7237,6086,6028,7107,5835,4412,5404,1224,7237,7206,6220,6412,5532,4140,6086,2247,5228,6412,6220,5056,5004,4546,5676,2497,7237,4297,5320,5532,7052,4524,6844,448,5829,5804,5577,4554,6300,4796,7052,705,5829,5804,6492,6684,4412,7284,4988,2500,5834,4811,6076,6086,6572,5004,6300,962,5829,5578,7110,6850,4140,5964,5132,1995,6085,7227,6343,4156,4296,4636,4444,715,6602,7296,7316,6343,7239,7107,7354,960,4810,7350,7203,7107,7268,7169,7232,2753,6597,7194,4544,7312,7285,5058,7223,714,7269,6084,7111,7020,5404,6339,4412,1224,7269,6084,6476,6597,4716,6156,4140,2247,6469,4634,6070,896,6757,4496,6947,1924,7013,7001,4634,4992,6036,2967,6469,6070,6170,6145,6712,2595,6469,4634,4278,4155,5760,1656,6469,4518,4152,4466,6066,359,6725,6070,4992,5161,4633,1186,6757,6036,4503,5042,6167,2049,6405,4634,4933,6070,4944,900,4197,5520,4518,6020,6947,22,7013,4954,6020,4121,6995,2595,6757,4496,4930,4996,5234,1970,6757,6020,4281,4155,6953,537,6725,6310,4496,5042,5288,1656,7269,7257,4634,5321,4296,7288,7239,7227,5835,3075,6469,7334,5056,4546,7346,7227,7296,7288,6086,3098,7269,7334,6597,4524,7201,7346,6084,7111,7316,2051,6469,4810,7350,7227,7203,7194,7169,7288,4296,3175,7269,6764,6084,5532,6476,6028,6156,4524,4544,946,6469,7334,6076,6339,7203,7346,7271,7169,6849,3200,7269,7258,7350,4810,6084,7291,7193,5321,7201,56,6853,7334,7237,6086,7316,7193,7346,4546,7291,896,6757,7227,6084,6343,6156,4156,6956,7193,4636,2380,6853,7237,6070,4296,5321,7193,7169,7224,7203,714,6757,4508,4544,5058,5004,6156,6476,6076,6084,2860,6853,6764,7193,6476,5212,5756,6156,6343,4124,2851,7269,5834,4811,5532,4636,4524,4156,4297,5052,1924,7237,6086,7257,4634,7300,7288,7350,7227,7312,960,7269,6597,4634,7224,6084,7111,7300,7171,7312,3254,7237,5834,4297,5320,5532,4124,4524,5756,6028,571,7269,4810,5058,5532,4544,4524,5052,7020,6412,1924,6597,4810,7237,6070,6849,7169,7312,7300,7203,2243,6757,5320,4297,4156,5004,5244,6076,4636,4811,412,6853,5572,6070,7193,4546,5056,7312,7330,7300,3128,6853,7020,7193,6700,4636,6412,4156,7107,5724,1924,6853,5834,4811,5212,5756,6076,4668,5004,5320,25,7269,5548,6084,6076,7020,6700,5004,5058,6220,400,6853,7020,5212,7288,7107,5756,6220,6700,4668,25,7269,7258,7312,7171,7224,7300,7239,7291,7350,7330,7201,3097,6853,6764,5004,4668,6956,5212,6076,5756,6476,4508,4124,2060,7269,7334,7346,7257,7201,7194,7316,7239,7288,7296,7171,3131,7237,7020,5532,4524,4124,6412,6220,6028,5756,5052,4668,2604,6757,6020,7047,6323,6148,4244,4496,4880,4627,2851,6469,4442,6070,4992,4866,4114,6408,5272,6481,2593,6757,6565,6801,6694,4790,5042,4402,4145,6401,1924,6469,7078,4992,6199,5047,4656,4384,4634,4779,1659,5221,7078,5401,4634,4779,5537,5524,5238,6070,2051,6757,5042,6323,5492,7047,7010,5794,5974,6215,400,5221,5209,4634,4992,4233,6217,6019,7027,6070,1892,6757,4496,6801,6565,6464,5248,6020,5492,5749,946,6757,4992,4633,6466,5298,1972,6709,5508,6070,4496,4666,901,6501,4634,6915,7008,5776,1924,6469,6054,5042,4120,4472,423]);var A=z;var X=[[0,0,0],[0,1,0],[0,1,1],[0,0,1],[1,0,0],[1,1,0],[1,1,1],[1,0,1]],H=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]],B=class{constructor(){this.table=A,this.f_test_results=new Int32Array(6)}signbf(a){return a<0}face_tests(a){let x=this.v,c=this.f_test_results;return c.fill(0),a&128?(c[0]=(a&204)===132?x[0]*x[5]<x[1]*x[4]?-1:1:0,c[3]=(a&153)===129?x[0]*x[7]<x[3]*x[4]?-1:1:0,c[4]=(a&240)===160?x[0]*x[2]<x[1]*x[3]?-1:1:0):(c[0]=(a&204)===72?x[0]*x[5]<x[1]*x[4]?1:-1:0,c[3]=(a&153)===24?x[0]*x[7]<x[3]*x[4]?1:-1:0,c[4]=(a&240)===80?x[0]*x[2]<x[1]*x[3]?1:-1:0),a&2?(c[1]=(a&102)===66?x[1]*x[6]<x[2]*x[5]?-1:1:0,c[2]=(a&51)===18?x[3]*x[6]<x[2]*x[7]?-1:1:0,c[5]=(a&15)===10?x[4]*x[6]<x[5]*x[7]?-1:1:0):(c[1]=(a&102)===36?x[1]*x[6]<x[2]*x[5]?1:-1:0,c[2]=(a&51)===33?x[3]*x[6]<x[2]*x[7]?1:-1:0,c[5]=(a&15)===5?x[4]*x[6]<x[5]*x[7]?1:-1:0),c[0]+c[1]+c[2]+c[3]+c[4]+c[5]}face_test1(a){let x=this.v;switch(a){case 0:return x[0]*x[5]<x[1]*x[4]?72:132;case 1:return x[1]*x[6]<x[2]*x[5]?36:66;case 2:return x[3]*x[6]<x[2]*x[7]?33:18;case 3:return x[0]*x[7]<x[3]*x[4]?24:129;case 4:return x[0]*x[2]<x[1]*x[3]?80:160;default:return x[4]*x[6]<x[5]*x[7]?5:10}}interior_test(a,x){let c=this.v,e=1e-9,s=c[4]-c[0],i=c[5]-c[1],o=c[6]-c[2],r=c[7]-c[3],t=s*o-i*r;if(this.signbf(t)){if(a&1)return 0}else if(!(a&1)||Math.abs(t)<e)return 0;let l=.5*(c[3]*i+c[1]*r-c[2]*s-c[0]*o)/t;if(l<=e||l>=1-e)return 0;let h=c[0]+s*l,b=c[1]+i*l,f=c[2]+o*l,u=c[3]+r*l,d=f*h,p=u*b;if(a&1){if(d<p&&!this.signbf(p))return(this.signbf(b)===this.signbf(c[a]))+x}else if(d>p&&!this.signbf(d))return(this.signbf(h)===this.signbf(c[a]))+x;return 0}pattern(a){let x=this.table,c=(a&128)!==0,e=c?a^255:a,s=x[e];if(s===void 0)throw new Error(`MC33 lookup miss: ${e}`);let i=(s&2048)!==0,o=c?!i:i,r=o?a:a^255,t=s&2047,l=s>>>12,h;switch(l){case 0:h=t;break;case 1:h=r&this.face_test1(t>>2)?183+(t<<1):159+t;break;case 2:h=this.interior_test(t,0)?239+6*t:231+(t<<1);break;case 3:r&this.face_test1(t%6)?h=575+5*t:h=this.interior_test(Math.floor(t/6),0)?407+7*t:335+3*t;break;case 4:{let b=this.face_tests(r);b===-3?h=695+3*t:b===-1?h=(this.f_test_results[4]+this.f_test_results[5]<0?this.f_test_results[0]+this.f_test_results[2]<0?759:799:719)+5*t:b===1?h=(this.f_test_results[4]+this.f_test_results[5]<0?983:this.f_test_results[0]+this.f_test_results[2]<0?839:911)+9*t:h=this.interior_test(t>>1,0)?1095+9*t:1055+5*t;break}case 5:{let b=this.face_tests(r);b===-2?h=(t&2?this.interior_test(0,0):this.interior_test(0,0)||this.interior_test(t?1:3,0))?1213+(t<<3):1189+(t<<2):b===0?h=(this.f_test_results[2+t]<0?1261:1285)+(t<<3):h=(t&2?this.interior_test(1,0):this.interior_test(2,0)||this.interior_test(t?3:1,0))?1237+(t<<3):1201+(t<<2);break}case 6:{let b=this.face_tests(r);b===-2?h=this.interior_test(14287116>>(t<<1)&3,0)?1453+(t<<3):1357+(t<<2):b===0?h=(this.f_test_results[t>>1]<0?1645:1741)+(t<<3):h=this.interior_test(10991589>>(t<<1)&3,0)?1549+(t<<3):1405+(t<<2);break}default:{let b=Math.abs(this.face_tests(r));if(b===0){let f=(this.f_test_results[1]<0)<<1|this.f_test_results[5]<0;if(this.f_test_results[0]*this.f_test_results[1]===this.f_test_results[5])h=2157+12*f;else{let u=this.interior_test(f,1);h=2285+(u?10*f-40*u:6*f)}}else if(b===2)h=1917+10*((this.f_test_results[0]<0?this.f_test_results[2]>0:12+(this.f_test_results[2]<0))+(this.f_test_results[1]<0?this.f_test_results[3]<0:6+(this.f_test_results[3]>0))),this.f_test_results[4]>0&&(h+=30);else if(b===4){let f=21+11*this.f_test_results[0]+4*this.f_test_results[1]+3*this.f_test_results[2]+2*this.f_test_results[3]+this.f_test_results[4];f>>4&&(f-=f&32?20:10),h=1845+3*f}else h=1839+2*this.f_test_results[0]}}return{offset:h+1,reverse:o}}triangles(a,x,c){if(this.v=a,x===0||x===255)return 0;let e=this.pattern(x),s=0;for(let i=e.offset;i<A.length;i++){let o=A[i],r=o&15,t=o>>4&15,l=o>>8&15;if(r<=12&&t<=12&&l<=12&&r!==t&&t!==l&&r!==l){if(s+3>c.length)throw new Error("MC33 cell exceeds output capacity");c[s++]=r,c[s++]=e.reverse?l:t,c[s++]=e.reverse?t:l}if(!(o&4096))return s}throw new Error("MC33 pattern exceeds lookup table")}},J={name:"MC33",corners:X,edges:H,maxVertices:36,table:A,cornerBit:n=>128>>n,createPolygonizer(){let n=new B;return n.triangles.bind(n)}};var T=J;function v(n={type:"cartesian"}){if(n.type==="cartesian")return(s,i,o)=>[s,i,o];if(n.type!=="spherical"&&n.type!=="cube-sphere")throw new Error(`Unknown coordinates: ${n.type}`);let a=n.radius||[.02,.7],x=n.center||[.5,.5,.5];if(a.length!==2||!a.every(Number.isFinite)||a[0]<0||a[1]<=a[0])throw new Error("Radius must be an increasing, nonnegative pair");if(x.length!==3||!x.every(Number.isFinite))throw new Error("Center must contain three finite coordinates");if(n.type==="cube-sphere"){if(!Number.isInteger(n.face)||n.face<0||n.face>5)throw new Error("Cube-sphere face must be 0..5");return(s,i,o)=>{let r=2*s-1,t=2*i-1,h=[[1,t,-r],[-1,t,r],[r,1,-t],[r,-1,t],[r,t,1],[-r,t,-1]][n.face],f=(a[0]+o*(a[1]-a[0]))/Math.hypot(...h);return h.map((u,d)=>x[d]+u*f)}}let c=n.longitude||[-Math.PI,Math.PI],e=n.latitude||[-Math.PI/2,Math.PI/2];for(let s of[c,e])if(s.length!==2||!s.every(Number.isFinite)||s[1]<=s[0])throw new Error("Angular ranges must be increasing finite pairs in radians");if(e[0]<-Math.PI/2||e[1]>Math.PI/2||c[1]-c[0]>2*Math.PI+1e-9)throw new Error("Latitude must be within \\xB1pi/2 and longitude span at most 2*pi");return(s,i,o)=>{let r=c[0]+s*(c[1]-c[0]),t=e[0]+i*(e[1]-e[0]),l=a[0]+o*(a[1]-a[0]),h=l*Math.cos(t);return Math.abs(Math.cos(t))<1e-15?[x[0],x[1]+l*Math.sin(t),x[2]]:[x[0]+h*Math.cos(r),x[1]+l*Math.sin(t),x[2]+h*Math.sin(r)]}}function q(n,a){if(!a||a.type==="cartesian")return n;let x=v(a);for(let c=0;c<n.length;c+=3){let e=x(n[c],n[c+1],n[c+2]);n[c]=e[0],n[c+1]=e[1],n[c+2]=e[2]}return n}var Q={bourke:$,mc33:T};function Z(n,a,x,c){let e=Q[c];if(!e)throw new Error(`Unknown marching cubes algorithm: ${c}`);if(!["x","y","z"].every(s=>Number.isInteger(a[s])&&a[s]>=2))throw new Error("Grid dimensions must be integers of at least 2");if(!(n instanceof Float32Array)||n.length!==a.x*a.y*a.z)throw new Error("Expected a Float32Array with x*y*z samples, indexed as (z*y + y)*x + x");if(!Number.isFinite(x))throw new Error("Isolevel must be finite");for(let s of n)if(!Number.isFinite(s)||!Number.isFinite(Math.fround(s-x)))throw new Error("Field samples and their differences from the isolevel must be finite f32 values");return e}function N(n,a,x=0,c="bourke",e={}){x=Math.fround(x),e.coordinates&&v(e.coordinates);let s=Z(n,a,x,c),{x:i,y:o,z:r}=a,t=s.createPolygonizer(),l=new Float32Array(8),h=new Uint8Array(s.maxVertices),b=new Float32Array(39),f=new Float32Array(65536),u=0;for(let d=0;d<r-1;d++)for(let p=0;p<o-1;p++)for(let y=0;y<i-1;y++){let M=0;for(let m=0;m<8;m++){let _=s.corners[m];l[m]=n[((d+_[2])*o+p+_[1])*i+y+_[0]]-x,l[m]<0&&(M|=s.cornerBit(m))}if(M===0||M===255)continue;let w=t(l,M,h);if(u+w*3>f.length){let m=new Float32Array(Math.max(f.length*2,u+w*3));m.set(f),f=m}for(let m=0;m<12;m++){let[_,k]=s.edges[m];if(l[_]<0==l[k]<0)continue;let E=l[_]-l[k],U=Math.abs(E)<1e-9?.5:Math.max(0,Math.min(1,l[_]/E)),P=s.corners[_],S=s.corners[k];b[m*3]=(y+P[0]+U*(S[0]-P[0]))/(i-1),b[m*3+1]=(p+P[1]+U*(S[1]-P[1]))/(o-1),b[m*3+2]=(d+P[2]+U*(S[2]-P[2]))/(r-1)}b[36]=(y+.5)/(i-1),b[37]=(p+.5)/(o-1),b[38]=(d+.5)/(r-1);for(let m=0;m<w;m++){let _=h[m]*3;f[u++]=b[_],f[u++]=b[_+1],f[u++]=b[_+2]}}return q(f.slice(0,u),e.coordinates)}function c1(n,a){let x=[],c=a/2,e=n%2===0;function s(o,r){let t=[Math.sin(o)*Math.cos(r),Math.cos(o),Math.sin(o)*Math.sin(r)],l=e?.5:.66,h=e?.69:.84;for(let b=0;b<14;b++){let f=(l+h)/2;g(1,n,...t.map(u=>u*f))<0?l=f:h=f}return t.map(b=>b*(l+h)/2)}function i(o,r,t){x.push(...o,...r,...t)}for(let o=0;o<c;o++)for(let r=0;r<a;r++){let t=o*Math.PI/c,l=(o+1)*Math.PI/c,h=r*2*Math.PI/a,b=(r+1)%a*2*Math.PI/a,f=s(t,h),u=s(t,b),d=s(l,b),p=s(l,h);o>0&&i(f,u,p),o<c-1&&i(u,d,p)}if(e){let r=(t,l)=>{let h=.82+.055*Math.cos(l);return[h*Math.cos(t),.055*Math.sin(l),h*Math.sin(t)]};for(let t=0;t<a;t++)for(let l=0;l<4;l++){let h=t*2*Math.PI/a,b=(t+1)%a*2*Math.PI/a,f=l*2*Math.PI/4,u=(l+1)%4*2*Math.PI/4,d=r(h,f),p=r(b,f),y=r(b,u),M=r(h,u);i(d,M,p),i(p,M,y)}}return Float32Array.from(x,o=>(o+1)/2)}function t1(n,a){let x=new Map,c=e=>e.every(s=>Math.abs(s*a-Math.floor(s*a)-.5)<1e-5);for(let e=0;e<n.length;e+=9){let s=[0,1,2].map(i=>Array.from(n.subarray(e+i*3,e+i*3+3)));for(let i=0;i<3;i++)if(c(s[i])){let o=s[i].join(",");x.has(o)||x.set(o,{boundary:new Map,offsets:[]});let r=x.get(o);r.offsets.push(e+i*3);for(let t=0;t<3;t++)t!==i&&r.boundary.set(s[t].join(","),s[t])}}for(let e of x.values()){let s=[0,0,0];for(let i of e.boundary.values())for(let o=0;o<3;o++)s[o]+=i[o]/e.boundary.size;for(let i of e.offsets)n.set(s,i)}return x.size}function O(n,a,x,c="mc33",e={}){let s=F[n]?.[x];if(!s)throw new Error("Invalid body mesh level");let i=n===1&&x>=5,o;if(i)o=c1(a,s);else{let b=s+1,f={x:b,y:b,z:b},u=new Float32Array(b*b*b);for(let d=0;d<b;d++)for(let p=0;p<b;p++)for(let y=0;y<b;y++)u[(d*b+p)*b+y]=g(n,a,y/s*2-1,p/s*2-1,d/s*2-1,e);o=N(u,f,0,c)}let r=new Float32Array(o.length/3*8),t=0,l=0,h=!i&&c==="mc33"?t1(o,s):0;for(let b=0;b<o.length;b+=9){let f=[],u=[];for(let M=0;M<3;M++){let w=[0,1,2].map(m=>o[b+M*3+m]*2-1);f.push(w),u.push(G(n,a,...w,e))}let d=f[1].map((M,w)=>M-f[0][w]),p=f[2].map((M,w)=>M-f[0][w]),y=[d[1]*p[2]-d[2]*p[1],d[2]*p[0]-d[0]*p[2],d[0]*p[1]-d[1]*p[0]];if(!(Math.hypot(...y)<1e-12)){l+=y.reduce((M,w,m)=>M+w*(u[0][m]+u[1][m]+u[2][m]),0);for(let M=0;M<3;M++){let w=t++*8;r.set([...f[M],1,...u[M],0],w)}}}if(l<0)for(let b=0;b<t*8;b+=24)for(let f=0;f<8;f++){let u=r[b+8+f];r[b+8+f]=r[b+16+f],r[b+16+f]=u}return{vertices:r.slice(0,t*8),count:t,divisions:s,interiorVertices:h,proxy:i}}function C(n,a=8192,x=7){let c=new Map;for(let r=0;r<n.length;r+=8){let t=[n[r],n[r+1],n[r+2]].map(l=>Math.round(l*1e6)).join(":");c.has(t)||c.set(t,r)}let e=Array.from(c.values()),s=I(x);for(let r=e.length-1;r>0;r--){let t=Math.floor(s()*(r+1));[e[r],e[t]]=[e[t],e[r]]}let i=Math.min(a,e.length),o=new Float32Array(i*8);return e.slice(0,i).forEach((r,t)=>o.set(n.subarray(r,r+8),t*8)),{vertices:o,count:i}}self.onmessage=n=>{let{key:a,kind:x,variant:c,level:e,algorithm:s,caves:i}=n.data;try{let o=performance.now(),r=O(x,c,e==="points"?0:e,s,{caves:i}),t=e==="points"?C(r.vertices,8192,x*71+c):r,l=e===R-1?C(r.vertices,512,x*71+c):null;self.postMessage({key:a,...t,fallback:l,ms:performance.now()-o},l?[t.vertices.buffer,l.vertices.buffer]:[t.vertices.buffer])}catch(o){self.postMessage({key:a,error:o.message})}};;if(typeof import_meta !== \'undefined\')import_meta.url=location.origin+"/dist/";})();\n';
-var f0 = URL.createObjectURL(new globalThis.Blob([u0], { type: "text/javascript" }));
-var be = {};
-F(be, { bounds: () => de, detailBands: () => T1, estimatedError: () => pe, height: () => x1, heightGradient: () => b0, wgsl: () => Ce });
-var gt = `fn progressive_height_gradient(xz: vec2<f32>, seed: u32) -> vec3<f32> {
+var la = { build: Zi, pointCloud: ji };
+var fa = '(()=>{function I(n){let a=n>>>0;return()=>{a=a+1831565813>>>0;let x=Math.imul(a^a>>>15,a|1);return x^=x+Math.imul(x^x>>>7,x|61),((x^x>>>14)>>>0)/4294967296}}var e1=[{id:"island",kind:2,variant:0,position:[420,-70,-250],radius:440,rotation:[0,0,0,1],tint:[.68,.87,.78]},{id:"planet",kind:1,variant:0,position:[-1300,430,-1900],radius:880,rotation:[.25,.08,.14,Math.sqrt(1-.25**2-.08**2-.14**2)],tint:[.45,.72,.91]},{id:"asteroid",kind:0,variant:2,position:[-230,100,500],radius:185,rotation:[.16,.34,.11,Math.sqrt(1-.16**2-.34**2-.11**2)],tint:[.63,.51,.39]}];function g(n,a,x,c,e,{caves:s=!1}={}){let i=a*1.713,o=Math.sin(x*5.3+i)*Math.cos(c*4.1-i)*Math.sin(e*6.2+1.3);if(n===0){let f=Math.hypot(x/1.05,c/.87,e/.96),u=.055*o+.025*Math.sin(x*13+i)*Math.sin(c*11)*Math.cos(e*9),d=.07*Math.exp(-65*((x-.46)**2+(c-.22)**2+(e-.35)**2));return f-.67-u+d}if(n===1){let f=a%2===0,u=Math.hypot(x,c,e),d=u-(f?.6:.75)-.025*o-.012*Math.sin(x*17+i)*Math.cos(e*13);return f?Math.min(d,Math.hypot(Math.hypot(x,e)-.82,c)-.055):d}let r=Math.hypot(x,e),t=.7+.05*Math.sin(x*8+i)*Math.cos(e*7),l=.23+.09*Math.sin(x*5+i)*Math.cos(e*6),h=-.78+.8*Math.pow(r,1.1)+.035*o,b=Math.max(r-t,c-l,h-c);return s?Math.max(b,.235-Math.hypot(x-.48,c+.1,e-.04)):b}function G(n,a,x,c,e,s){let o=[g(n,a,x+.0015,c,e,s)-g(n,a,x-.0015,c,e,s),g(n,a,x,c+.0015,e,s)-g(n,a,x,c-.0015,e,s),g(n,a,x,c,e+.0015,s)-g(n,a,x,c,e-.0015,s)],r=Math.hypot(...o)||1;return o.map(t=>t/r)}var F=[[48,36,28,20,16,10,6,4,3,2],[64,48,36,28,24,16,12,8,6,4],[64,48,32,24,16,10,6,4,3,2]],R=10;var W=[[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]],j=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]],L=[[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,8,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,1,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,8,3,9,8,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,2,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,8,3,1,2,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,2,10,0,2,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[2,8,3,2,10,8,10,9,8,-1,-1,-1,-1,-1,-1,-1],[3,11,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,11,2,8,11,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,9,0,2,3,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,11,2,1,9,11,9,8,11,-1,-1,-1,-1,-1,-1,-1],[3,10,1,11,10,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,10,1,0,8,10,8,11,10,-1,-1,-1,-1,-1,-1,-1],[3,9,0,3,11,9,11,10,9,-1,-1,-1,-1,-1,-1,-1],[9,8,10,10,8,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,7,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,3,0,7,3,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,1,9,8,4,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,1,9,4,7,1,7,3,1,-1,-1,-1,-1,-1,-1,-1],[1,2,10,8,4,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,4,7,3,0,4,1,2,10,-1,-1,-1,-1,-1,-1,-1],[9,2,10,9,0,2,8,4,7,-1,-1,-1,-1,-1,-1,-1],[2,10,9,2,9,7,2,7,3,7,9,4,-1,-1,-1,-1],[8,4,7,3,11,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[11,4,7,11,2,4,2,0,4,-1,-1,-1,-1,-1,-1,-1],[9,0,1,8,4,7,2,3,11,-1,-1,-1,-1,-1,-1,-1],[4,7,11,9,4,11,9,11,2,9,2,1,-1,-1,-1,-1],[3,10,1,3,11,10,7,8,4,-1,-1,-1,-1,-1,-1,-1],[1,11,10,1,4,11,1,0,4,7,11,4,-1,-1,-1,-1],[4,7,8,9,0,11,9,11,10,11,0,3,-1,-1,-1,-1],[4,7,11,4,11,9,9,11,10,-1,-1,-1,-1,-1,-1,-1],[9,5,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,5,4,0,8,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,5,4,1,5,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[8,5,4,8,3,5,3,1,5,-1,-1,-1,-1,-1,-1,-1],[1,2,10,9,5,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,0,8,1,2,10,9,5,4,-1,-1,-1,-1,-1,-1,-1],[5,2,10,5,4,2,4,0,2,-1,-1,-1,-1,-1,-1,-1],[2,10,5,3,2,5,3,5,4,3,4,8,-1,-1,-1,-1],[9,5,4,2,3,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,11,2,0,8,11,4,9,5,-1,-1,-1,-1,-1,-1,-1],[0,5,4,0,1,5,2,3,11,-1,-1,-1,-1,-1,-1,-1],[2,1,5,2,5,8,2,8,11,4,8,5,-1,-1,-1,-1],[10,3,11,10,1,3,9,5,4,-1,-1,-1,-1,-1,-1,-1],[4,9,5,0,8,1,8,10,1,8,11,10,-1,-1,-1,-1],[5,4,0,5,0,11,5,11,10,11,0,3,-1,-1,-1,-1],[5,4,8,5,8,10,10,8,11,-1,-1,-1,-1,-1,-1,-1],[9,7,8,5,7,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,3,0,9,5,3,5,7,3,-1,-1,-1,-1,-1,-1,-1],[0,7,8,0,1,7,1,5,7,-1,-1,-1,-1,-1,-1,-1],[1,5,3,3,5,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,7,8,9,5,7,10,1,2,-1,-1,-1,-1,-1,-1,-1],[10,1,2,9,5,0,5,3,0,5,7,3,-1,-1,-1,-1],[8,0,2,8,2,5,8,5,7,10,5,2,-1,-1,-1,-1],[2,10,5,2,5,3,3,5,7,-1,-1,-1,-1,-1,-1,-1],[7,9,5,7,8,9,3,11,2,-1,-1,-1,-1,-1,-1,-1],[9,5,7,9,7,2,9,2,0,2,7,11,-1,-1,-1,-1],[2,3,11,0,1,8,1,7,8,1,5,7,-1,-1,-1,-1],[11,2,1,11,1,7,7,1,5,-1,-1,-1,-1,-1,-1,-1],[9,5,8,8,5,7,10,1,3,10,3,11,-1,-1,-1,-1],[5,7,0,5,0,9,7,11,0,1,0,10,11,10,0,-1],[11,10,0,11,0,3,10,5,0,8,0,7,5,7,0,-1],[11,10,5,7,11,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[10,6,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,8,3,5,10,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,0,1,5,10,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,8,3,1,9,8,5,10,6,-1,-1,-1,-1,-1,-1,-1],[1,6,5,2,6,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,6,5,1,2,6,3,0,8,-1,-1,-1,-1,-1,-1,-1],[9,6,5,9,0,6,0,2,6,-1,-1,-1,-1,-1,-1,-1],[5,9,8,5,8,2,5,2,6,3,2,8,-1,-1,-1,-1],[2,3,11,10,6,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[11,0,8,11,2,0,10,6,5,-1,-1,-1,-1,-1,-1,-1],[0,1,9,2,3,11,5,10,6,-1,-1,-1,-1,-1,-1,-1],[5,10,6,1,9,2,9,11,2,9,8,11,-1,-1,-1,-1],[6,3,11,6,5,3,5,1,3,-1,-1,-1,-1,-1,-1,-1],[0,8,11,0,11,5,0,5,1,5,11,6,-1,-1,-1,-1],[3,11,6,0,3,6,0,6,5,0,5,9,-1,-1,-1,-1],[6,5,9,6,9,11,11,9,8,-1,-1,-1,-1,-1,-1,-1],[5,10,6,4,7,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,3,0,4,7,3,6,5,10,-1,-1,-1,-1,-1,-1,-1],[1,9,0,5,10,6,8,4,7,-1,-1,-1,-1,-1,-1,-1],[10,6,5,1,9,7,1,7,3,7,9,4,-1,-1,-1,-1],[6,1,2,6,5,1,4,7,8,-1,-1,-1,-1,-1,-1,-1],[1,2,5,5,2,6,3,0,4,3,4,7,-1,-1,-1,-1],[8,4,7,9,0,5,0,6,5,0,2,6,-1,-1,-1,-1],[7,3,9,7,9,4,3,2,9,5,9,6,2,6,9,-1],[3,11,2,7,8,4,10,6,5,-1,-1,-1,-1,-1,-1,-1],[5,10,6,4,7,2,4,2,0,2,7,11,-1,-1,-1,-1],[0,1,9,4,7,8,2,3,11,5,10,6,-1,-1,-1,-1],[9,2,1,9,11,2,9,4,11,7,11,4,5,10,6,-1],[8,4,7,3,11,5,3,5,1,5,11,6,-1,-1,-1,-1],[5,1,11,5,11,6,1,0,11,7,11,4,0,4,11,-1],[0,5,9,0,6,5,0,3,6,11,6,3,8,4,7,-1],[6,5,9,6,9,11,4,7,9,7,11,9,-1,-1,-1,-1],[10,4,9,6,4,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,10,6,4,9,10,0,8,3,-1,-1,-1,-1,-1,-1,-1],[10,0,1,10,6,0,6,4,0,-1,-1,-1,-1,-1,-1,-1],[8,3,1,8,1,6,8,6,4,6,1,10,-1,-1,-1,-1],[1,4,9,1,2,4,2,6,4,-1,-1,-1,-1,-1,-1,-1],[3,0,8,1,2,9,2,4,9,2,6,4,-1,-1,-1,-1],[0,2,4,4,2,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[8,3,2,8,2,4,4,2,6,-1,-1,-1,-1,-1,-1,-1],[10,4,9,10,6,4,11,2,3,-1,-1,-1,-1,-1,-1,-1],[0,8,2,2,8,11,4,9,10,4,10,6,-1,-1,-1,-1],[3,11,2,0,1,6,0,6,4,6,1,10,-1,-1,-1,-1],[6,4,1,6,1,10,4,8,1,2,1,11,8,11,1,-1],[9,6,4,9,3,6,9,1,3,11,6,3,-1,-1,-1,-1],[8,11,1,8,1,0,11,6,1,9,1,4,6,4,1,-1],[3,11,6,3,6,0,0,6,4,-1,-1,-1,-1,-1,-1,-1],[6,4,8,11,6,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[7,10,6,7,8,10,8,9,10,-1,-1,-1,-1,-1,-1,-1],[0,7,3,0,10,7,0,9,10,6,7,10,-1,-1,-1,-1],[10,6,7,1,10,7,1,7,8,1,8,0,-1,-1,-1,-1],[10,6,7,10,7,1,1,7,3,-1,-1,-1,-1,-1,-1,-1],[1,2,6,1,6,8,1,8,9,8,6,7,-1,-1,-1,-1],[2,6,9,2,9,1,6,7,9,0,9,3,7,3,9,-1],[7,8,0,7,0,6,6,0,2,-1,-1,-1,-1,-1,-1,-1],[7,3,2,6,7,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[2,3,11,10,6,8,10,8,9,8,6,7,-1,-1,-1,-1],[2,0,7,2,7,11,0,9,7,6,7,10,9,10,7,-1],[1,8,0,1,7,8,1,10,7,6,7,10,2,3,11,-1],[11,2,1,11,1,7,10,6,1,6,7,1,-1,-1,-1,-1],[8,9,6,8,6,7,9,1,6,11,6,3,1,3,6,-1],[0,9,1,11,6,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[7,8,0,7,0,6,3,11,0,11,6,0,-1,-1,-1,-1],[7,11,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[7,6,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,0,8,11,7,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,1,9,11,7,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[8,1,9,8,3,1,11,7,6,-1,-1,-1,-1,-1,-1,-1],[10,1,2,6,11,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,2,10,3,0,8,6,11,7,-1,-1,-1,-1,-1,-1,-1],[2,9,0,2,10,9,6,11,7,-1,-1,-1,-1,-1,-1,-1],[6,11,7,2,10,3,10,8,3,10,9,8,-1,-1,-1,-1],[7,2,3,6,2,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[7,0,8,7,6,0,6,2,0,-1,-1,-1,-1,-1,-1,-1],[2,7,6,2,3,7,0,1,9,-1,-1,-1,-1,-1,-1,-1],[1,6,2,1,8,6,1,9,8,8,7,6,-1,-1,-1,-1],[10,7,6,10,1,7,1,3,7,-1,-1,-1,-1,-1,-1,-1],[10,7,6,1,7,10,1,8,7,1,0,8,-1,-1,-1,-1],[0,3,7,0,7,10,0,10,9,6,10,7,-1,-1,-1,-1],[7,6,10,7,10,8,8,10,9,-1,-1,-1,-1,-1,-1,-1],[6,8,4,11,8,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,6,11,3,0,6,0,4,6,-1,-1,-1,-1,-1,-1,-1],[8,6,11,8,4,6,9,0,1,-1,-1,-1,-1,-1,-1,-1],[9,4,6,9,6,3,9,3,1,11,3,6,-1,-1,-1,-1],[6,8,4,6,11,8,1,2,10,-1,-1,-1,-1,-1,-1,-1],[1,2,10,3,0,11,0,6,11,0,4,6,-1,-1,-1,-1],[4,11,8,4,6,11,0,2,9,2,10,9,-1,-1,-1,-1],[10,9,3,10,3,2,9,4,3,11,3,6,4,6,3,-1],[8,2,3,8,4,2,4,6,2,-1,-1,-1,-1,-1,-1,-1],[0,4,2,4,6,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,9,0,2,3,4,2,4,6,4,3,8,-1,-1,-1,-1],[1,9,4,1,4,2,2,4,6,-1,-1,-1,-1,-1,-1,-1],[8,1,3,8,4,1,4,6,1,6,10,1,-1,-1,-1,-1],[10,1,0,10,0,6,6,0,4,-1,-1,-1,-1,-1,-1,-1],[4,6,3,4,3,8,6,10,3,0,3,9,10,9,3,-1],[10,9,4,6,10,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,9,5,7,6,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,8,3,4,9,5,11,7,6,-1,-1,-1,-1,-1,-1,-1],[5,0,1,5,4,0,7,6,11,-1,-1,-1,-1,-1,-1,-1],[11,7,6,8,3,4,3,5,4,3,1,5,-1,-1,-1,-1],[9,5,4,10,1,2,7,6,11,-1,-1,-1,-1,-1,-1,-1],[6,11,7,1,2,10,0,8,3,4,9,5,-1,-1,-1,-1],[7,6,11,5,4,10,4,2,10,4,0,2,-1,-1,-1,-1],[3,4,8,3,5,4,3,2,5,10,5,2,11,7,6,-1],[7,2,3,7,6,2,5,4,9,-1,-1,-1,-1,-1,-1,-1],[9,5,4,0,8,6,0,6,2,6,8,7,-1,-1,-1,-1],[3,6,2,3,7,6,1,5,0,5,4,0,-1,-1,-1,-1],[6,2,8,6,8,7,2,1,8,4,8,5,1,5,8,-1],[9,5,4,10,1,6,1,7,6,1,3,7,-1,-1,-1,-1],[1,6,10,1,7,6,1,0,7,8,7,0,9,5,4,-1],[4,0,10,4,10,5,0,3,10,6,10,7,3,7,10,-1],[7,6,10,7,10,8,5,4,10,4,8,10,-1,-1,-1,-1],[6,9,5,6,11,9,11,8,9,-1,-1,-1,-1,-1,-1,-1],[3,6,11,0,6,3,0,5,6,0,9,5,-1,-1,-1,-1],[0,11,8,0,5,11,0,1,5,5,6,11,-1,-1,-1,-1],[6,11,3,6,3,5,5,3,1,-1,-1,-1,-1,-1,-1,-1],[1,2,10,9,5,11,9,11,8,11,5,6,-1,-1,-1,-1],[0,11,3,0,6,11,0,9,6,5,6,9,1,2,10,-1],[11,8,5,11,5,6,8,0,5,10,5,2,0,2,5,-1],[6,11,3,6,3,5,2,10,3,10,5,3,-1,-1,-1,-1],[5,8,9,5,2,8,5,6,2,3,8,2,-1,-1,-1,-1],[9,5,6,9,6,0,0,6,2,-1,-1,-1,-1,-1,-1,-1],[1,5,8,1,8,0,5,6,8,3,8,2,6,2,8,-1],[1,5,6,2,1,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,3,6,1,6,10,3,8,6,5,6,9,8,9,6,-1],[10,1,0,10,0,6,9,5,0,5,6,0,-1,-1,-1,-1],[0,3,8,5,6,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[10,5,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[11,5,10,7,5,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[11,5,10,11,7,5,8,3,0,-1,-1,-1,-1,-1,-1,-1],[5,11,7,5,10,11,1,9,0,-1,-1,-1,-1,-1,-1,-1],[10,11,7,10,7,5,9,8,1,8,3,1,-1,-1,-1,-1],[11,1,2,11,7,1,7,5,1,-1,-1,-1,-1,-1,-1,-1],[0,8,3,1,2,7,1,7,5,7,2,11,-1,-1,-1,-1],[9,7,5,9,2,7,9,0,2,2,11,7,-1,-1,-1,-1],[7,5,2,7,2,11,5,9,2,3,2,8,9,8,2,-1],[2,5,10,2,3,5,3,7,5,-1,-1,-1,-1,-1,-1,-1],[8,2,0,8,5,2,8,7,5,10,2,5,-1,-1,-1,-1],[9,0,1,5,10,3,5,3,7,3,10,2,-1,-1,-1,-1],[9,8,2,9,2,1,8,7,2,10,2,5,7,5,2,-1],[1,3,5,3,7,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,8,7,0,7,1,1,7,5,-1,-1,-1,-1,-1,-1,-1],[9,0,3,9,3,5,5,3,7,-1,-1,-1,-1,-1,-1,-1],[9,8,7,5,9,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[5,8,4,5,10,8,10,11,8,-1,-1,-1,-1,-1,-1,-1],[5,0,4,5,11,0,5,10,11,11,3,0,-1,-1,-1,-1],[0,1,9,8,4,10,8,10,11,10,4,5,-1,-1,-1,-1],[10,11,4,10,4,5,11,3,4,9,4,1,3,1,4,-1],[2,5,1,2,8,5,2,11,8,4,5,8,-1,-1,-1,-1],[0,4,11,0,11,3,4,5,11,2,11,1,5,1,11,-1],[0,2,5,0,5,9,2,11,5,4,5,8,11,8,5,-1],[9,4,5,2,11,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[2,5,10,3,5,2,3,4,5,3,8,4,-1,-1,-1,-1],[5,10,2,5,2,4,4,2,0,-1,-1,-1,-1,-1,-1,-1],[3,10,2,3,5,10,3,8,5,4,5,8,0,1,9,-1],[5,10,2,5,2,4,1,9,2,9,4,2,-1,-1,-1,-1],[8,4,5,8,5,3,3,5,1,-1,-1,-1,-1,-1,-1,-1],[0,4,5,1,0,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[8,4,5,8,5,3,9,0,5,0,3,5,-1,-1,-1,-1],[9,4,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,11,7,4,9,11,9,10,11,-1,-1,-1,-1,-1,-1,-1],[0,8,3,4,9,7,9,11,7,9,10,11,-1,-1,-1,-1],[1,10,11,1,11,4,1,4,0,7,4,11,-1,-1,-1,-1],[3,1,4,3,4,8,1,10,4,7,4,11,10,11,4,-1],[4,11,7,9,11,4,9,2,11,9,1,2,-1,-1,-1,-1],[9,7,4,9,11,7,9,1,11,2,11,1,0,8,3,-1],[11,7,4,11,4,2,2,4,0,-1,-1,-1,-1,-1,-1,-1],[11,7,4,11,4,2,8,3,4,3,2,4,-1,-1,-1,-1],[2,9,10,2,7,9,2,3,7,7,4,9,-1,-1,-1,-1],[9,10,7,9,7,4,10,2,7,8,7,0,2,0,7,-1],[3,7,10,3,10,2,7,4,10,1,10,0,4,0,10,-1],[1,10,2,8,7,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,9,1,4,1,7,7,1,3,-1,-1,-1,-1,-1,-1,-1],[4,9,1,4,1,7,0,8,1,8,7,1,-1,-1,-1,-1],[4,0,3,7,4,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,8,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,10,8,10,11,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,0,9,3,9,11,11,9,10,-1,-1,-1,-1,-1,-1,-1],[0,1,10,0,10,8,8,10,11,-1,-1,-1,-1,-1,-1,-1],[3,1,10,11,3,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,2,11,1,11,9,9,11,8,-1,-1,-1,-1,-1,-1,-1],[3,0,9,3,9,11,1,2,9,2,11,9,-1,-1,-1,-1],[0,2,11,8,0,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,2,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[2,3,8,2,8,10,10,8,9,-1,-1,-1,-1,-1,-1,-1],[9,10,2,0,9,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[2,3,8,2,8,10,0,1,8,1,10,8,-1,-1,-1,-1],[1,10,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,3,8,9,1,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,9,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,3,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]],V=Uint32Array.from(L.flat(),n=>n>>>0),Y={name:"Bourke",corners:W,edges:j,maxVertices:15,table:V,cornerBit:n=>1<<n,createPolygonizer(){return(n,a,x)=>{let c=L[a],e=0;for(;e<15&&c[e]>=0;)x[e]=c[e],e++;return e}}};var $=Y;var z=new Uint32Array([0,2181,2182,2197,2179,6166,2205,2371,2180,2199,6164,2326,2193,2380,2335,1167,2178,2203,6152,2356,10243,14359,14356,1317,6158,2344,18434,1181,14357,1345,24580,272,2177,6154,2201,2338,6150,18432,2323,1177,10242,14350,14353,1341,14349,24578,1313,269,2187,2374,2359,1171,14355,24579,1349,302,14351,1329,24586,284,20481,12289,12297,135,2176,10241,6148,14343,2191,14347,2347,1337,6146,14342,18438,24577,2341,1309,1173,266,6162,14346,18437,24585,14358,20482,24584,12304,18433,24576,28672,16387,24582,12292,16391,4112,2185,14344,2362,1325,2377,24581,1169,305,14348,20480,24587,12306,1353,12290,281,141,2311,1333,1185,317,1321,12293,320,147,24583,12288,16388,4096,12291,8192,4108,127,896,265,538,2866,2373,1864,1974,1701,4489,312,4762,146,6970,794,4784,2944,4165,261,6517,2439,4928,884,7077,1973,5254,2920,5653,534,5926,1842,5226,2378,6469,56,4361,1864,5797,265,6469,538,5797,811,6070,538,6070,56,6962,1864,4634,56,6962,265,5797,2164,6469,1974,6405,4149,5203,2115,6516,6423,6257,129,5637,6480,4458,262,6725,6466,4682,402,5029,6998,4906,2869,4518,6066,4631,1649,6022,6150,7008,944,6196,4900,5954,2930,4666,5002,4520,24,4393,4793,4251,779,5285,6790,5258,1896,7013,6036,6073,1435,5797,896,6070,265,4634,1864,6469,2866,4261,6149,6243,5765,5795,928,6038,4534,4457,6512,6064,177,5962,6050,6258,6721,5249,386,4789,6964,6467,5556,5522,659,7066,6448,2483,6154,4122,2954,6299,6930,2961,4746,4994,2472,4678,5145,1057,6309,5253,2984,4134,4199,120,6213,5432,309,5994,6791,2442,5909,4530,379,4469,5896,1808,5158,6194,584,4202,5216,266,4425,4468,881,5163,5963,36,4773,5426,1845,5685,4971,339,5781,5641,518,6453,5008,1875,5046,4960,1030,6586,6068,2964,6054,5914,791,6693,4677,66,6501,6582,2233,5226,6804,896,5797,4489,312,5797,6155,43,7077,5499,56,5653,5665,2051,5797,4148,884,6326,5704,265,7077,6069,265,4762,6070,146,6070,4489,312,5926,5938,265,4165,6070,261,4762,4617,1864,6517,4634,2169,5254,4634,2230,4890,6970,2164,4634,4980,1027,5653,4630,2164,6469,4784,2944,6469,6970,794,5226,6474,811,6517,6535,691,4165,5392,2866,6469,5926,1842,4970,6410,4244,6148,5764,4998,928,6293,4517,4970,5521,5025,6243,2134,4261,6838,4138,6699,6251,5480,88,4261,6021,6267,5003,6715,4154,88,5765,4662,4897,4145,5377,6149,2147,4261,5206,4982,5748,4180,5024,2614,5270,6472,4248,6920,4363,5659,361,6037,4517,4538,6421,4247,6919,177,6566,5794,7010,4274,6064,6512,1942,6038,4411,6968,6072,6520,4457,438,6038,5936,4146,4354,5650,6422,2416,4453,5957,5974,5892,7009,4273,2823,5274,4616,6153,5257,5962,4730,1832,6565,5978,4521,6169,4632,5928,634,5286,6322,4790,6694,4516,6164,386,5146,7034,6067,6259,4483,5249,1191,5146,4116,4355,4627,5923,6695,1191,5701,5141,5958,4726,6258,4482,2068,6437,7044,5248,6464,4752,6994,1460,6565,4889,6426,7002,5211,4939,1081,7018,6982,4794,6442,4905,5177,843,4789,5016,4999,6967,5559,6437,659,6981,4389,4624,4896,5168,6964,2898,4709,5492,5479,4935,6467,4755,2341,4970,6410,5024,5764,902,5765,4970,6293,4410,2147,4261,6230,4138,6251,88,4261,6021,4184,6715,58,5765,4662,6243,5377,2053,4261,6710,4180,4982,928,5270,4457,6920,4363,1563,6037,4538,4273,4247,2823,6566,6038,4274,6064,2416,6038,4411,5659,6520,361,6038,4390,5936,6512,2326,4453,5892,6919,7009,177,5274,4616,5928,5962,634,6773,4730,6169,4632,1832,5286,6322,4482,4516,2068,5962,7034,4483,5249,2625,5146,4116,5923,6695,1191,5141,4726,6164,6258,386,6437,7044,5556,4752,2898,6837,4889,5177,5211,843,6982,6442,4939,4905,1081,4789,5016,4755,5559,2341,4789,4389,5168,6964,1460,4709,6437,5940,6467,659,6469,4634,1974,4787,6260,265,5797,6962,2164,6469,4634,56,6469,6070,56,5797,6962,265,5797,4361,1864,4634,6070,896,7013,6581,4634,6036,2967,7058,6260,6960,6576,2322,5285,6790,6962,6262,2212,6469,5002,6145,6785,2595,7013,4992,6036,7063,2485,5797,4393,7058,6960,2480,5285,6262,4361,6308,2694,6070,4666,6307,6145,2689,6725,6070,4682,4633,1065,4361,5251,4675,4791,1063,5797,4724,4791,5251,579,6725,4152,4633,5161,586,6469,6150,5752,4155,1547,5637,4245,4458,4907,97,5637,4245,4458,5960,97,6022,4634,4155,5643,104,6469,4518,5910,6066,370,4907,5961,4360,5912,377,5029,6998,5960,4955,810,6405,4634,4944,4996,1332,6405,5428,6070,4996,848,5029,6998,4361,4906,859,5797,5961,4473,4360,1816,4518,4992,6066,4466,1814,7269,7258,6084,7291,7316,7193,7201,7330,3254,7284,7351,7211,4553,7186,7177,7216,7299,3144,7333,7274,7218,7299,7240,7252,7286,7351,3115,6853,7224,7203,7330,7237,7316,7193,7169,3200,7269,6597,7350,7227,7171,7296,6084,7288,3220,5829,7274,7317,7177,7216,7347,7211,7186,3233,7317,7274,7184,7329,7240,7286,7303,7252,3081,7194,6086,7169,7296,7288,7350,7227,7203,3234,7269,7334,7257,4546,7346,6084,7291,7316,3098,7211,4553,7186,7241,7284,7303,7176,7216,3251,7333,7252,7286,7240,7210,7218,7347,7275,3207,7237,4810,7300,7224,7203,7257,7194,7169,3216,7269,7171,7312,7257,7350,6084,7291,7300,3128,7333,7254,7177,7216,7347,7275,7210,7186,3217,7333,7274,7252,7286,7303,7176,4553,7184,3145,7334,6086,7194,7169,7296,7224,7203,7346,3195,6853,7334,7316,7193,7201,7346,7291,7271,3141,7211,4553,7241,7284,7351,7218,7299,7176,3088,7333,7254,7210,7218,7299,7240,7284,7351,3179,6853,4810,7237,7300,7224,7171,7312,7193,3105,7237,7350,7227,7171,7312,7257,7300,7288,3175,5829,7210,5067,7275,7317,7177,7184,7329,3122,5829,7274,7317,7284,6088,7176,7184,7329,3145,7334,7296,7288,7271,7194,7201,7346,7227,3075,6757,5145,4530,6068,1201,5963,4425,4785,4532,2096,4773,5253,7030,6194,1410,6693,4664,5208,5416,25,6501,5008,7011,5779,1924,5781,4394,4243,6966,918,5269,5994,4362,6256,1952,6054,6016,4512,6768,946,5221,5209,4634,6834,7078,6070,5238,5537,2385,4228,5960,6327,7043,4787,4361,4400,4387,2308,5797,4907,7043,6260,6327,5494,5447,5810,2658,6469,4442,4152,4131,4609,6689,5401,6408,1176,5221,4992,6288,6532,5524,5703,7015,6019,2931,5797,6805,6561,4241,4882,4865,6962,4774,2854,5797,4361,6561,6805,5972,5989,6260,5264,2112,7078,4992,4984,5947,5755,6834,4514,4656,288,7066,2488,5158,36,4981,309,6054,4480,6017,2673,6978,4393,5266,1207,6709,5026,6227,1412,6501,5040,4278,105,5226,6474,4136,2091,6053,4489,4993,1978,5669,4928,5955,1313,6214,6410,6251,42,6037,4538,6025,945,4117,4662,5440,1891,4714,4137,4777,7010,5816,5224,5257,2057,6565,6025,6487,4521,6675,7075,6967,903,5125,5974,4117,4129,4896,4663,5671,1861,5226,6804,6404,5128,7040,6914,6834,2667,7077,4489,4408,5048,6327,5499,4442,405,5221,4438,5665,4657,4400,5123,5175,1607,6602,6854,6412,4140,4796,6347,6220,1132,7317,7354,7291,7255,6600,7224,7187,458,7189,4806,7201,5317,7286,6083,7171,3136,7238,7210,7316,7337,4800,7296,7352,3014,7333,6085,7354,7227,4553,5057,7305,2247,5829,4806,4668,5964,4988,4292,4124,348,5813,7040,5552,336,6022,4489,4390,1665,4762,6516,6034,882,5285,5050,5028,832,6517,6402,6439,1835,4458,6214,6241,2067,5994,6800,6048,880,6938,4416,4532,1867,4389,4741,4792,1112,5781,4662,5014,905,5270,4409,4969,1595,4773,6021,6181,2050,4678,4498,5161,56,6469,6170,4480,2954,5797,4393,7058,2203,5797,5961,4473,881,4666,6070,6307,2472,5797,4724,5931,36,5909,6066,4466,896,6586,6036,7063,2051,5126,4634,4155,1547,6405,4634,4944,1875,4933,6070,4996,309,6469,6022,4200,608,4678,4996,4930,400,6725,5288,6315,25,5813,5561,4394,2488,5269,4458,5655,1811,6022,5770,6793,571,5285,7030,6722,576,5909,4480,6167,2851,6586,5040,4281,1924,4518,4448,4196,946,6709,4666,5431,25,7013,6995,4945,1924,4197,6405,5634,1924,6214,6472,6528,6401,6243,4962,4402,259,6837,4441,4517,4496,5556,5304,4168,148,5765,4714,5513,4517,4790,5816,4769,345,6565,6710,6426,6675,6484,5687,5223,1110,4714,5944,4987,6025,5042,6038,5786,694,4261,7018,5957,5974,5440,5995,6658,2978,4117,4354,4611,4667,4184,6231,7047,2872,5050,6020,4987,5944,5024,4265,5129,1152,7018,7074,6756,6947,6721,4416,4880,801,6565,4896,4129,4663,4121,4730,6773,2330,4453,5206,5223,5240,5659,6931,6323,2171,4709,6153,6292,6402,6215,6437,5974,1861,6470,4882,4115,5665,6147,6497,5272,2312,6469,4442,4228,6404,7040,4528,6833,405,5797,4501,6677,6289,4737,7042,6950,678,5797,5988,5446,4980,6452,4409,4506,2394,4774,6950,6562,6070,5010,6291,6199,951,5797,6954,5818,4139,5972,5899,5127,1893,6949,6027,5048,5499,4152,4434,4384,560,6474,5264,6208,4992,6052,7079,7027,1923,7078,4400,4657,5123,6689,6979,5707,2858,6805,4506,5977,4634,4217,4976,4866,18,5221,5048,6027,4408,5755,5144,5396,1142,6469,5989,5972,4711,6183,4136,4233,2121,4806,7193,4544,5058,6156,6339,6476,1132,6853,4508,5321,5212,6844,4296,7052,448,7333,5484,4780,5820,7052,4553,6300,705,7333,6854,5317,5831,4988,4553,4412,2500,4810,7350,5052,6028,5756,6300,6572,962,7333,5452,5996,6854,5132,7106,4140,1995,7189,4668,4124,6339,6156,7111,5500,715,7354,7224,6084,7111,7300,7312,7337,960,5834,4546,7171,4811,7227,7232,7268,2753,6853,7193,4546,5056,4297,7223,7285,714,7237,6086,6028,7107,5835,4412,5404,1224,7237,7206,6220,6412,5532,4140,6086,2247,5228,6412,6220,5056,5004,4546,5676,2497,7237,4297,5320,5532,7052,4524,6844,448,5829,5804,5577,4554,6300,4796,7052,705,5829,5804,6492,6684,4412,7284,4988,2500,5834,4811,6076,6086,6572,5004,6300,962,5829,5578,7110,6850,4140,5964,5132,1995,6085,7227,6343,4156,4296,4636,4444,715,6602,7296,7316,6343,7239,7107,7354,960,4810,7350,7203,7107,7268,7169,7232,2753,6597,7194,4544,7312,7285,5058,7223,714,7269,6084,7111,7020,5404,6339,4412,1224,7269,6084,6476,6597,4716,6156,4140,2247,6469,4634,6070,896,6757,4496,6947,1924,7013,7001,4634,4992,6036,2967,6469,6070,6170,6145,6712,2595,6469,4634,4278,4155,5760,1656,6469,4518,4152,4466,6066,359,6725,6070,4992,5161,4633,1186,6757,6036,4503,5042,6167,2049,6405,4634,4933,6070,4944,900,4197,5520,4518,6020,6947,22,7013,4954,6020,4121,6995,2595,6757,4496,4930,4996,5234,1970,6757,6020,4281,4155,6953,537,6725,6310,4496,5042,5288,1656,7269,7257,4634,5321,4296,7288,7239,7227,5835,3075,6469,7334,5056,4546,7346,7227,7296,7288,6086,3098,7269,7334,6597,4524,7201,7346,6084,7111,7316,2051,6469,4810,7350,7227,7203,7194,7169,7288,4296,3175,7269,6764,6084,5532,6476,6028,6156,4524,4544,946,6469,7334,6076,6339,7203,7346,7271,7169,6849,3200,7269,7258,7350,4810,6084,7291,7193,5321,7201,56,6853,7334,7237,6086,7316,7193,7346,4546,7291,896,6757,7227,6084,6343,6156,4156,6956,7193,4636,2380,6853,7237,6070,4296,5321,7193,7169,7224,7203,714,6757,4508,4544,5058,5004,6156,6476,6076,6084,2860,6853,6764,7193,6476,5212,5756,6156,6343,4124,2851,7269,5834,4811,5532,4636,4524,4156,4297,5052,1924,7237,6086,7257,4634,7300,7288,7350,7227,7312,960,7269,6597,4634,7224,6084,7111,7300,7171,7312,3254,7237,5834,4297,5320,5532,4124,4524,5756,6028,571,7269,4810,5058,5532,4544,4524,5052,7020,6412,1924,6597,4810,7237,6070,6849,7169,7312,7300,7203,2243,6757,5320,4297,4156,5004,5244,6076,4636,4811,412,6853,5572,6070,7193,4546,5056,7312,7330,7300,3128,6853,7020,7193,6700,4636,6412,4156,7107,5724,1924,6853,5834,4811,5212,5756,6076,4668,5004,5320,25,7269,5548,6084,6076,7020,6700,5004,5058,6220,400,6853,7020,5212,7288,7107,5756,6220,6700,4668,25,7269,7258,7312,7171,7224,7300,7239,7291,7350,7330,7201,3097,6853,6764,5004,4668,6956,5212,6076,5756,6476,4508,4124,2060,7269,7334,7346,7257,7201,7194,7316,7239,7288,7296,7171,3131,7237,7020,5532,4524,4124,6412,6220,6028,5756,5052,4668,2604,6757,6020,7047,6323,6148,4244,4496,4880,4627,2851,6469,4442,6070,4992,4866,4114,6408,5272,6481,2593,6757,6565,6801,6694,4790,5042,4402,4145,6401,1924,6469,7078,4992,6199,5047,4656,4384,4634,4779,1659,5221,7078,5401,4634,4779,5537,5524,5238,6070,2051,6757,5042,6323,5492,7047,7010,5794,5974,6215,400,5221,5209,4634,4992,4233,6217,6019,7027,6070,1892,6757,4496,6801,6565,6464,5248,6020,5492,5749,946,6757,4992,4633,6466,5298,1972,6709,5508,6070,4496,4666,901,6501,4634,6915,7008,5776,1924,6469,6054,5042,4120,4472,423]);var A=z;var X=[[0,0,0],[0,1,0],[0,1,1],[0,0,1],[1,0,0],[1,1,0],[1,1,1],[1,0,1]],H=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]],B=class{constructor(){this.table=A,this.f_test_results=new Int32Array(6)}signbf(a){return a<0}face_tests(a){let x=this.v,c=this.f_test_results;return c.fill(0),a&128?(c[0]=(a&204)===132?x[0]*x[5]<x[1]*x[4]?-1:1:0,c[3]=(a&153)===129?x[0]*x[7]<x[3]*x[4]?-1:1:0,c[4]=(a&240)===160?x[0]*x[2]<x[1]*x[3]?-1:1:0):(c[0]=(a&204)===72?x[0]*x[5]<x[1]*x[4]?1:-1:0,c[3]=(a&153)===24?x[0]*x[7]<x[3]*x[4]?1:-1:0,c[4]=(a&240)===80?x[0]*x[2]<x[1]*x[3]?1:-1:0),a&2?(c[1]=(a&102)===66?x[1]*x[6]<x[2]*x[5]?-1:1:0,c[2]=(a&51)===18?x[3]*x[6]<x[2]*x[7]?-1:1:0,c[5]=(a&15)===10?x[4]*x[6]<x[5]*x[7]?-1:1:0):(c[1]=(a&102)===36?x[1]*x[6]<x[2]*x[5]?1:-1:0,c[2]=(a&51)===33?x[3]*x[6]<x[2]*x[7]?1:-1:0,c[5]=(a&15)===5?x[4]*x[6]<x[5]*x[7]?1:-1:0),c[0]+c[1]+c[2]+c[3]+c[4]+c[5]}face_test1(a){let x=this.v;switch(a){case 0:return x[0]*x[5]<x[1]*x[4]?72:132;case 1:return x[1]*x[6]<x[2]*x[5]?36:66;case 2:return x[3]*x[6]<x[2]*x[7]?33:18;case 3:return x[0]*x[7]<x[3]*x[4]?24:129;case 4:return x[0]*x[2]<x[1]*x[3]?80:160;default:return x[4]*x[6]<x[5]*x[7]?5:10}}interior_test(a,x){let c=this.v,e=1e-9,s=c[4]-c[0],i=c[5]-c[1],o=c[6]-c[2],r=c[7]-c[3],t=s*o-i*r;if(this.signbf(t)){if(a&1)return 0}else if(!(a&1)||Math.abs(t)<e)return 0;let l=.5*(c[3]*i+c[1]*r-c[2]*s-c[0]*o)/t;if(l<=e||l>=1-e)return 0;let h=c[0]+s*l,b=c[1]+i*l,f=c[2]+o*l,u=c[3]+r*l,d=f*h,p=u*b;if(a&1){if(d<p&&!this.signbf(p))return(this.signbf(b)===this.signbf(c[a]))+x}else if(d>p&&!this.signbf(d))return(this.signbf(h)===this.signbf(c[a]))+x;return 0}pattern(a){let x=this.table,c=(a&128)!==0,e=c?a^255:a,s=x[e];if(s===void 0)throw new Error(`MC33 lookup miss: ${e}`);let i=(s&2048)!==0,o=c?!i:i,r=o?a:a^255,t=s&2047,l=s>>>12,h;switch(l){case 0:h=t;break;case 1:h=r&this.face_test1(t>>2)?183+(t<<1):159+t;break;case 2:h=this.interior_test(t,0)?239+6*t:231+(t<<1);break;case 3:r&this.face_test1(t%6)?h=575+5*t:h=this.interior_test(Math.floor(t/6),0)?407+7*t:335+3*t;break;case 4:{let b=this.face_tests(r);b===-3?h=695+3*t:b===-1?h=(this.f_test_results[4]+this.f_test_results[5]<0?this.f_test_results[0]+this.f_test_results[2]<0?759:799:719)+5*t:b===1?h=(this.f_test_results[4]+this.f_test_results[5]<0?983:this.f_test_results[0]+this.f_test_results[2]<0?839:911)+9*t:h=this.interior_test(t>>1,0)?1095+9*t:1055+5*t;break}case 5:{let b=this.face_tests(r);b===-2?h=(t&2?this.interior_test(0,0):this.interior_test(0,0)||this.interior_test(t?1:3,0))?1213+(t<<3):1189+(t<<2):b===0?h=(this.f_test_results[2+t]<0?1261:1285)+(t<<3):h=(t&2?this.interior_test(1,0):this.interior_test(2,0)||this.interior_test(t?3:1,0))?1237+(t<<3):1201+(t<<2);break}case 6:{let b=this.face_tests(r);b===-2?h=this.interior_test(14287116>>(t<<1)&3,0)?1453+(t<<3):1357+(t<<2):b===0?h=(this.f_test_results[t>>1]<0?1645:1741)+(t<<3):h=this.interior_test(10991589>>(t<<1)&3,0)?1549+(t<<3):1405+(t<<2);break}default:{let b=Math.abs(this.face_tests(r));if(b===0){let f=(this.f_test_results[1]<0)<<1|this.f_test_results[5]<0;if(this.f_test_results[0]*this.f_test_results[1]===this.f_test_results[5])h=2157+12*f;else{let u=this.interior_test(f,1);h=2285+(u?10*f-40*u:6*f)}}else if(b===2)h=1917+10*((this.f_test_results[0]<0?this.f_test_results[2]>0:12+(this.f_test_results[2]<0))+(this.f_test_results[1]<0?this.f_test_results[3]<0:6+(this.f_test_results[3]>0))),this.f_test_results[4]>0&&(h+=30);else if(b===4){let f=21+11*this.f_test_results[0]+4*this.f_test_results[1]+3*this.f_test_results[2]+2*this.f_test_results[3]+this.f_test_results[4];f>>4&&(f-=f&32?20:10),h=1845+3*f}else h=1839+2*this.f_test_results[0]}}return{offset:h+1,reverse:o}}triangles(a,x,c){if(this.v=a,x===0||x===255)return 0;let e=this.pattern(x),s=0;for(let i=e.offset;i<A.length;i++){let o=A[i],r=o&15,t=o>>4&15,l=o>>8&15;if(r<=12&&t<=12&&l<=12&&r!==t&&t!==l&&r!==l){if(s+3>c.length)throw new Error("MC33 cell exceeds output capacity");c[s++]=r,c[s++]=e.reverse?l:t,c[s++]=e.reverse?t:l}if(!(o&4096))return s}throw new Error("MC33 pattern exceeds lookup table")}},J={name:"MC33",corners:X,edges:H,maxVertices:36,table:A,cornerBit:n=>128>>n,createPolygonizer(){let n=new B;return n.triangles.bind(n)}};var T=J;function v(n={type:"cartesian"}){if(n.type==="cartesian")return(s,i,o)=>[s,i,o];if(n.type!=="spherical"&&n.type!=="cube-sphere")throw new Error(`Unknown coordinates: ${n.type}`);let a=n.radius||[.02,.7],x=n.center||[.5,.5,.5];if(a.length!==2||!a.every(Number.isFinite)||a[0]<0||a[1]<=a[0])throw new Error("Radius must be an increasing, nonnegative pair");if(x.length!==3||!x.every(Number.isFinite))throw new Error("Center must contain three finite coordinates");if(n.type==="cube-sphere"){if(!Number.isInteger(n.face)||n.face<0||n.face>5)throw new Error("Cube-sphere face must be 0..5");return(s,i,o)=>{let r=2*s-1,t=2*i-1,h=[[1,t,-r],[-1,t,r],[r,1,-t],[r,-1,t],[r,t,1],[-r,t,-1]][n.face],f=(a[0]+o*(a[1]-a[0]))/Math.hypot(...h);return h.map((u,d)=>x[d]+u*f)}}let c=n.longitude||[-Math.PI,Math.PI],e=n.latitude||[-Math.PI/2,Math.PI/2];for(let s of[c,e])if(s.length!==2||!s.every(Number.isFinite)||s[1]<=s[0])throw new Error("Angular ranges must be increasing finite pairs in radians");if(e[0]<-Math.PI/2||e[1]>Math.PI/2||c[1]-c[0]>2*Math.PI+1e-9)throw new Error("Latitude must be within \\xB1pi/2 and longitude span at most 2*pi");return(s,i,o)=>{let r=c[0]+s*(c[1]-c[0]),t=e[0]+i*(e[1]-e[0]),l=a[0]+o*(a[1]-a[0]),h=l*Math.cos(t);return Math.abs(Math.cos(t))<1e-15?[x[0],x[1]+l*Math.sin(t),x[2]]:[x[0]+h*Math.cos(r),x[1]+l*Math.sin(t),x[2]+h*Math.sin(r)]}}function q(n,a){if(!a||a.type==="cartesian")return n;let x=v(a);for(let c=0;c<n.length;c+=3){let e=x(n[c],n[c+1],n[c+2]);n[c]=e[0],n[c+1]=e[1],n[c+2]=e[2]}return n}var Q={bourke:$,mc33:T};function Z(n,a,x,c){let e=Q[c];if(!e)throw new Error(`Unknown marching cubes algorithm: ${c}`);if(!["x","y","z"].every(s=>Number.isInteger(a[s])&&a[s]>=2))throw new Error("Grid dimensions must be integers of at least 2");if(!(n instanceof Float32Array)||n.length!==a.x*a.y*a.z)throw new Error("Expected a Float32Array with x*y*z samples, indexed as (z*y + y)*x + x");if(!Number.isFinite(x))throw new Error("Isolevel must be finite");for(let s of n)if(!Number.isFinite(s)||!Number.isFinite(Math.fround(s-x)))throw new Error("Field samples and their differences from the isolevel must be finite f32 values");return e}function N(n,a,x=0,c="bourke",e={}){x=Math.fround(x),e.coordinates&&v(e.coordinates);let s=Z(n,a,x,c),{x:i,y:o,z:r}=a,t=s.createPolygonizer(),l=new Float32Array(8),h=new Uint8Array(s.maxVertices),b=new Float32Array(39),f=new Float32Array(65536),u=0;for(let d=0;d<r-1;d++)for(let p=0;p<o-1;p++)for(let y=0;y<i-1;y++){let M=0;for(let m=0;m<8;m++){let _=s.corners[m];l[m]=n[((d+_[2])*o+p+_[1])*i+y+_[0]]-x,l[m]<0&&(M|=s.cornerBit(m))}if(M===0||M===255)continue;let w=t(l,M,h);if(u+w*3>f.length){let m=new Float32Array(Math.max(f.length*2,u+w*3));m.set(f),f=m}for(let m=0;m<12;m++){let[_,k]=s.edges[m];if(l[_]<0==l[k]<0)continue;let E=l[_]-l[k],U=Math.abs(E)<1e-9?.5:Math.max(0,Math.min(1,l[_]/E)),P=s.corners[_],S=s.corners[k];b[m*3]=(y+P[0]+U*(S[0]-P[0]))/(i-1),b[m*3+1]=(p+P[1]+U*(S[1]-P[1]))/(o-1),b[m*3+2]=(d+P[2]+U*(S[2]-P[2]))/(r-1)}b[36]=(y+.5)/(i-1),b[37]=(p+.5)/(o-1),b[38]=(d+.5)/(r-1);for(let m=0;m<w;m++){let _=h[m]*3;f[u++]=b[_],f[u++]=b[_+1],f[u++]=b[_+2]}}return q(f.slice(0,u),e.coordinates)}function c1(n,a){let x=[],c=a/2,e=n%2===0;function s(o,r){let t=[Math.sin(o)*Math.cos(r),Math.cos(o),Math.sin(o)*Math.sin(r)],l=e?.5:.66,h=e?.69:.84;for(let b=0;b<14;b++){let f=(l+h)/2;g(1,n,...t.map(u=>u*f))<0?l=f:h=f}return t.map(b=>b*(l+h)/2)}function i(o,r,t){x.push(...o,...r,...t)}for(let o=0;o<c;o++)for(let r=0;r<a;r++){let t=o*Math.PI/c,l=(o+1)*Math.PI/c,h=r*2*Math.PI/a,b=(r+1)%a*2*Math.PI/a,f=s(t,h),u=s(t,b),d=s(l,b),p=s(l,h);o>0&&i(f,u,p),o<c-1&&i(u,d,p)}if(e){let r=(t,l)=>{let h=.82+.055*Math.cos(l);return[h*Math.cos(t),.055*Math.sin(l),h*Math.sin(t)]};for(let t=0;t<a;t++)for(let l=0;l<4;l++){let h=t*2*Math.PI/a,b=(t+1)%a*2*Math.PI/a,f=l*2*Math.PI/4,u=(l+1)%4*2*Math.PI/4,d=r(h,f),p=r(b,f),y=r(b,u),M=r(h,u);i(d,M,p),i(p,M,y)}}return Float32Array.from(x,o=>(o+1)/2)}function t1(n,a){let x=new Map,c=e=>e.every(s=>Math.abs(s*a-Math.floor(s*a)-.5)<1e-5);for(let e=0;e<n.length;e+=9){let s=[0,1,2].map(i=>Array.from(n.subarray(e+i*3,e+i*3+3)));for(let i=0;i<3;i++)if(c(s[i])){let o=s[i].join(",");x.has(o)||x.set(o,{boundary:new Map,offsets:[]});let r=x.get(o);r.offsets.push(e+i*3);for(let t=0;t<3;t++)t!==i&&r.boundary.set(s[t].join(","),s[t])}}for(let e of x.values()){let s=[0,0,0];for(let i of e.boundary.values())for(let o=0;o<3;o++)s[o]+=i[o]/e.boundary.size;for(let i of e.offsets)n.set(s,i)}return x.size}function O(n,a,x,c="mc33",e={}){let s=F[n]?.[x];if(!s)throw new Error("Invalid body mesh level");let i=n===1&&x>=5,o;if(i)o=c1(a,s);else{let b=s+1,f={x:b,y:b,z:b},u=new Float32Array(b*b*b);for(let d=0;d<b;d++)for(let p=0;p<b;p++)for(let y=0;y<b;y++)u[(d*b+p)*b+y]=g(n,a,y/s*2-1,p/s*2-1,d/s*2-1,e);o=N(u,f,0,c)}let r=new Float32Array(o.length/3*8),t=0,l=0,h=!i&&c==="mc33"?t1(o,s):0;for(let b=0;b<o.length;b+=9){let f=[],u=[];for(let M=0;M<3;M++){let w=[0,1,2].map(m=>o[b+M*3+m]*2-1);f.push(w),u.push(G(n,a,...w,e))}let d=f[1].map((M,w)=>M-f[0][w]),p=f[2].map((M,w)=>M-f[0][w]),y=[d[1]*p[2]-d[2]*p[1],d[2]*p[0]-d[0]*p[2],d[0]*p[1]-d[1]*p[0]];if(!(Math.hypot(...y)<1e-12)){l+=y.reduce((M,w,m)=>M+w*(u[0][m]+u[1][m]+u[2][m]),0);for(let M=0;M<3;M++){let w=t++*8;r.set([...f[M],1,...u[M],0],w)}}}if(l<0)for(let b=0;b<t*8;b+=24)for(let f=0;f<8;f++){let u=r[b+8+f];r[b+8+f]=r[b+16+f],r[b+16+f]=u}return{vertices:r.slice(0,t*8),count:t,divisions:s,interiorVertices:h,proxy:i}}function C(n,a=8192,x=7){let c=new Map;for(let r=0;r<n.length;r+=8){let t=[n[r],n[r+1],n[r+2]].map(l=>Math.round(l*1e6)).join(":");c.has(t)||c.set(t,r)}let e=Array.from(c.values()),s=I(x);for(let r=e.length-1;r>0;r--){let t=Math.floor(s()*(r+1));[e[r],e[t]]=[e[t],e[r]]}let i=Math.min(a,e.length),o=new Float32Array(i*8);return e.slice(0,i).forEach((r,t)=>o.set(n.subarray(r,r+8),t*8)),{vertices:o,count:i}}self.onmessage=n=>{let{key:a,kind:x,variant:c,level:e,algorithm:s,caves:i}=n.data;try{let o=performance.now(),r=O(x,c,e==="points"?0:e,s,{caves:i}),t=e==="points"?C(r.vertices,8192,x*71+c):r,l=e===R-1?C(r.vertices,512,x*71+c):null;self.postMessage({key:a,...t,fallback:l,ms:performance.now()-o},l?[t.vertices.buffer,l.vertices.buffer]:[t.vertices.buffer])}catch(o){self.postMessage({key:a,error:o.message})}};;if(typeof import_meta !== \'undefined\')import_meta.url=location.origin+"/dist/";})();\n';
+var ca = URL.createObjectURL(new globalThis.Blob([fa], { type: "text/javascript" }));
+var At = {};
+F(At, { bounds: () => Bt, detailBands: () => Ye, estimatedError: () => Ct, height: () => we, heightGradient: () => ma, wgsl: () => Jt });
+var Qi = `fn progressive_height_gradient(xz: vec2<f32>, seed: u32) -> vec3<f32> {
   var result = terrain_height_gradient(xz, seed);
   var wave = 4.0;
   var amplitude = 0.42;
@@ -25061,189 +25081,393 @@ var gt = `fn progressive_height_gradient(xz: vec2<f32>, seed: u32) -> vec3<f32> 
   return result;
 }
 `;
-var T1 = [[4, 0.42], [2, 0.22], [1, 0.11], [0.5, 0.055], [0.25, 0.0275], [0.125, 0.01375], [0.0625, 6875e-6]];
-var de = [-382, 482];
-var Ce = Y + gt;
-function b0(i, e, t = 7) {
-  let s = Z(i, e, t);
-  return T1.forEach(([r, n], o) => {
-    let a = y1(i / r, e / r, t + 211 + o * 19);
-    s[0] += a[0] * n, s[1] += a[1] * n / r, s[2] += a[2] * n / r;
-  }), s;
+var Ye = [[4, 0.42], [2, 0.22], [1, 0.11], [0.5, 0.055], [0.25, 0.0275], [0.125, 0.01375], [0.0625, 6875e-6]];
+var Bt = [-382, 482];
+var Jt = le + Qi;
+function ma(a, e, t = 7) {
+  let i = me(a, e, t);
+  return Ye.forEach(([r, s], o) => {
+    let l = Re(a / r, e / r, t + 211 + o * 19);
+    i[0] += l[0] * s, i[1] += l[1] * s / r, i[2] += l[2] * s / r;
+  }), i;
 }
-function x1(i, e, t = 7) {
-  let s = J(i, e, t);
-  for (let r = 0; r < T1.length; r++) {
-    let [n, o] = T1[r];
-    s += w1(i / n, e / n, t + 211 + r * 19) * o;
-  }
-  return s;
-}
-function pe(i) {
-  let e = X(i);
-  for (let [t, s] of T1) e += s * Math.min(1, 2 * (i / t) ** 2);
-  return e;
-}
-var ve = {};
-F(ve, { boundsFor: () => G1, children: () => Fe, distance: () => Oe, distanceToBounds: () => me, findLeaf: () => yt, key: () => Ie, meshLevels: () => Ve, neighbors: () => C1, parent: () => De, residentCut: () => Ne, seamMask: () => m0, select: () => Le, tile: () => H, visible: () => Re });
-var Ie = (i, e, t) => `${i}:${e}:${t}`;
-function H(i, e, t, s = 1024) {
-  let r = s / 2 ** i;
-  return { key: Ie(i, e, t), level: i, x: e, z: t, size: r, ox: e * r, oz: t * r };
-}
-function Fe(i, e = 1024) {
-  return [H(i.level + 1, i.x * 2, i.z * 2, e), H(i.level + 1, i.x * 2 + 1, i.z * 2, e), H(i.level + 1, i.x * 2, i.z * 2 + 1, e), H(i.level + 1, i.x * 2 + 1, i.z * 2 + 1, e)];
-}
-function De(i, e = 1024) {
-  return H(i.level - 1, Math.floor(i.x / 2), Math.floor(i.z / 2), e);
-}
-function G1(i) {
-  if (i.lo === void 0) {
-    let e = x1(i.ox + i.size / 2, i.oz + i.size / 2), t = 2.5 * i.size + 1.75;
-    i.lo = Math.max(de[0], e - t), i.hi = Math.min(de[1], e + t);
+function we(a, e, t = 7) {
+  let i = he(a, e, t);
+  for (let r = 0; r < Ye.length; r++) {
+    let [s, o] = Ye[r];
+    i += qe(a / s, e / s, t + 211 + r * 19) * o;
   }
   return i;
 }
-function me(i, e) {
-  let { lo: t, hi: s } = G1(i);
-  return Math.hypot(Math.max(i.ox - e[0], 0, e[0] - i.ox - i.size), Math.max(t - e[1], 0, e[1] - s), Math.max(i.oz - e[2], 0, e[2] - i.oz - i.size));
+function Ct(a) {
+  let e = fe(a);
+  for (let [t, i] of Ye) e += i * Math.min(1, 2 * (a / t) ** 2);
+  return e;
 }
-function Re(i, e = []) {
-  return e.length ? (G1(i), e.every(([t, s, r, n]) => t * (t >= 0 ? i.ox + i.size : i.ox) + s * (s >= 0 ? i.hi : i.lo) + r * (r >= 0 ? i.oz + i.size : i.oz) + n >= 0)) : true;
+var rr = {};
+F(rr, { clamp: () => H, cross: () => va, dot: () => _e, elevationBound: () => Rt, noise3: () => wa, radius: () => j, seed: () => He, studioElevationBounds: () => ai, studioHeightScale: () => ze, studioOceanLevel: () => si, surface: () => oi, unit: () => Me });
+var ha = [["Utahish", "000033 000097 000097 ffb266 003300 75b582 994c00 cc6600 663300 994c00 cc6600 ff8000 ffb266 993300 ea9966 cc6633 003300 39b532 993300 663300 331900 994c00 cc6600 146338 75b582 146338 ff8000 e1e1e1"], ["Volcanic", "000000 190c00 331900 4c2600 663300 804000 995933 b32200 8b0000 661111 802d24 994600 b35900 cc9900 bb9b55 b3a970 ccc0a0 b39966 cccca4 b3a077 998e7e 6c5f6c 595959 696969 778899 708090 a9a9a9"], ["Desert", "4d3319 664c33 80664c 997f66 b39980 ccb399 cccc99 cccc66 cccc33 ccb300 cc8033 cc6600 cc6600 ff8000 ffb266 663300 664d33 996600 b38000 ccb366 b3b399 999980 808066 66664c 4c4c33 333319 ccb399"], ["Forest", "000019 003300 004d00 006600 008000 198019 338033 4c994c 66b366 80cc80 99cc66 b3cc33 cccc00 ccb300 cc9933 cc8000 004d00 006600 008000 663300 664d33 996600 b38000 ccb366 b3b399 999980 808066 66664c 4c4c33 e1e1e1"], ["Oceanic", "000019 000033 00004c 000066 000080 194d80 3380b3 4c99cc 66b3e5 72cccc 99ccff 59cccc 5699b3 3683b5 2d93c9 23415a 32557f 58626f 636d7f 708090 778899 696969 595959 4d4d4d 424242 373737"], ["Ice", "000033 000066 000099 0000cc 0000ff 3399ff 66ccff 99ccff cce5ff e5ffff ffffff e0ffff add8e6 87ceeb 87cefa 4682b4 6495ed b0c4de c7ceea fffafa f0f8ff f0ffff f0fff0 f5fffa fff8dc ffefd5 e1e1e1"], ["Ice2", "000019 000033 00004c 000066 000080 194d80 3380b3 4c99cc 66b3e5 72cccc 99ccff 59cccc 5699b3 3683b5 2d93c9 23415a 32557f 58626f 636d7f 808080 78879b 649696 64877d 7b9b9b ccd2b4 c8c3aa e1e1e1"], ["Mars Dawn", "120a0e 341612 582a18 7e3a1c a04c24 bf6434 d2824c dea270 e8be94 f3d7ba fcf0dc d0ae84 aa7852 885237 6c3e2d 523028 42583e 5c764c 847858 e0e0e0"], ["Badlands", "1c120c 3a2012 5c3016 82441e a45c2c c27640 d89256 e4ac70 ecc28a f4d6aa 785c36 5c784c 8a9860 bcaa6e d2bc84 a56e4c 744a34 56362a 462e24 e1e1e1"], ["Jungle", "06100c 0a2012 0e3418 164e22 206c2e 308840 46a052 5eb662 7ec46e 9cce7a bcc478 786e40 5c5230 4a4228 3a3222 2c281c 28606c 3e8a8e 74b0aa e4ece4"], ["Toxic", "080e08 121c0e 1c2e14 2e4618 46621a 5e801e 78a022 96bc2a b6d238 d6e452 c6bc60 a48c44 806432 624a2a 4c3626 3a2a24 265a52 328476 58c4a8 e4f8ce"], ["Lavender Dusk", "0c0a1c 181230 2a1c48 3e2a62 583a7e 764e9a 9668b2 b684c4 ce9ccc e2b8d2 f0d0d8 ceb0ac b08e88 8c6a66 6c5052 503e44 4e7286 709cb0 a4cad4 f4f4f6"], ["Gas Giant", "22140e 3a2216 58361e 784e2a 986636 b68042 cc9a52 deb468 eaca82 f2dca0 e4ccb0 d2ba9e bea48c a8907c 927c6c 7c6c5e 685a50 967462 bc947a f5ece0"], ["Copper Oxide", "0a1416 122628 1a383a 224a4c 2c5e60 387476 488a8a 60a29c 82b09c a4a47e bc9260 cc7c4a ba663a a05230 844228 6a3624 542c20 74583a aa906c e8e2d4"], ["Moon Dust", "08080a 121216 1c1c22 28282e 36363c 46464e 585860 6c6c74 808088 94949a a8a8ac b8b8ba c4c4c4 b0a294 988a7e 80746c 6c625c 5e5854 7e848a e8e8ec"], ["Coral Sea", "000c1e 001a34 002c4e 00426e 005e8e 147caa 369cc0 5cb8cc 82cece a6dcc4 c4d6a8 dcc48e ecb07e f49a78 ee8278 de6c76 ba6078 926e8a 708aa4 f0f6f8"]];
+var ei = /* @__PURE__ */ new Map();
+var xa = { lakeshore: "alpine", ice: "alpine", ice2: "alpine", forest: "alpine", jungle: "alpine", utahish: "mesa", badlands: "mesa", desert: "mesa", "copper-oxide": "mesa", volcanic: "volcanic", "mars-dawn": "volcanic", "moon-dust": "volcanic", toxic: "volcanic" };
+function Ji(a, e, t) {
+  let i = a.toLowerCase().replaceAll(" ", "-"), r = e.split(" ").map((s) => parseInt(s, 16));
+  ei.set(i, { id: i, name: a, stops: r, seedOffset: t, geology: xa[i] ?? "mixed" });
 }
-function Oe(i, e) {
-  let t = Math.max(i.ox, Math.min(i.ox + i.size, e[0])), s = Math.max(i.oz, Math.min(i.oz + i.size, e[2]));
-  return Math.hypot(t - e[0], s - e[2], x1(t, s) - e[1]);
+Ji("Lakeshore", "183b5b 285c7e 4b8b95 b8a979 59794e 789660 86996a 8e8976 bdbaa8 e1e7e9", 0);
+ha.forEach((a, e) => Ji(...a, 1013 * (e + 1)));
+var ga = Object.freeze(Array.from(ei.values(), ({ id: a, name: e }) => Object.freeze({ id: a, name: e, wet: false })));
+function Xe(a = "lakeshore") {
+  let e = ei.get(a);
+  if (!e) throw new RangeError(`Unknown planet preset: ${a}`);
+  return e;
 }
-function yt(i, e, t, s, r, n = 0) {
-  let o = (c) => {
-    let x = s / 2 ** c;
-    return i.get(Ie(c, Math.floor(e / x), Math.floor(t / x)));
-  }, a = o(n);
-  if (a) return a;
-  for (let c = 1; c <= r; c++) {
-    if (n - c >= 0) {
-      let x = o(n - c);
-      if (x) return x;
-    }
-    if (n + c <= r) {
-      let x = o(n + c);
-      if (x) return x;
-    }
-  }
+function er(a, e, t, i, r) {
+  return e + r * (0.5 * (t - a) + r * (a - 2.5 * e + 2 * t - 0.5 * i + r * (0.5 * (i - a) + 1.5 * (e - t))));
 }
-function C1(i, e, t = 1024, s = 10) {
-  let { ox: r, oz: n, size: o } = i, a = t / 2 ** s / 4;
-  return [[r - a, n + o / 2, 1], [r + o + a, n + o / 2, 2], [r + o / 2, n - a, 4], [r + o / 2, n + o + a, 8]].map(([c, x, l]) => [yt(e, c, x, t, s, i.level), l]);
-}
-function Le(i, e = [], t = {}, s = /* @__PURE__ */ new Set()) {
-  let { rootSize: r = 1024, minSize: n = 1, divs: o = 32, maxNodes: a = 334, pixelError: c = 2, boundsCache: x } = t, l = Math.round(Math.log2(r / n)), u = Array.from({ length: l + 1 }, (z, E) => pe(r / 2 ** E / o));
-  function f(z) {
-    let E = x?.get(z.key);
-    return E?.size === z.size && (z.lo = E.lo, z.hi = E.hi), z;
-  }
-  let p = /* @__PURE__ */ new Map(), h = /* @__PURE__ */ new Map(), d = /* @__PURE__ */ new Set(), b = [], m = Math.max(r, i.far), v = Math.floor((i.position[0] - m) / r), g = Math.floor((i.position[0] + m) / r), y = Math.floor((i.position[2] - m) / r), w = Math.floor((i.position[2] + m) / r);
-  for (let z = y; z <= w; z++) for (let E = v; E <= g; E++) {
-    let U = f(H(0, E, z, r));
-    b.push(U), p.set(U.key, U), h.set(U.key, U);
-  }
-  if (p.size > a) throw new RangeError("Tile budget is too small for root coverage");
-  let M = i.height / (2 * Math.tan(i.fov / 2)), P = [...i.position], _ = [], k = (z) => {
-    if (z.level >= l) return 0;
-    let E = z.distance ??= Oe(z, i.position);
-    return z.distancePosition = P, me(z, i.position) > i.far ? 0 : u[z.level] * M / Math.max(E, 0.05) / c * (s.has(z.key) ? 1.2 : 1);
-  }, S = (z) => {
-    let E = k(z);
-    E > 1 && _.push({ n: z, priority: E });
+function ii({ side: a, values: e }, [t, i, r]) {
+  let s = Math.hypot(t, r), o = s > 0 ? Math.atan2(r, t) / (2 * Math.PI) : 0, l = (o - Math.floor(o)) * (a - 1), n = Math.atan2(s, i) * (a - 1) / Math.PI, f = Math.floor(l), c = Math.floor(n), u = (h) => (h + a - 1) % (a - 1), p = (h) => {
+    let d = Math.min(a - 1, Math.max(0, c + h)) * a;
+    return er(e[d + u(f - 1)], e[d + u(f)], e[d + u(f + 1)], e[d + u(f + 2)], l - f);
   };
-  b.forEach(S);
-  let B = false;
-  for (; _.length; ) {
-    let G = function(A) {
-      if (!U.has(A.key)) {
-        U.set(A.key, A);
-        for (let [T] of C1(A, h, r, l)) T && T.level < A.level && G(T);
+  return er(p(-1), p(0), p(1), p(2), n - c);
+}
+var j = 262144;
+var He = 29;
+var Rt = 5e3;
+var _e = (a, e) => a[0] * e[0] + a[1] * e[1] + a[2] * e[2];
+var va = (a, e) => [a[1] * e[2] - a[2] * e[1], a[2] * e[0] - a[0] * e[2], a[0] * e[1] - a[1] * e[0]];
+var Me = (a) => {
+  let e = Math.hypot(...a);
+  return a.map((t) => t / e);
+};
+var H = (a, e, t) => Math.max(e, Math.min(t, a));
+var X = (a, e, t) => a + (e - a) * t;
+var tr = [8600, 2600, 780, 230, 68, 20, 6];
+var Tt = [290, 115, 40, 17, 5.8, 2.1, 0.74];
+var ya = [0.18, 0.34, 0.22, 0.52, 0.54, 0.4, 0.22];
+var ba = Tt.slice(2).reduce((a, e) => a + e, 0);
+var ir = (a) => H(a / j, 0.32, 1);
+function ri(a, e, t, i) {
+  let r = Math.imul(a, 2376512323) ^ Math.imul(e, 3625334849) ^ Math.imul(t, 3407524639) ^ Math.imul(i, 374761393);
+  return r = Math.imul(r ^ r >>> 16, 2146121005), r = Math.imul(r ^ r >>> 15, 2221713035), (r ^ r >>> 16) >>> 0;
+}
+function wa(a, e, t, i = He) {
+  let r = Math.floor(a), s = Math.floor(e), o = Math.floor(t), l = (h) => h * h * (3 - 2 * h), n = l(a - r), f = l(e - s), c = l(t - o), u = (h, d, m) => ri(r + h, s + d, o + m, i) / 4294967295 * 2 - 1, p = (h, d) => X(u(0, h, d), u(1, h, d), n);
+  return X(X(p(0, 0), p(1, 0), f), X(p(0, 1), p(1, 1), f), c);
+}
+function za(a, e, t, i) {
+  let r = Math.floor(a), s = Math.floor(e), o = Math.floor(t), l = a - r, n = e - s, f = t - o, c = (w) => w * w * w * (10 + w * (-15 + 6 * w)), u = c(l), p = c(n), h = c(f), d = 1.15 / Math.SQRT2, m = (w, P, _) => {
+    let S = ri(r + w, s + P, o + _, i) & 15, D = S & 1 ? -d : d, C = S & 2 ? -d : d, M = l - w, B = n - P, A = f - _;
+    return [D * (S < 8 ? M : B) + C * (S < 4 ? B : S === 12 || S === 14 ? M : A), (S >= 8 ? D : 0) + (S < 4 ? C : 0)];
+  }, x = (w, P) => {
+    let [_, S] = m(0, w, P), [D, C] = m(1, w, P);
+    return [X(_, D, u), X(S, C, u)];
+  }, v = (w) => {
+    let [P, _] = x(0, w), [S, D] = x(1, w);
+    return [X(P, S, p), X(_, D, p) + (S - P) * 30 * n ** 2 * (1 - n) ** 2];
+  }, [g, y] = v(0), [b, z] = v(1);
+  return [X(g, b, h), X(y, z, h)];
+}
+var ze = (a = j) => a * (1.15 / 50);
+function ai(a, e = j, t = "mixed") {
+  let i = (a.max - a.min) * 0.28125, r = ze(e), s = ba + 1.22 * (Tt[0] + Tt[1]) * ir(e) + (t === "mesa" ? 0.07 * r : 0);
+  return [(a.min - i) * r - s, (a.max + i) * r + s];
+}
+function si(a, e, t = j) {
+  let i = ri(0, 0, 0, e);
+  if (i >= 2147483648) return null;
+  let { side: r, values: s, min: o, max: l } = a, n = l - o;
+  if (n === 0) return o * ze(t);
+  let f = new Float64Array(96), c = Math.max(1, Math.floor((r - 1) / 160)), u = 0;
+  for (let d = 1; d < r - 1; d += c) {
+    let m = Math.sin(Math.PI * d / (r - 1));
+    for (let x = 0; x < r - 1; x += c) {
+      let v = Math.min(95, Math.floor((s[d * r + x] - o) / n * 96));
+      f[v] += m, u += m;
+    }
+  }
+  let p = 0.28 + 0.36 * (i / 2147483648), h = u * p;
+  for (let d = 0; d < f.length; d++) {
+    let m = f[d];
+    if (m > 0 && h <= m) return (o + n * (d + h / m) / 96) * ze(t);
+    h -= m;
+  }
+  return a.mean * ze(t);
+}
+function oi(a, e = j, t = He, i, r, s = null, o = "mixed") {
+  if (Xe(i), !r) throw new TypeError("Bake a Planet Studio noise map before sampling the surface.");
+  let [l, n, f] = a, c = ii(r, a), u = ze(e), p = c * u, h = (4 * l - 20 * n + 22 * f) * e / 30, d = (28 * l + 10 * n + 4 * f) * e / 30, m = (-10 * l + 20 * n + 20 * f) * e / 30, x = (4 * h - 4 * d + 7 * m) / 9, v = (8 * h + d - 4 * m) / 9, g = (h + 8 * d + 4 * m) / 9, y = ir(e), b = H((c + 1) / 3, 0, 1), z = 0.6 + 0.62 * b * b * (3 - 2 * b), w = 1.15 * c;
+  for (let _ = 0; _ < tr.length; _++) {
+    let S = _ < 2, D = tr[_] * (S ? y : 1), C = _ % 2 === 1, [M, B] = za((C ? x : h) / D + w, (C ? v : d) / D, (C ? g : m) / D, t + 131 + _ * 19), A = Math.max(0, 1 - M * M / (0.34 * 0.34)), k = (M + 1) * 4, T = Math.floor(k), R = H((k - T - 0.22) / 0.56, 0, 1), N = (T + R * R * (3 - 2 * R)) / 4 - 1;
+    if (p += Tt[_] * (S ? y * z : 1) * (X(M, N, ya[_]) - (S ? 0.3 : 0.36) * A * A), _ === 0 && o === "mesa") {
+      let I = c / 0.165 + 0.38 * M, q = Math.floor(I), E = H((I - q - 0.3) / 0.4, 0, 1);
+      p += (q + E * E * (3 - 2 * E) - I) * (0.165 * u * 0.82);
+    }
+    w = 0.65 * M + 0.34 * B;
+  }
+  let P = s === null ? 0 : Math.max(0, s - p);
+  return { height: P > 0 ? s : p, depth: P, land: c, lake: false };
+}
+var fr = {};
+F(fr, { cube: () => fi, neighbors: () => lr, project: () => sr, selectPlanet: () => ci });
+var ni = [[[1, 0, 0], [0, 0, 1], [0, 1, 0]], [[-1, 0, 0], [0, 0, -1], [0, 1, 0]], [[0, 1, 0], [1, 0, 0], [0, 0, 1]], [[0, -1, 0], [1, 0, 0], [0, 0, -1]], [[0, 0, 1], [-1, 0, 0], [0, 1, 0]], [[0, 0, -1], [1, 0, 0], [0, 1, 0]]];
+function fi(a, e, t) {
+  let [i, r, s] = ni[a];
+  return i.map((o, l) => o + e * r[l] + t * s[l]);
+}
+function sr(a) {
+  let e = a.map(Math.abs), t = e[0] >= e[1] && e[0] >= e[2] ? 0 : e[1] >= e[2] ? 1 : 2, i = t * 2 + +(a[t] < 0);
+  return [i, _e(a, ni[i][1]) / e[t], _e(a, ni[i][2]) / e[t]];
+}
+var or = (a, e, t, i) => (a * 32 + e) * 1099511627776 + t * 1048576 + i;
+function ar(a, e, t, i) {
+  let r = 2 / 2 ** e, s = t * r - 1, o = i * r - 1;
+  return { key: or(a, e, t, i), face: a, level: e, x: t, y: i, size: r, u: s, v: o, dir: Me(fi(a, s + r / 2, o + r / 2)) };
+}
+function nr(a, e, t) {
+  let { u: i, v: r, size: s, level: o } = a, l = 2 ** o, n = a.face, f = a.x + +(t === 1) - +(t === 0), c = a.y + +(t === 3) - +(t === 2);
+  if (f < 0 || f >= l || c < 0 || c >= l) {
+    let u = s * 1e-4, p = t === 0 ? i - u : t === 1 ? i + s + u : i + s / 2, h = t === 2 ? r - u : t === 3 ? r + s + u : r + s / 2, [d, m, x] = sr(fi(n, p, h));
+    n = d, f = H(Math.floor((m + 1) * l / 2), 0, l - 1), c = H(Math.floor((x + 1) * l / 2), 0, l - 1);
+  }
+  for (let u = o; u >= 0; u--, f >>= 1, c >>= 1) {
+    let p = e.get(or(n, u, f, c));
+    if (p) return p;
+  }
+}
+function lr(a, e) {
+  return [0, 1, 2, 3].map((t) => nr(a, e, t));
+}
+var li = class {
+  items = [];
+  push(e) {
+    let t = this.items, i = t.length;
+    for (t.push(e); i > 0; ) {
+      let r = i - 1 >> 1;
+      if (t[r].score >= e.score) break;
+      t[i] = t[r], i = r;
+    }
+    t[i] = e;
+  }
+  pop() {
+    let e = this.items, t = e[0], i = e.pop();
+    if (!e.length) return t;
+    let r = 0;
+    for (; r * 2 + 1 < e.length; ) {
+      let s = r * 2 + 1;
+      if (s + 1 < e.length && e[s + 1].score > e[s].score && s++, e[s].score <= i.score) break;
+      e[r] = e[s], r = s;
+    }
+    return e[r] = i, t;
+  }
+};
+function ci(a, { radius: e = j, divs: t = 16, maxTiles: i = 576, pixelError: r = 3, minSpacing: s = 2, elevationBounds: o } = {}, l = /* @__PURE__ */ new Set()) {
+  let n = /* @__PURE__ */ new Map(), f = /* @__PURE__ */ new Set(), c = new li(), u = a.position, p = Math.hypot(...u), h = Me(u), d = Math.max(1, a.clearance ?? p - e), m = H(Math.ceil(Math.log2(2 * e / (t * s))), 0, 20), [x, v] = o ?? [-Rt, Rt], g = e + x, y = e + v, b = (g + y) / 2, z = (y - g) / 2, w = Math.acos(H(g / p, -1, 1)) + Math.acos(g / y), P = Math.min(5e3, Math.max(64, d * 0.1)), _ = a.planes || [], S = Array.from({ length: m + 1 }, (M, B) => {
+    let A = 2 / 2 ** B, k = Math.SQRT1_2 * A, T = e * A / t;
+    return { lateral: e * k, bound: b * k + z, horizon: Math.cos(Math.min(Math.PI, w + 2 * Math.asin(k / 2))), nearby: Math.min(90, e * A * 0.65), error: (Math.min(o ? z : 3300, T * (o ? 0.25 : 0.13)) + T ** 2 / (2 * e)) * a.pixelScale };
+  });
+  function D(M) {
+    n.set(M.key, M);
+    let B = S[M.level], A = H(_e(M.dir, h), -1, 1);
+    M.visible = A >= B.horizon;
+    for (let R = 0; M.visible && R < _.length; R++) {
+      let N = _[R];
+      M.visible = b * _e(N, M.dir) + N[3] >= -B.bound - (R < 4 ? P : 0);
+    }
+    if (M.level >= m) return;
+    let k = Math.max(0, e * Math.sqrt(2 * (1 - A)) - B.lateral);
+    if (!M.visible && k >= B.nearby) return;
+    let T = B.error / Math.hypot(d, k);
+    T > r * (l.has(M.key) ? 0.8 : 1) && c.push({ node: M, score: T * (M.visible ? 1.15 : 1) });
+  }
+  for (let M = 0; M < 6; M++) D(ar(M, 0, 0, 0));
+  for (; c.items.length && n.size + 3 <= i; ) {
+    let A = function(k) {
+      if (!B.has(k)) {
+        B.add(k);
+        for (let T = 0; T < 4; T++) {
+          let R = nr(k, n, T);
+          R && R.level < k.level && A(R);
+        }
       }
-    }, z = 0;
-    for (let A = 1; A < _.length; A++) _[A].priority > _[z].priority && (z = A);
-    let { n: E } = _.splice(z, 1)[0];
-    if (!h.has(E.key)) continue;
-    let U = /* @__PURE__ */ new Map();
-    if (G(E), p.size + U.size * 4 > a) {
-      B = true;
+    }, { node: M } = c.pop();
+    if (!n.has(M.key)) continue;
+    let B = /* @__PURE__ */ new Set();
+    if (A(M), !(n.size + 3 * B.size > i)) for (let k of B) {
+      n.delete(k.key), f.add(k.key);
+      for (let T = 0; T < 2; T++) for (let R = 0; R < 2; R++) D(ar(k.face, k.level + 1, k.x * 2 + R, k.y * 2 + T));
+    }
+  }
+  let C = [];
+  for (let M of n.values()) {
+    if (!M.visible) continue;
+    let B = 0;
+    lr(M, n).forEach((A, k) => {
+      A && A.level < M.level && (B |= 1 << k);
+    }), C.push({ ...M, mask: B, spacing: e * M.size / t });
+  }
+  return { leaves: n, visible: C, split: f };
+}
+var Gt = {};
+F(Gt, { boundsFor: () => je, children: () => vi, distance: () => wi, distanceToBounds: () => Nt, findLeaf: () => yr, key: () => gi, meshLevels: () => Mi, neighbors: () => Ke, parent: () => yi, residentCut: () => _i, seamMask: () => qa, select: () => zi, tile: () => pe, visible: () => bi });
+var gi = (a, e, t) => `${a}:${e}:${t}`;
+function pe(a, e, t, i = 1024) {
+  let r = i / 2 ** a;
+  return { key: gi(a, e, t), level: a, x: e, z: t, size: r, ox: e * r, oz: t * r };
+}
+function vi(a, e = 1024) {
+  return [pe(a.level + 1, a.x * 2, a.z * 2, e), pe(a.level + 1, a.x * 2 + 1, a.z * 2, e), pe(a.level + 1, a.x * 2, a.z * 2 + 1, e), pe(a.level + 1, a.x * 2 + 1, a.z * 2 + 1, e)];
+}
+function yi(a, e = 1024) {
+  return pe(a.level - 1, Math.floor(a.x / 2), Math.floor(a.z / 2), e);
+}
+function je(a) {
+  if (a.lo === void 0) {
+    let e = we(a.ox + a.size / 2, a.oz + a.size / 2), t = 2.5 * a.size + 1.75;
+    a.lo = Math.max(Bt[0], e - t), a.hi = Math.min(Bt[1], e + t);
+  }
+  return a;
+}
+function Nt(a, e) {
+  let { lo: t, hi: i } = je(a);
+  return Math.hypot(Math.max(a.ox - e[0], 0, e[0] - a.ox - a.size), Math.max(t - e[1], 0, e[1] - i), Math.max(a.oz - e[2], 0, e[2] - a.oz - a.size));
+}
+function bi(a, e = []) {
+  return e.length ? (je(a), e.every(([t, i, r, s]) => t * (t >= 0 ? a.ox + a.size : a.ox) + i * (i >= 0 ? a.hi : a.lo) + r * (r >= 0 ? a.oz + a.size : a.oz) + s >= 0)) : true;
+}
+function wi(a, e) {
+  let t = Math.max(a.ox, Math.min(a.ox + a.size, e[0])), i = Math.max(a.oz, Math.min(a.oz + a.size, e[2]));
+  return Math.hypot(t - e[0], i - e[2], we(t, i) - e[1]);
+}
+function yr(a, e, t, i, r, s = 0) {
+  let o = (n) => {
+    let f = i / 2 ** n;
+    return a.get(gi(n, Math.floor(e / f), Math.floor(t / f)));
+  }, l = o(s);
+  if (l) return l;
+  for (let n = 1; n <= r; n++) {
+    if (s - n >= 0) {
+      let f = o(s - n);
+      if (f) return f;
+    }
+    if (s + n <= r) {
+      let f = o(s + n);
+      if (f) return f;
+    }
+  }
+}
+function Ke(a, e, t = 1024, i = 10) {
+  let { ox: r, oz: s, size: o } = a, l = t / 2 ** i / 4;
+  return [[r - l, s + o / 2, 1], [r + o + l, s + o / 2, 2], [r + o / 2, s - l, 4], [r + o / 2, s + o + l, 8]].map(([n, f, c]) => [yr(e, n, f, t, i, a.level), c]);
+}
+function zi(a, e = [], t = {}, i = /* @__PURE__ */ new Set()) {
+  let { rootSize: r = 1024, minSize: s = 1, divs: o = 32, maxNodes: l = 334, pixelError: n = 2, boundsCache: f } = t, c = Math.round(Math.log2(r / s)), u = Array.from({ length: c + 1 }, (M, B) => Ct(r / 2 ** B / o));
+  function p(M) {
+    let B = f?.get(M.key);
+    return B?.size === M.size && (M.lo = B.lo, M.hi = B.hi), M;
+  }
+  let h = /* @__PURE__ */ new Map(), d = /* @__PURE__ */ new Map(), m = /* @__PURE__ */ new Set(), x = [], v = Math.max(r, a.far), g = Math.floor((a.position[0] - v) / r), y = Math.floor((a.position[0] + v) / r), b = Math.floor((a.position[2] - v) / r), z = Math.floor((a.position[2] + v) / r);
+  for (let M = b; M <= z; M++) for (let B = g; B <= y; B++) {
+    let A = p(pe(0, B, M, r));
+    x.push(A), h.set(A.key, A), d.set(A.key, A);
+  }
+  if (h.size > l) throw new RangeError("Tile budget is too small for root coverage");
+  let w = a.height / (2 * Math.tan(a.fov / 2)), P = [...a.position], _ = [], S = (M) => {
+    if (M.level >= c) return 0;
+    let B = M.distance ??= wi(M, a.position);
+    return M.distancePosition = P, Nt(M, a.position) > a.far ? 0 : u[M.level] * w / Math.max(B, 0.05) / n * (i.has(M.key) ? 1.2 : 1);
+  }, D = (M) => {
+    let B = S(M);
+    B > 1 && _.push({ n: M, priority: B });
+  };
+  x.forEach(D);
+  let C = false;
+  for (; _.length; ) {
+    let k = function(T) {
+      if (!A.has(T.key)) {
+        A.set(T.key, T);
+        for (let [R] of Ke(T, d, r, c)) R && R.level < T.level && k(R);
+      }
+    }, M = 0;
+    for (let T = 1; T < _.length; T++) _[T].priority > _[M].priority && (M = T);
+    let { n: B } = _.splice(M, 1)[0];
+    if (!d.has(B.key)) continue;
+    let A = /* @__PURE__ */ new Map();
+    if (k(B), h.size + A.size * 4 > l) {
+      C = true;
       continue;
     }
-    for (let A of [...U.values()].sort((T, N) => T.level - N.level)) {
-      h.delete(A.key), d.add(A.key);
-      for (let T of Fe(A, r)) f(T), p.set(T.key, T), h.set(T.key, T), S(T);
+    for (let T of [...A.values()].sort((R, N) => R.level - N.level)) {
+      d.delete(T.key), m.add(T.key);
+      for (let R of vi(T, r)) p(R), h.set(R.key, R), d.set(R.key, R), D(R);
     }
   }
-  return { nodes: p, leaves: h, splits: d, roots: b, rootSize: r, maxLevel: l, limited: B };
+  return { nodes: h, leaves: d, splits: m, roots: x, rootSize: r, maxLevel: c, limited: C };
 }
-function Ne(i, e) {
+function _i(a, e) {
   let t = /* @__PURE__ */ new Map();
-  function s(n) {
-    if (!e(n.key)) return;
-    if (!i.splits.has(n.key)) {
-      t.set(n.key, n);
+  function i(s) {
+    if (!e(s.key)) return;
+    if (!a.splits.has(s.key)) {
+      t.set(s.key, s);
       return;
     }
-    let o = Fe(n, i.rootSize).map((a) => i.nodes.get(a.key) || a);
-    o.every((a) => e(a.key)) ? o.forEach(s) : t.set(n.key, n);
+    let o = vi(s, a.rootSize).map((l) => a.nodes.get(l.key) || l);
+    o.every((l) => e(l.key)) ? o.forEach(i) : t.set(s.key, s);
   }
-  i.roots.forEach(s);
+  a.roots.forEach(i);
   let r = true;
   for (; r; ) {
     r = false;
-    for (let n of t.values()) if (C1(n, t, i.rootSize, i.maxLevel).some(([o]) => o && n.level - o.level > 1)) {
-      let o = i.nodes.get(De(n, i.rootSize).key);
+    for (let s of t.values()) if (Ke(s, t, a.rootSize, a.maxLevel).some(([o]) => o && s.level - o.level > 1)) {
+      let o = a.nodes.get(yi(s, a.rootSize).key);
       if (!o || !e(o.key)) throw new Error("Resident ancestor missing");
-      for (let [a, c] of t) c.ox >= o.ox && c.oz >= o.oz && c.ox + c.size <= o.ox + o.size && c.oz + c.size <= o.oz + o.size && t.delete(a);
+      for (let [l, n] of t) n.ox >= o.ox && n.oz >= o.oz && n.ox + n.size <= o.ox + o.size && n.oz + n.size <= o.oz + o.size && t.delete(l);
       t.set(o.key, o), r = true;
       break;
     }
   }
   return t;
 }
-function m0(i, e, t, s) {
+function qa(a, e, t, i) {
   let r = 0;
-  for (let [n, o] of C1(i, e, t, s)) n && n.level < i.level && (r |= o);
+  for (let [s, o] of Ke(a, e, t, i)) s && s.level < a.level && (r |= o);
   return r;
 }
-function Ve(i, e, t, s, r = {}) {
-  let { divs: n = 32, pixelError: o = 2 } = r, a = Math.min(4, n), c = e.height / (2 * Math.tan(e.fov / 2)), x = /* @__PURE__ */ new Map(), l = /* @__PURE__ */ new Map(), u = /* @__PURE__ */ new Map(), f = /* @__PURE__ */ new Map(), p = (b) => (f.has(b) || f.set(b, pe(b)), f.get(b));
-  for (let b of i.values()) {
-    u.set(b.key, C1(b, i, t, s));
-    let m = De(b, t).key, v = b.distancePosition, g = e.position, y = v && v[0] === g[0] && v[1] === g[1] && v[2] === g[2] ? b.distance : Oe(b, e.position), w = a;
-    for (; w < n && p(b.size / w) * c / Math.max(y, 0.05) > o; ) w *= 2;
-    let M = x.get(m);
-    M || (M = { divs: w }, x.set(m, M)), M.divs = Math.max(M.divs, w), l.set(b.key, M);
+function Mi(a, e, t, i, r = {}) {
+  let { divs: s = 32, pixelError: o = 2 } = r, l = Math.min(4, s), n = e.height / (2 * Math.tan(e.fov / 2)), f = /* @__PURE__ */ new Map(), c = /* @__PURE__ */ new Map(), u = /* @__PURE__ */ new Map(), p = /* @__PURE__ */ new Map(), h = (x) => (p.has(x) || p.set(x, Ct(x)), p.get(x));
+  for (let x of a.values()) {
+    u.set(x.key, Ke(x, a, t, i));
+    let v = yi(x, t).key, g = x.distancePosition, y = e.position, b = g && g[0] === y[0] && g[1] === y[1] && g[2] === y[2] ? x.distance : wi(x, e.position), z = l;
+    for (; z < s && h(x.size / z) * n / Math.max(b, 0.05) > o; ) z *= 2;
+    let w = f.get(v);
+    w || (w = { divs: z }, f.set(v, w)), w.divs = Math.max(w.divs, z), c.set(x.key, w);
   }
-  let h = true;
-  for (; h; ) {
-    h = false;
-    for (let b of i.values()) {
-      let m = l.get(b.key);
-      for (let [v] of u.get(b.key)) {
-        if (!v) continue;
-        let g = l.get(v.key), y = b.size / m.divs, w = v.size / g.divs;
-        y > w * 2 && m.divs < n && (m.divs *= 2, h = true), w > y * 2 && g.divs < n && (g.divs *= 2, h = true);
+  let d = true;
+  for (; d; ) {
+    d = false;
+    for (let x of a.values()) {
+      let v = c.get(x.key);
+      for (let [g] of u.get(x.key)) {
+        if (!g) continue;
+        let y = c.get(g.key), b = x.size / v.divs, z = g.size / y.divs;
+        b > z * 2 && v.divs < s && (v.divs *= 2, d = true), z > b * 2 && y.divs < s && (y.divs *= 2, d = true);
       }
     }
   }
-  let d = /* @__PURE__ */ new Map();
-  for (let b of i.values()) {
-    let m = l.get(b.key).divs, v = b.size / m, g = 0;
-    for (let [y, w] of u.get(b.key)) y && y.size / l.get(y.key).divs > v && (g |= w);
-    d.set(b.key, { divs: m, mask: g });
+  let m = /* @__PURE__ */ new Map();
+  for (let x of a.values()) {
+    let v = c.get(x.key).divs, g = x.size / v, y = 0;
+    for (let [b, z] of u.get(x.key)) b && b.size / c.get(b.key).divs > g && (y |= z);
+    m.set(x.key, { divs: v, mask: y });
   }
-  return d;
+  return m;
 }
-var Ye = { renderDistance: [1, 1 / 0], lodColors: "boolean" };
-var Xe = { terrain: { ...Ye, pixelError: [0.01, 1 / 0], nearRadius: [0, 1 / 0], uniform: "boolean", infinite: "boolean", algorithm: ["bourke", "mc33"], wireframe: "boolean", trees: "trees" }, space: { ...Ye, mode: ["mesh", "points", "hybrid"], quality: [0.01, 1 / 0], uniform: "boolean", algorithm: ["bourke", "mc33"], pointSize: [0.01, 1 / 0], lodDistance: [1, 1 / 0], maxMeshLevel: [0, C - 1], nearRadius: [0, 1 / 0], caves: "boolean" }, progressive: { ...Ye, pixelError: [0.01, 1 / 0], wireframe: "boolean", tileBorders: "boolean" } };
+var Pi = { renderDistance: [1, 1 / 0], lodColors: "boolean" };
+var Si = { terrain: { ...Pi, pixelError: [0.01, 1 / 0], nearRadius: [0, 1 / 0], uniform: "boolean", infinite: "boolean", algorithm: ["bourke", "mc33"], wireframe: "boolean", trees: "trees" }, space: { ...Pi, mode: ["mesh", "points", "hybrid"], quality: [0.01, 1 / 0], uniform: "boolean", algorithm: ["bourke", "mc33"], pointSize: [0.01, 1 / 0], lodDistance: [1, 1 / 0], maxMeshLevel: [0, L - 1], nearRadius: [0, 1 / 0], caves: "boolean" }, progressive: { ...Pi, pixelError: [0.01, 1 / 0], wireframe: "boolean", tileBorders: "boolean" } };
 
 // tests/terrain-webgpu.js
-var AdaptiveTerrain = { Renderer: B1 };
+var AdaptiveTerrain = { Renderer: Le };
 (async function() {
   const results = document.getElementById("results"), lines = [];
   let terrain;
@@ -25301,7 +25525,7 @@ var AdaptiveTerrain = { Renderer: B1 };
         stats = render(position, target, options, far);
         await terrain.device.queue.onSubmittedWorkDone();
         for (const [id2, level] of terrain.lastActual)
-          for (const [neighbor] of z1.neighbors(id2, terrain.side)) {
+          for (const [neighbor] of Ge.neighbors(id2, terrain.side)) {
             if (terrain.lastActual.has(neighbor))
               assert(
                 Math.abs(level - terrain.lastActual.get(neighbor)) <= 1,
@@ -25321,7 +25545,7 @@ var AdaptiveTerrain = { Renderer: B1 };
     for (let z = 0; z <= patch.divs; z++)
       for (let x = 0; x <= patch.divs; x++) {
         const offset = (z * (patch.divs + 1) + x) * 8, worldX = tile.ox + x * tile.size / patch.divs, worldZ = tile.oz + z * tile.size / patch.divs;
-        const expected = W.heightGradient(worldX, worldZ), normal = [-expected[1], 1, -expected[2]], length = Math.hypot(...normal);
+        const expected = ie.heightGradient(worldX, worldZ), normal = [-expected[1], 1, -expected[2]], length = Math.hypot(...normal);
         assert(
           Math.abs(patch.data[offset] - worldX) < 1e-5 && Math.abs(patch.data[offset + 2] - worldZ) < 1e-5,
           "world sample coordinates"
@@ -25431,7 +25655,7 @@ var AdaptiveTerrain = { Renderer: B1 };
       terrain.needsSelection = true;
       await settle(position, target);
       for (const [id2, level] of terrain.lastActual)
-        for (const [neighbor] of z1.neighbors(id2, terrain.side)) {
+        for (const [neighbor] of Ge.neighbors(id2, terrain.side)) {
           if (terrain.lastActual.has(neighbor))
             assert(
               Math.abs(level - terrain.lastActual.get(neighbor)) <= 1,
@@ -25457,7 +25681,7 @@ var AdaptiveTerrain = { Renderer: B1 };
     const nearCount = (await settle(void 0, void 0, {}, 400)).visible;
     for (const id2 of terrain.visibleIds)
       assert(
-        z1.distanceTo(terrain.tiles[id2], camera.position.toArray()) <= 400,
+        Ge.distanceTo(terrain.tiles[id2], camera.position.toArray()) <= 400,
         "render distance culls distant tiles"
       );
     terrain.needsSelection = true;
@@ -25475,7 +25699,7 @@ var AdaptiveTerrain = { Renderer: B1 };
     await settle();
     const originalTree = terrain.tree;
     const centerId = terrain.visibleIds.filter((id2) => terrain.entries.get(id2)?.ready).sort(
-      (a, b) => z1.distanceTo(terrain.tiles[a], [-100, 170, 300]) - z1.distanceTo(terrain.tiles[b], [-100, 170, 300])
+      (a, b) => Ge.distanceTo(terrain.tiles[a], [-100, 170, 300]) - Ge.distanceTo(terrain.tiles[b], [-100, 170, 300])
     )[0];
     const centerTile = terrain.tiles[centerId], worldKey = `${centerTile.ox},${centerTile.oz}`, savedSlot = terrain.entries.get(centerId).slot, savedPatch = await terrain.readPatch(centerId);
     terrain.updateWindow({
@@ -25495,10 +25719,10 @@ var AdaptiveTerrain = { Renderer: B1 };
     );
     log("PASS infinite recenter preserves overlapping GPU samples exactly");
     for (const z of [-4096, -12288, -32768, 300]) {
-      const position = [-100, W.height(-100, z) + 170, z];
+      const position = [-100, ie.height(-100, z) + 170, z];
       await settle(position, [
         -100,
-        W.height(-100, z - 600),
+        ie.height(-100, z - 600),
         z - 600
       ]);
       assert(
@@ -25519,7 +25743,7 @@ var AdaptiveTerrain = { Renderer: B1 };
       for (let i = 0; i < probe.data.length; i += 8) {
         assert(
           Math.abs(
-            probe.data[i + 1] - W.height(probe.data[i], probe.data[i + 2])
+            probe.data[i + 1] - ie.height(probe.data[i], probe.data[i + 2])
           ) < 0.02,
           "streamed world noise agrees with CPU"
         );

@@ -118,7 +118,9 @@ test("recentered horizon bands share exact seams with each other and the detail 
     const camera = createCamera({ position: [-384, 100, 256], far: 32000 });
     renderer.updateWindow(camera);
     renderer.select(camera, [], 0);
-    const exterior = renderer.horizonTiles.filter((p) => p.grade <= 3);
+    const exterior = renderer.horizonTiles
+      .filter((p) => p.grade <= 4)
+      .map((p) => ({ ...p, divs: 2 << Math.min(p.grade, 3) }));
     const near = renderer.tiles.map(({ x, z, ox, oz, size }) => ({
       x: ox,
       z: oz,

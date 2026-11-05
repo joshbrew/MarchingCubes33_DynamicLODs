@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Planet approach — Orbit to surface</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #07111e;
+        color: #eef5ff;
+        font:
+          14px system-ui,
+          sans-serif;
+      }
+      canvas {
+        width: 100vw;
+        height: 100dvh;
+        display: block;
+        touch-action: none;
+        outline: none;
+      }
+      .panel {
+        position: fixed;
+        border: 1px solid #90b4d84d;
+        border-radius: 12px;
+        background: #101d2bee;
+        padding: 16px;
+        scrollbar-width: thin;
+      }
+      header {
+        top: 16px;
+        left: 16px;
+        width: 340px;
+        max-height: calc(100dvh - 32px);
+        overflow: auto;
+      }
+      nav {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+      }
+      nav a {
+        color: #b8ddfc;
+        text-decoration: none;
+        padding: 4px 7px;
+        border: 1px solid #93b9d750;
+        border-radius: 5px;
+        font-size: 12px;
+      }
+      nav a[aria-current] {
+        background: #4b71974d;
+        border-color: #93c9fb;
+      }
+      h1 {
+        font-size: 23px;
+        line-height: 1.15;
+        margin: 0 0 6px;
+      }
+      p {
+        color: #b2c6db;
+        line-height: 1.45;
+        margin: 8px 0;
+      }
+      .buttons {
+        display: flex;
+        gap: 7px;
+        flex-wrap: wrap;
+        margin: 14px 0;
+      }
+      button,
+      select {
+        font: inherit;
+        border-radius: 6px;
+        border: 1px solid #86b2d85e;
+        background: #233c53;
+        color: inherit;
+        padding: 7px 10px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #345775;
+      }
+      #approach {
+        background: #295b83;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin: 12px 0;
+      }
+      input[type="range"] {
+        width: 135px;
+        accent-color: #8ccaf0;
+      }
+      input[type="checkbox"] {
+        accent-color: #8ccaf0;
+      }
+      output {
+        font-variant-numeric: tabular-nums;
+        color: #b9e2ff;
+      }
+      #status {
+        display: block;
+        line-height: 1.4;
+        margin-top: 12px;
+      }
+      .error {
+        color: #ffbaba;
+      }
+      aside {
+        right: 16px;
+        bottom: 16px;
+        width: 280px;
+      }
+      aside h2 {
+        font-size: 14px;
+        margin: 0 0 10px;
+      }
+      dl {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 6px;
+        margin: 0;
+      }
+      dt {
+        color: #afc7de;
+      }
+      dd {
+        margin: 0;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+      }
+      .hint {
+        font-size: 12px;
+      }
+      @media (max-width: 720px) {
+        header {
+          width: min(340px, calc(100vw - 20px));
+          top: 10px;
+          left: 10px;
+          max-height: 59dvh;
+        }
+        aside {
+          bottom: 10px;
+          right: 10px;
+          width: 238px;
+          font-size: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas
+      id="planet"
+      tabindex="0"
+      aria-label="Fly around the procedural planet"
+    ></canvas>
+    <header class="panel">
+      <nav aria-label="Demos">
+        <a href="index.html?demo=sphere">Sphere</a
+        ><a href="index.html?demo=terrain">Terrain</a>
+        <a href="index.html?demo=space">Infinite space</a
+        ><a href="index.html?demo=progressive">Noise tiles</a>
+        <a href="index.html?demo=planet" aria-current="page">Planet approach</a>
+      </nav>
+      <h1>Planet approach</h1>
+      <p>
+        Pick a world and fly from orbit to the surface. The mesh gets finer as
+        you descend.
+      </p>
+      <div class="row">
+        <label for="preset">Planet preset</label>
+        <select id="preset"></select>
+      </div>
+      <div class="buttons">
+        <button id="approach">Start approach</button
+        ><button id="orbit">Orbit</button>
+        <button id="shore">Low flyover</button
+        ><button id="surface">Near surface</button>
+        <button id="random">Randomize planet</button>
+      </div>
+      <div class="row">
+        <label for="altitude"
+          >Height <output id="altitudeValue"></output
+        ></label>
+        <input
+          id="altitude"
+          type="range"
+          min="1"
+          max="20"
+          step=".01"
+          value="19"
+          aria-label="Height"
+        />
+      </div>
+      <div class="row">
+        <label for="detail"
+          >Detail <output id="detailValue">3 px</output></label
+        >
+        <input
+          id="detail"
+          type="range"
+          min="1.25"
+          max="8"
+          step=".25"
+          value="3"
+          aria-label="Detail"
+        />
+      </div>
+      <div class="row">
+        <label><input id="colors" type="checkbox" />LOD colors</label
+        ><label><input id="wire" type="checkbox" />Wireframe</label>
+      </div>
+      <p class="hint">
+        Left drag turns the planet. Right drag changes the view angle. WASD to
+        move, Space/C to climb or descend, Shift for speed.
+      </p>
+      <output id="status">Preparing the planet…</output>
+    </header>
+    <aside class="panel" aria-label="Planet performance">
+      <h2>Surface and performance</h2>
+      <dl>
+        <dt>Height above ground</dt>
+        <dd id="heightReadout">—</dd>
+        <dt>Seed</dt>
+        <dd id="seedReadout">—</dd>
+        <dt>World surface</dt>
+        <dd id="oceanReadout">—</dd>
+        <dt>Landforms</dt>
+        <dd id="geologyReadout">—</dd>
+        <dt>Finest grid spacing</dt>
+        <dd id="spacing">—</dd>
+        <dt>Triangles</dt>
+        <dd id="tris">—</dd>
+        <dt>Drawn / planned patches</dt>
+        <dd id="tiles">—</dd>
+        <dt>Visible LOD grades</dt>
+        <dd id="grades">—</dd>
+        <dt>CPU / GPU</dt>
+        <dd id="timing">—</dd>
+        <dt>FPS</dt>
+        <dd id="fps">—</dd>
+      </dl>
+    </aside>
+  </body>
+</html>

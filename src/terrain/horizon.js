@@ -1,6 +1,8 @@
 import { bounds } from "./field.js";
 import { WEST, EAST, NORTH, SOUTH } from "./lod.js";
 
+export const horizonDivisions = (grade) => 2 << Math.min(grade, 3);
+
 export function boundaryMask(id, side) {
   const x = id % side,
     z = Math.floor(id / side);
@@ -42,11 +44,15 @@ export function horizonPatches(worldSize, tileSize, origin, position, far) {
         for (let dx = 0; dx < x1 - x0; dx++) {
           const x = x0 + dx,
             z = z0 + dz;
+          // The first three bands double their divisions along with their
+          // width, so they keep the same sample spacing without stitches.
           const mask =
-            (x === minX ? WEST : 0) |
-            (x === maxX - 1 ? EAST : 0) |
-            (z === minZ ? NORTH : 0) |
-            (z === maxZ - 1 ? SOUTH : 0);
+            grade < 3
+              ? 0
+              : (x === minX ? WEST : 0) |
+                (x === maxX - 1 ? EAST : 0) |
+                (z === minZ ? NORTH : 0) |
+                (z === maxZ - 1 ? SOUTH : 0);
           patches.push({
             x: anchor + x * size,
             z: anchor + z * size,

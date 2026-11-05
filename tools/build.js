@@ -5,7 +5,8 @@ import website from "../tinybuild.web.config.js";
 
 await mkdir("dist", { recursive: true });
 await bundle({ ...library.bundler, plugins: [workers()] });
-for (const feature of ["core", "camera", "terrain", "space", "progressive"]) {
+const features = ["core", "camera", "terrain", "space", "progressive", "noise"];
+for (const feature of features) {
   await bundle({
     ...library.bundler,
     entryPoints: [`src/entries/${feature}.js`],
@@ -38,6 +39,7 @@ if (process.argv.includes("--checks")) {
         "tests/space-webgpu.js",
         "tests/space-stress-webgpu.js",
         "tests/progressive-webgpu.js",
+        "tests/planet-webgpu.js",
         "tests/package-webgpu.js",
         "tests/turn-webgpu.js",
       ],
@@ -68,7 +70,7 @@ if (process.argv.includes("--checks")) {
     "demo.js",
     "index.js",
     "space.worker.js",
-    ...["index", "core", "camera", "terrain", "space", "progressive"].flatMap(
+    ...["index", ...features].flatMap(
       (name) => [`${name}.esm.js`, `${name}.cjs`],
     ),
   ]) {

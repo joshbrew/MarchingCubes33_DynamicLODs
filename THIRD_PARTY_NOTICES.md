@@ -25,3 +25,14 @@ traversal ideas in `babylon-avbd/src/gpu/gpuHploc.js` and `hplocpp.wgsl`
 here is newly written for terrain; the AVBD physics solver is not included.
 The previous `3dfractals/webgpubuild/shaders` LOD and transition attempts were
 inspected for the design and findings recorded in `docs/terrain-source-review.md`.
+
+## Planet surface palettes
+
+`src/planet/presets.js` adapts the color stops and names from
+`tools/planet/planetGradients.js` and `tools/planet/planetGpuMesh.ts` in
+WebGPU Realtime Clouds. MIT licensed, copyright 2025 Joshua Brewster
+(Bubba Skrimp). See [LICENSE](LICENSE).
+
+The reusable Noise Compute builder and shaders in `src/noise/` come from
+`tools/noise/` in the same project. The five default terrain layers in
+`src/noise/studio.js` follow Planet Studio's `tools/noise/noisePlanetTest.js`.

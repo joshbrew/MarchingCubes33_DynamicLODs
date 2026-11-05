@@ -3,6 +3,8 @@ export * from "./camera.js";
 export * from "./terrain.js";
 export * from "./space.js";
 export * from "./progressive.js";
+export * from "./planet.js";
+export * from "./noise.js";
 export type {
   CanvasLike,
   GPUOptions,

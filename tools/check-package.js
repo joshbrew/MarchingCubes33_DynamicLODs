@@ -55,18 +55,19 @@ import {createRequire} from 'node:module';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 const require=createRequire(import.meta.url),name='marching-cubes-bourke-mc33';
-for(const feature of ['', '/core','/camera','/terrain','/space','/progressive']) {
+for(const feature of ['', '/core','/camera','/terrain','/space','/progressive','/noise']) {
  const esm=await import(name+feature),cjs=require(name+feature);
  assert.deepEqual(Object.keys(esm).sort(),Object.keys(cjs).sort());
 }
 const api=await import(name),surface=await api.createSphere({radius:12,surface:'both',thickness:1});
 assert(surface.triangleCount>0&&surface.groups.length===2);
 assert.equal(typeof api.createTerrain,'function');assert.equal(typeof api.createSpace,'function');assert.equal(typeof api.createProgressiveTerrain,'function');
+assert.equal((await import(name+'/noise')).createStudioPlanetNoise().layers.length,5);
 const context=vm.createContext({URL,Blob});
 vm.runInContext(await readFile(require.resolve(name+'/browser'),'utf8'),context);
 assert.equal(typeof context.MarchingCubes.createTerrain,'function');
 assert((await readFile(require.resolve(name+'/space.worker'),'utf8')).includes('onmessage'));
-console.log('PASS installed tarball: ESM + CommonJS for all 6 entries, browser global, sphere shells, external worker; no runtime dependencies.');
+console.log('PASS installed tarball: ESM + CommonJS for all 7 entries, browser global, sphere shells, noise compute, external worker; no runtime dependencies.');
 `,
 );
 execFileSync(process.execPath, [join(folder, "check.mjs")], {

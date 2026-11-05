@@ -23,7 +23,7 @@ nearby things get more triangles, faraway things get fewer.
 ## Contents
 
 - [Run it](#1-run-it)
-- [Try the demos](#2-try-the-examples): [Sphere](#sphere-turn-points-into-a-surface) · [Terrain](#terrain-detailed-ground-and-trees) · [Space](#space-asteroids-islands-and-planets) · [Noise tiles](#noise-tiles-zoom-from-hills-to-tiny-bumps)
+- [Try the demos](#2-try-the-examples): [Sphere](#sphere-turn-points-into-a-surface) · [Terrain](#terrain-detailed-ground-and-trees) · [Space](#space-asteroids-islands-and-planets) · [Noise tiles](#noise-tiles-zoom-from-hills-to-tiny-bumps) · [Planet approach](#planet-approach-from-orbit-to-the-ground)
 - [Movement controls](#moving-around)
 - [What the sliders and performance numbers mean](#which-sliders-should-i-change)
 - [Make a sphere in JavaScript](#3-make-a-sphere-in-javascript)
@@ -43,10 +43,10 @@ npm start
 ```
 
 Open the address printed by the server. Keep that terminal running.
-You should see the sphere demo, with **Sphere**, **Terrain**, **Infinite space** and **Noise tiles**
+You should see the sphere demo, with **Sphere**, **Terrain**, **Infinite space**, **Noise tiles** and **Planet approach**
 buttons at the top. Use those buttons to switch demos.
 
-The sphere works in CPU mode without WebGPU. Terrain, space, noise tiles and GPU extraction
+The sphere works in CPU mode without WebGPU. Terrain, space, noise tiles, planet approach and GPU extraction
 need a browser with WebGPU enabled, served locally or over HTTPS.
 Use the server above; double-clicking the HTML file will not run the demos correctly.
 
@@ -135,6 +135,54 @@ The GPU check sweeps through a full turn to verify that it triggers **zero new
 tile builds**. It also reports CPU time and the peak triangle count, so you can
 repeat the performance check on your hardware.
 
+### Planet approach: from orbit to the ground
+
+1. Open **Planet approach** (`index.html?demo=planet`).
+2. Choose a **Planet preset** to generate terrain with that palette and landform style, or
+   click **Randomize planet** for a new seed and preset.
+3. Click **Start approach** to descend from orbit, or **Near surface** to skip ahead.
+4. Turn on **LOD colors** or **Wireframe** to see the mesh get finer near the camera.
+
+Every world, including the first **Lakeshore** view, uses the five-layer
+generator from WebGPU Realtime Clouds' Planet Studio. The demo starts with a
+fresh seed and shows it in the performance panel. The other 16 palettes come
+from Planet Studio. **Gas Giant** applies its original gradient to a solid
+surface you can fly down to.
+
+Left drag turns the planet. The closer you are to the surface, the smaller
+the turn. Right drag changes the view angle. Movement follows the camera’s
+heading as you cross a pole or the longitude seam.
+
+The Studio noise stack lays out the continents and basins. A seeded erosion pass
+cuts gullies into the slopes and routes runoff downhill to carve connected
+valleys. **Lakeshore** and **Ice** have alpine ridges, **Utahish** and
+**Badlands** have stepped cliff bands and mesas, and **Volcanic** and
+**Moon Dust** have rough crater rims and basins. These shapes are part of the
+terrain mesh. The **Landforms** readout shows which style the planet uses.
+
+Regional relief starts at kilometer scales. Smaller noise layers follow the
+slope as you approach the ground, and nearby mesh patches refine to **2 m
+spacing**. Surface shading adds detail down to about **0.55 m**. About half of
+seeds get an ocean. The **World surface** readout shows whether the current
+seed is wet or dry.
+
+![Planet from orbit](docs/benchmarks/planet-orbit.png)
+
+![Regional valleys and ridges from 600 m above the surface](docs/benchmarks/planet-flyover.png)
+
+![The same planet 3 m above the ground](docs/benchmarks/planet-shore.png)
+
+In these 960 × 540 GPU captures with seed `123456789`, orbit drew
+**38,896 triangles**, the low flyover drew **242,992**, and the ground view
+drew **250,200** across 13 visible LOD grades. Counts vary with the seed,
+camera, and view size.
+
+![Utahish canyon, 226,280 triangles at 600 m](docs/benchmarks/planet-mesa.png)
+
+![Volcanic caldera, 189,104 triangles at 22 km](docs/benchmarks/planet-caldera.png)
+
+![An Ice world with a seeded ocean](docs/benchmarks/planet-ocean.png)
+
 ### Moving around
 
 Terrain now prepares nearby ground and tree placements behind you. Space prepares
@@ -143,7 +191,7 @@ when you turn. Large turns update visibility immediately; small turns reuse a
 slightly wider cached view. The existing memory limits still apply.
 See [the turn check results](docs/benchmarks/turn-streaming-webgpu.txt).
 
-Click the terrain, space or noise tiles view before using the keyboard.
+Click the terrain, space, noise tiles or planet view before using the keyboard.
 
 | Action                          | Control                        |
 | ------------------------------- | ------------------------------ |
@@ -166,11 +214,15 @@ Click the terrain, space or noise tiles view before using the keyboard.
 | Space: Near detail       | The area around you that keeps the finest meshes.                    |
 | Noise tiles: Height      | How close you are to the surface; descending requests smaller tiles. |
 | Noise tiles: Tile detail | Allowed surface error in pixels; lower values keep smaller bumps.    |
+| Planet: Altitude         | Height above the local ground or water.                              |
+| Planet: Tile detail      | Lower values refine patches sooner, within the same tile budget.     |
 
 Render distance is a limit, not a promise to fill the entire view. These demos
 have memory and object limits. Flat terrain keeps an 8.2 km detail window.
 Infinite mode moves that window as you travel and draws coarser terrain beyond
-it out to the requested render distance. Space fills a 3D region.
+it out to the requested render distance. Distant ground keeps more mesh samples
+in the first few outer rings. Shoreline color and lighting sample the same noise
+at each pixel, so they stay detailed as the mesh gets coarser. Space fills a 3D region.
 The flat terrain keeps a small coarse grid for the entire window, so a full
 detail cache no longer shortens the visible horizon.
 See the [distance and frame-time checks](docs/benchmarks/terrain-long-range-webgpu.txt).
@@ -330,9 +382,11 @@ is not already running. Open these paths under its address:
 | -------------------------------- | ------------------------------------------------------------------- |
 | `tests/webgpu.html`              | CPU and GPU extraction agree                                        |
 | `tests/terrain-webgpu.html`      | Terrain, seams, trees and travel                                    |
+| `tests/terrain-range-webgpu.html` | Infinite terrain coverage through 64 km                            |
 | `tests/space-webgpu.html`        | Space meshes, points, streaming and both algorithms                 |
 | `tests/space-stress-webgpu.html` | The 32 km comparison and moving-camera performance                  |
 | `tests/progressive-webgpu.html`  | Fine noise tiles, seamless refinement and bounded memory            |
+| `tests/planet-webgpu.html`       | Orbit, oceans, seeded landforms, and 2 m ground patches              |
 | `tests/package-webgpu.html`      | Drop-in worlds, controls, external worker and shared-device cleanup |
 
 For source changes, run `npm run build` again and refresh the demo.

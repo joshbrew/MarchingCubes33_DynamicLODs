@@ -3,7 +3,7 @@ import * as Field from "./field.js";
 import * as LOD from "./lod.js";
 import * as Surface from "./surface.js";
 import * as PLOC from "./ploc.js";
-import { boundaryMask, selectHorizon } from "./horizon.js";
+import { boundaryMask, horizonDivisions, selectHorizon } from "./horizon.js";
 import { Trees } from "./trees.js";
 import { guardPlanes, turnedSince } from "../api/visibility.js";
 import renderShader from "./shaders/render.wgsl";
@@ -673,8 +673,9 @@ class Renderer {
     }
     const buckets = new Map();
     for (const tile of tiles) {
-      if (!buckets.has(tile.mask)) buckets.set(tile.mask, []);
-      buckets.get(tile.mask).push(tile);
+      const key = horizonDivisions(tile.grade) * 16 + tile.mask;
+      if (!buckets.has(key)) buckets.set(key, []);
+      buckets.get(key).push(tile);
       this.stats.horizonGrades[tile.grade] =
         (this.stats.horizonGrades[tile.grade] || 0) + 1;
     }
@@ -682,8 +683,8 @@ class Renderer {
     const f32 = new Float32Array(data),
       u32 = new Uint32Array(data);
     let at = 0;
-    for (const [mask, bucket] of buckets) {
-      const template = this.getTemplate(2, mask),
+    for (const [key, bucket] of buckets) {
+      const template = this.getTemplate(key >> 4, key & 15),
         base = at / 4;
       for (const { x, z, size, grade } of bucket) {
         f32[at] = x;

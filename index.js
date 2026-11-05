@@ -2,11 +2,13 @@ import spherePage from "./demo/sphere.html";
 import terrainPage from "./demo/terrain.html";
 import spacePage from "./demo/space.html";
 import progressivePage from "./demo/progressive.html";
+import planetPage from "./demo/planet.html";
 
 const demos = {
   sphere: { page: spherePage, load: () => import("./src/demo.js") },
   terrain: { page: terrainPage, load: () => import("./src/terrain/demo.js") },
   space: { page: spacePage, load: () => import("./src/space/demo.js") },
+  planet: { page: planetPage, load: () => import("./src/planet/demo.js") },
   progressive: {
     page: progressivePage,
     load: () => import("./src/progressive/demo.js"),
