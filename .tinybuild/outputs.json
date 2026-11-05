@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "files": [
+    {
+      "path": "dist/index.js",
+      "kind": "build",
+      "hash": "141d3fe95cb1df5b0190b9aea9c8d543fb9a22eb24fe0b96b73533875cc2c477"
+    },
+    {
+      "path": "dist/index.esm.js",
+      "kind": "build",
+      "hash": "b65212b0620f7102cd77a7914349f480d40903513ed27863c279d83b171c9330"
+    },
+    {
+      "path": "dist/index.cjs",
+      "kind": "build",
+      "hash": "7134dc01aa712df261815213b72e22c17f2e366a8595a275123cf8df6d3fb2fc"
+    }
+  ]
+}
