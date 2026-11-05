@@ -505,7 +505,11 @@ function updateHUD(now, stats) {
               `${number(stats.coverageTiles)} / ${number(stats.coarseDrawn)}`,
             ],
             ["Coarse coverage memory", mb(stats.coverageBytes)],
-            ["Map window width", meters(renderer.options.worldSize)],
+            ["Detail window width", meters(renderer.options.worldSize)],
+            [
+              "Horizon patches / grades",
+              `${number(stats.horizonDrawn)} / ${stats.horizonGrades?.filter(Boolean).length || 0}`,
+            ],
             [
               "Bundle builds / plan reuses",
               `${number(stats.bundleBuilds)} / ${number(stats.planReuses)}`,

@@ -3,6 +3,7 @@ import * as Field from "./field.js";
 import * as LOD from "./lod.js";
 import * as Surface from "./surface.js";
 import * as PLOC from "./ploc.js";
+import { boundaryMask, selectHorizon } from "./horizon.js";
 import { Trees } from "./trees.js";
 import { guardPlanes, turnedSince } from "../api/visibility.js";
 import renderShader from "./shaders/render.wgsl";
@@ -66,6 +67,8 @@ class Renderer {
     this.selected = new Map();
     this.detailSelected = new Map();
     this.visibleIds = [];
+    this.horizonTiles = [];
+    this.horizonPlan = [];
     this.needsSelection = true;
     this.lastSelect = -Infinity;
     this.generation = 0;
@@ -86,6 +89,7 @@ class Renderer {
     this.planAlgorithm = null;
     this.viewState = [];
     this.frameData = new Float32Array(32);
+    this.frameWords = new Uint32Array(this.frameData.buffer);
   }
   async initialize() {
     const device = await initializeGPU(this);
@@ -223,6 +227,21 @@ class Renderer {
       ...descriptor,
       primitive: { topology: "line-list" },
     });
+    const horizonDescriptor = {
+      ...descriptor,
+      vertex: { module, entryPoint: "vertex_horizon" },
+    };
+    [this.horizonPipeline, this.horizonLines] = await Promise.all([
+      device.createRenderPipelineAsync({
+        ...horizonDescriptor,
+        primitive: { topology: "triangle-list", cullMode: "back" },
+      }),
+      device.createRenderPipelineAsync({
+        ...horizonDescriptor,
+        primitive: { topology: "line-list" },
+      }),
+    ]);
+    this.renderLayout = renderLayout;
     this.renderGroup = device.createBindGroup({
       layout: renderLayout,
       entries: [
@@ -373,6 +392,15 @@ class Renderer {
         .map((id) => [id, selection.levels.get(id)]),
     );
     this.visibleIds = cull.ids;
+    this.horizonTiles = this.settings.infinite
+      ? selectHorizon(
+          this.options.worldSize,
+          this.options.tileSize,
+          this.origin,
+          camera,
+          guardPlanes(planes, camera.far),
+        )
+      : [];
     this.selected = selection.levels;
     this.previous = new Map(selection.levels);
     this.stats.selectionMs = performance.now() - start;
@@ -500,12 +528,22 @@ class Renderer {
           cached?.ready && cached.generation === this.generation
             ? cached
             : this.coverageEntries[id];
-      actual.set(id, Math.max(target, entry.lod));
+      // Taper the outside row of the detail window into the first horizon
+      // band. Four divisions can stitch to its two; two already match.
+      const edge =
+        this.horizonTiles.length && boundaryMask(id, this.side)
+          ? this.levels - 2
+          : 0;
+      actual.set(id, Math.max(target, entry.lod, edge));
       drawEntries.set(id, entry);
     }
     LOD.balance(actual, this.side, "coarsen");
     const masks = LOD.seams(actual, this.side),
       buckets = new Map();
+    if (this.horizonTiles.length)
+      for (const [id, level] of actual)
+        if (level === this.levels - 2)
+          masks.set(id, masks.get(id) | boundaryMask(id, this.side));
     this.lastActual = actual;
     this.lastMasks = masks;
     this.drawEntries = drawEntries;
@@ -575,10 +613,10 @@ class Renderer {
         instance * 4,
       );
     Object.assign(this.stats, {
-      triangles,
+      nearTriangles: triangles,
       coarseDrawn,
-      drawCalls: draws.length,
-      drawn: instance,
+      nearDrawCalls: draws.length,
+      nearDrawn: instance,
       histogram,
       seams: seamCount,
       activeSamples: samples,
@@ -588,6 +626,76 @@ class Renderer {
     this.planAlgorithm = this.algorithm;
     this.planGeneration = this.generation;
     this.stats.planBuilds = (this.stats.planBuilds || 0) + 1;
+  }
+  prepareHorizon() {
+    const tiles = this.horizonTiles,
+      previous = this.horizonPlannedTiles;
+    if (tiles === previous && this.horizonAlgorithm === this.algorithm) return;
+    this.horizonPlannedTiles = tiles;
+    if (
+      this.horizonAlgorithm === this.algorithm &&
+      previous?.length === tiles.length &&
+      tiles.every((tile, i) => {
+        const old = previous[i];
+        return (
+          tile.x === old.x &&
+          tile.z === old.z &&
+          tile.size === old.size &&
+          tile.mask === old.mask &&
+          tile.grade === old.grade
+        );
+      })
+    )
+      return;
+    this.horizonAlgorithm = this.algorithm;
+    this.horizonPlan = [];
+    this.stats.horizonDrawn = tiles.length;
+    this.stats.horizonTriangles = 0;
+    this.stats.horizonGrades = [];
+    if (!tiles.length) return;
+    if (!this.horizonBuffer || tiles.length * 16 > this.horizonBuffer.size) {
+      const size = 16 * 2 ** Math.ceil(Math.log2(tiles.length));
+      this.horizonBuffer?.destroy();
+      this.horizonBuffer = this.device.createBuffer({
+        label: "Terrain horizon patch instances",
+        size,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      });
+      this.horizonGroup = this.device.createBindGroup({
+        layout: this.renderLayout,
+        entries: [
+          { binding: 0, resource: { buffer: this.atlas } },
+          { binding: 1, resource: { buffer: this.horizonBuffer } },
+          { binding: 2, resource: { buffer: this.frameParams } },
+        ],
+      });
+      this.stats.horizonBytes = size;
+    }
+    const buckets = new Map();
+    for (const tile of tiles) {
+      if (!buckets.has(tile.mask)) buckets.set(tile.mask, []);
+      buckets.get(tile.mask).push(tile);
+      this.stats.horizonGrades[tile.grade] =
+        (this.stats.horizonGrades[tile.grade] || 0) + 1;
+    }
+    const data = new ArrayBuffer(tiles.length * 16);
+    const f32 = new Float32Array(data),
+      u32 = new Uint32Array(data);
+    let at = 0;
+    for (const [mask, bucket] of buckets) {
+      const template = this.getTemplate(2, mask),
+        base = at / 4;
+      for (const { x, z, size, grade } of bucket) {
+        f32[at] = x;
+        f32[at + 1] = z;
+        f32[at + 2] = size;
+        u32[at + 3] = grade;
+        at += 4;
+      }
+      this.horizonPlan.push({ template, base, count: bucket.length });
+      this.stats.horizonTriangles += template.triangles * bucket.length;
+    }
+    this.device.queue.writeBuffer(this.horizonBuffer, 0, data);
   }
   render(camera, planes, now, { lodColors = false, wireframe = false } = {}) {
     const cpuStart = performance.now();
@@ -685,9 +793,11 @@ class Renderer {
       this.planAlgorithm !== this.algorithm
     )
       this.prepareDrawPlan();
+    this.prepareHorizon();
     this.vegetation?.prepare(camera, planes, now);
     if (
       this.bundlePlan !== this.drawPlan ||
+      this.bundleHorizon !== this.horizonPlan ||
       this.bundleTrees !== this.vegetation?.draws ||
       this.bundleWire !== wireframe
     ) {
@@ -710,9 +820,29 @@ class Renderer {
           draw.base,
         );
       }
+      if (this.horizonPlan.length) {
+        bundle.setPipeline(
+          wireframe ? this.horizonLines : this.horizonPipeline,
+        );
+        bundle.setBindGroup(0, this.horizonGroup);
+        for (const draw of this.horizonPlan) {
+          bundle.setIndexBuffer(
+            wireframe ? draw.template.line : draw.template.index,
+            "uint32",
+          );
+          bundle.drawIndexed(
+            wireframe ? draw.template.lineCount : draw.template.indexCount,
+            draw.count,
+            0,
+            0,
+            draw.base,
+          );
+        }
+      }
       this.vegetation?.render(bundle);
       this.renderBundle = bundle.finish();
       this.bundlePlan = this.drawPlan;
+      this.bundleHorizon = this.horizonPlan;
       this.bundleTrees = this.vegetation?.draws;
       this.bundleWire = wireframe;
       this.stats.bundleBuilds = (this.stats.bundleBuilds || 0) + 1;
@@ -721,10 +851,8 @@ class Renderer {
     frame.set(camera.viewProjection, 0);
     frame.set([...camera.position, 1], 16);
     frame.set([0.5, 0.85, 0.35, 0], 20);
-    frame.set(
-      [this.stride, Number(lodColors), Number(wireframe), camera.far],
-      28,
-    );
+    frame.set([0, Number(lodColors), Number(wireframe), camera.far], 28);
+    this.frameWords[28] = this.seed;
     device.queue.writeBuffer(this.frameParams, 0, frame);
     const descriptor = {
       colorAttachments: [
@@ -783,6 +911,10 @@ class Renderer {
           if (!this.disposed) this.errors.push(error.message);
         });
     this.stats.cpuMs = performance.now() - cpuStart;
+    this.stats.drawn = this.stats.nearDrawn + this.stats.horizonDrawn;
+    this.stats.triangles =
+      this.stats.nearTriangles + this.stats.horizonTriangles;
+    this.stats.drawCalls = this.stats.nearDrawCalls + this.horizonPlan.length;
     this.stats.resident = this.entries.size;
     this.stats.builtThisFrame = builds.length;
     this.stats.vegetation = this.vegetation?.stats;
@@ -832,6 +964,7 @@ class Renderer {
       this.buildParams,
       this.frameParams,
       this.instanceBuffer,
+      this.horizonBuffer,
     ])
       b?.destroy();
     this.depth?.destroy();

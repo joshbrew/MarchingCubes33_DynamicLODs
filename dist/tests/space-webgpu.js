@@ -208,10 +208,10 @@ var DEG2RAD = Math.PI / 180;
 var RAD2DEG = 180 / Math.PI;
 function generateUUID() {
   const d02 = Math.random() * 4294967295 | 0;
-  const d12 = Math.random() * 4294967295 | 0;
+  const d1 = Math.random() * 4294967295 | 0;
   const d2 = Math.random() * 4294967295 | 0;
   const d3 = Math.random() * 4294967295 | 0;
-  const uuid = _lut[d02 & 255] + _lut[d02 >> 8 & 255] + _lut[d02 >> 16 & 255] + _lut[d02 >> 24 & 255] + "-" + _lut[d12 & 255] + _lut[d12 >> 8 & 255] + "-" + _lut[d12 >> 16 & 15 | 64] + _lut[d12 >> 24 & 255] + "-" + _lut[d2 & 63 | 128] + _lut[d2 >> 8 & 255] + "-" + _lut[d2 >> 16 & 255] + _lut[d2 >> 24 & 255] + _lut[d3 & 255] + _lut[d3 >> 8 & 255] + _lut[d3 >> 16 & 255] + _lut[d3 >> 24 & 255];
+  const uuid = _lut[d02 & 255] + _lut[d02 >> 8 & 255] + _lut[d02 >> 16 & 255] + _lut[d02 >> 24 & 255] + "-" + _lut[d1 & 255] + _lut[d1 >> 8 & 255] + "-" + _lut[d1 >> 16 & 15 | 64] + _lut[d1 >> 24 & 255] + "-" + _lut[d2 & 63 | 128] + _lut[d2 >> 8 & 255] + "-" + _lut[d2 >> 16 & 255] + _lut[d2 >> 24 & 255] + _lut[d3 & 255] + _lut[d3 >> 8 & 255] + _lut[d3 >> 16 & 255] + _lut[d3 >> 24 & 255];
   return uuid.toUpperCase();
 }
 function clamp(value, min, max) {
@@ -1439,7 +1439,7 @@ var Quaternion = class {
   }
   static slerpFlat(dst, dstOffset, src0, srcOffset0, src1, srcOffset1, t) {
     let x02 = src0[srcOffset0 + 0], y0 = src0[srcOffset0 + 1], z0 = src0[srcOffset0 + 2], w0 = src0[srcOffset0 + 3];
-    const x1 = src1[srcOffset1 + 0], y12 = src1[srcOffset1 + 1], z12 = src1[srcOffset1 + 2], w12 = src1[srcOffset1 + 3];
+    const x12 = src1[srcOffset1 + 0], y12 = src1[srcOffset1 + 1], z12 = src1[srcOffset1 + 2], w12 = src1[srcOffset1 + 3];
     if (t === 0) {
       dst[dstOffset + 0] = x02;
       dst[dstOffset + 1] = y0;
@@ -1448,22 +1448,22 @@ var Quaternion = class {
       return;
     }
     if (t === 1) {
-      dst[dstOffset + 0] = x1;
+      dst[dstOffset + 0] = x12;
       dst[dstOffset + 1] = y12;
       dst[dstOffset + 2] = z12;
       dst[dstOffset + 3] = w12;
       return;
     }
-    if (w0 !== w12 || x02 !== x1 || y0 !== y12 || z0 !== z12) {
+    if (w0 !== w12 || x02 !== x12 || y0 !== y12 || z0 !== z12) {
       let s = 1 - t;
-      const cos = x02 * x1 + y0 * y12 + z0 * z12 + w0 * w12, dir = cos >= 0 ? 1 : -1, sqrSin = 1 - cos * cos;
+      const cos = x02 * x12 + y0 * y12 + z0 * z12 + w0 * w12, dir = cos >= 0 ? 1 : -1, sqrSin = 1 - cos * cos;
       if (sqrSin > Number.EPSILON) {
         const sin = Math.sqrt(sqrSin), len = Math.atan2(sin, cos * dir);
         s = Math.sin(s * len) / sin;
         t = Math.sin(t * len) / sin;
       }
       const tDir = t * dir;
-      x02 = x02 * s + x1 * tDir;
+      x02 = x02 * s + x12 * tDir;
       y0 = y0 * s + y12 * tDir;
       z0 = z0 * s + z12 * tDir;
       w0 = w0 * s + w12 * tDir;
@@ -1485,14 +1485,14 @@ var Quaternion = class {
     const y0 = src0[srcOffset0 + 1];
     const z0 = src0[srcOffset0 + 2];
     const w0 = src0[srcOffset0 + 3];
-    const x1 = src1[srcOffset1];
+    const x12 = src1[srcOffset1];
     const y12 = src1[srcOffset1 + 1];
     const z12 = src1[srcOffset1 + 2];
     const w12 = src1[srcOffset1 + 3];
-    dst[dstOffset] = x02 * w12 + w0 * x1 + y0 * z12 - z0 * y12;
-    dst[dstOffset + 1] = y0 * w12 + w0 * y12 + z0 * x1 - x02 * z12;
-    dst[dstOffset + 2] = z0 * w12 + w0 * z12 + x02 * y12 - y0 * x1;
-    dst[dstOffset + 3] = w0 * w12 - x02 * x1 - y0 * y12 - z0 * z12;
+    dst[dstOffset] = x02 * w12 + w0 * x12 + y0 * z12 - z0 * y12;
+    dst[dstOffset + 1] = y0 * w12 + w0 * y12 + z0 * x12 - x02 * z12;
+    dst[dstOffset + 2] = z0 * w12 + w0 * z12 + x02 * y12 - y0 * x12;
+    dst[dstOffset + 3] = w0 * w12 - x02 * x12 - y0 * y12 - z0 * z12;
     return dst;
   }
   get x() {
@@ -1549,7 +1549,7 @@ var Quaternion = class {
     const x = euler._x, y = euler._y, z = euler._z, order = euler._order;
     const cos = Math.cos;
     const sin = Math.sin;
-    const c1 = cos(x / 2);
+    const c12 = cos(x / 2);
     const c2 = cos(y / 2);
     const c3 = cos(z / 2);
     const s12 = sin(x / 2);
@@ -1557,40 +1557,40 @@ var Quaternion = class {
     const s3 = sin(z / 2);
     switch (order) {
       case "XYZ":
-        this._x = s12 * c2 * c3 + c1 * s2 * s3;
-        this._y = c1 * s2 * c3 - s12 * c2 * s3;
-        this._z = c1 * c2 * s3 + s12 * s2 * c3;
-        this._w = c1 * c2 * c3 - s12 * s2 * s3;
+        this._x = s12 * c2 * c3 + c12 * s2 * s3;
+        this._y = c12 * s2 * c3 - s12 * c2 * s3;
+        this._z = c12 * c2 * s3 + s12 * s2 * c3;
+        this._w = c12 * c2 * c3 - s12 * s2 * s3;
         break;
       case "YXZ":
-        this._x = s12 * c2 * c3 + c1 * s2 * s3;
-        this._y = c1 * s2 * c3 - s12 * c2 * s3;
-        this._z = c1 * c2 * s3 - s12 * s2 * c3;
-        this._w = c1 * c2 * c3 + s12 * s2 * s3;
+        this._x = s12 * c2 * c3 + c12 * s2 * s3;
+        this._y = c12 * s2 * c3 - s12 * c2 * s3;
+        this._z = c12 * c2 * s3 - s12 * s2 * c3;
+        this._w = c12 * c2 * c3 + s12 * s2 * s3;
         break;
       case "ZXY":
-        this._x = s12 * c2 * c3 - c1 * s2 * s3;
-        this._y = c1 * s2 * c3 + s12 * c2 * s3;
-        this._z = c1 * c2 * s3 + s12 * s2 * c3;
-        this._w = c1 * c2 * c3 - s12 * s2 * s3;
+        this._x = s12 * c2 * c3 - c12 * s2 * s3;
+        this._y = c12 * s2 * c3 + s12 * c2 * s3;
+        this._z = c12 * c2 * s3 + s12 * s2 * c3;
+        this._w = c12 * c2 * c3 - s12 * s2 * s3;
         break;
       case "ZYX":
-        this._x = s12 * c2 * c3 - c1 * s2 * s3;
-        this._y = c1 * s2 * c3 + s12 * c2 * s3;
-        this._z = c1 * c2 * s3 - s12 * s2 * c3;
-        this._w = c1 * c2 * c3 + s12 * s2 * s3;
+        this._x = s12 * c2 * c3 - c12 * s2 * s3;
+        this._y = c12 * s2 * c3 + s12 * c2 * s3;
+        this._z = c12 * c2 * s3 - s12 * s2 * c3;
+        this._w = c12 * c2 * c3 + s12 * s2 * s3;
         break;
       case "YZX":
-        this._x = s12 * c2 * c3 + c1 * s2 * s3;
-        this._y = c1 * s2 * c3 + s12 * c2 * s3;
-        this._z = c1 * c2 * s3 - s12 * s2 * c3;
-        this._w = c1 * c2 * c3 - s12 * s2 * s3;
+        this._x = s12 * c2 * c3 + c12 * s2 * s3;
+        this._y = c12 * s2 * c3 + s12 * c2 * s3;
+        this._z = c12 * c2 * s3 - s12 * s2 * c3;
+        this._w = c12 * c2 * c3 - s12 * s2 * s3;
         break;
       case "XZY":
-        this._x = s12 * c2 * c3 - c1 * s2 * s3;
-        this._y = c1 * s2 * c3 - s12 * c2 * s3;
-        this._z = c1 * c2 * s3 + s12 * s2 * c3;
-        this._w = c1 * c2 * c3 + s12 * s2 * s3;
+        this._x = s12 * c2 * c3 - c12 * s2 * s3;
+        this._y = c12 * s2 * c3 - s12 * c2 * s3;
+        this._z = c12 * c2 * s3 + s12 * s2 * c3;
+        this._w = c12 * c2 * c3 + s12 * s2 * s3;
         break;
       default:
         console.warn("THREE.Quaternion: .setFromEuler() encountered an unknown order: " + order);
@@ -2723,54 +2723,54 @@ var Ray = class {
     _diff.copy(this.origin).sub(_segCenter);
     const segExtent = v0.distanceTo(v12) * 0.5;
     const a01 = -this.direction.dot(_segDir);
-    const b0 = _diff.dot(this.direction);
+    const b02 = _diff.dot(this.direction);
     const b12 = -_diff.dot(_segDir);
     const c = _diff.lengthSq();
     const det = Math.abs(1 - a01 * a01);
-    let s02, s12, sqrDist, extDet;
+    let s0, s12, sqrDist, extDet;
     if (det > 0) {
-      s02 = a01 * b12 - b0;
-      s12 = a01 * b0 - b12;
+      s0 = a01 * b12 - b02;
+      s12 = a01 * b02 - b12;
       extDet = segExtent * det;
-      if (s02 >= 0) {
+      if (s0 >= 0) {
         if (s12 >= -extDet) {
           if (s12 <= extDet) {
             const invDet = 1 / det;
-            s02 *= invDet;
+            s0 *= invDet;
             s12 *= invDet;
-            sqrDist = s02 * (s02 + a01 * s12 + 2 * b0) + s12 * (a01 * s02 + s12 + 2 * b12) + c;
+            sqrDist = s0 * (s0 + a01 * s12 + 2 * b02) + s12 * (a01 * s0 + s12 + 2 * b12) + c;
           } else {
             s12 = segExtent;
-            s02 = Math.max(0, -(a01 * s12 + b0));
-            sqrDist = -s02 * s02 + s12 * (s12 + 2 * b12) + c;
+            s0 = Math.max(0, -(a01 * s12 + b02));
+            sqrDist = -s0 * s0 + s12 * (s12 + 2 * b12) + c;
           }
         } else {
           s12 = -segExtent;
-          s02 = Math.max(0, -(a01 * s12 + b0));
-          sqrDist = -s02 * s02 + s12 * (s12 + 2 * b12) + c;
+          s0 = Math.max(0, -(a01 * s12 + b02));
+          sqrDist = -s0 * s0 + s12 * (s12 + 2 * b12) + c;
         }
       } else {
         if (s12 <= -extDet) {
-          s02 = Math.max(0, -(-a01 * segExtent + b0));
-          s12 = s02 > 0 ? -segExtent : Math.min(Math.max(-segExtent, -b12), segExtent);
-          sqrDist = -s02 * s02 + s12 * (s12 + 2 * b12) + c;
+          s0 = Math.max(0, -(-a01 * segExtent + b02));
+          s12 = s0 > 0 ? -segExtent : Math.min(Math.max(-segExtent, -b12), segExtent);
+          sqrDist = -s0 * s0 + s12 * (s12 + 2 * b12) + c;
         } else if (s12 <= extDet) {
-          s02 = 0;
+          s0 = 0;
           s12 = Math.min(Math.max(-segExtent, -b12), segExtent);
           sqrDist = s12 * (s12 + 2 * b12) + c;
         } else {
-          s02 = Math.max(0, -(a01 * segExtent + b0));
-          s12 = s02 > 0 ? segExtent : Math.min(Math.max(-segExtent, -b12), segExtent);
-          sqrDist = -s02 * s02 + s12 * (s12 + 2 * b12) + c;
+          s0 = Math.max(0, -(a01 * segExtent + b02));
+          s12 = s0 > 0 ? segExtent : Math.min(Math.max(-segExtent, -b12), segExtent);
+          sqrDist = -s0 * s0 + s12 * (s12 + 2 * b12) + c;
         }
       }
     } else {
       s12 = a01 > 0 ? -segExtent : segExtent;
-      s02 = Math.max(0, -(a01 * s12 + b0));
-      sqrDist = -s02 * s02 + s12 * (s12 + 2 * b12) + c;
+      s0 = Math.max(0, -(a01 * s12 + b02));
+      sqrDist = -s0 * s0 + s12 * (s12 + 2 * b12) + c;
     }
     if (optionalPointOnRay) {
-      optionalPointOnRay.copy(this.direction).multiplyScalar(s02).add(this.origin);
+      optionalPointOnRay.copy(this.direction).multiplyScalar(s0).add(this.origin);
     }
     if (optionalPointOnSegment) {
       optionalPointOnSegment.copy(_segDir).multiplyScalar(s12).add(_segCenter);
@@ -2784,11 +2784,11 @@ var Ray = class {
     const radius2 = sphere.radius * sphere.radius;
     if (d2 > radius2) return null;
     const thc = Math.sqrt(radius2 - d2);
-    const t02 = tca - thc;
+    const t0 = tca - thc;
     const t12 = tca + thc;
-    if (t02 < 0 && t12 < 0) return null;
-    if (t02 < 0) return this.at(t12, target);
-    return this.at(t02, target);
+    if (t0 < 0 && t12 < 0) return null;
+    if (t0 < 0) return this.at(t12, target);
+    return this.at(t0, target);
   }
   intersectsSphere(sphere) {
     return this.distanceSqToPoint(sphere.center) <= sphere.radius * sphere.radius;
@@ -4590,9 +4590,9 @@ var Triangle = class _Triangle {
     _vab.subVectors(b, a);
     _vac.subVectors(c, a);
     _vap.subVectors(p, a);
-    const d12 = _vab.dot(_vap);
+    const d1 = _vab.dot(_vap);
     const d2 = _vac.dot(_vap);
-    if (d12 <= 0 && d2 <= 0) {
+    if (d1 <= 0 && d2 <= 0) {
       return target.copy(a);
     }
     _vbp.subVectors(p, b);
@@ -4601,9 +4601,9 @@ var Triangle = class _Triangle {
     if (d3 >= 0 && d4 <= d3) {
       return target.copy(b);
     }
-    const vc = d12 * d4 - d3 * d2;
-    if (vc <= 0 && d12 >= 0 && d3 <= 0) {
-      v = d12 / (d12 - d3);
+    const vc = d1 * d4 - d3 * d2;
+    if (vc <= 0 && d1 >= 0 && d3 <= 0) {
+      v = d1 / (d1 - d3);
       return target.copy(a).addScaledVector(_vab, v);
     }
     _vcp.subVectors(p, c);
@@ -4612,7 +4612,7 @@ var Triangle = class _Triangle {
     if (d6 >= 0 && d5 <= d6) {
       return target.copy(c);
     }
-    const vb = d5 * d2 - d12 * d6;
+    const vb = d5 * d2 - d1 * d6;
     if (vb <= 0 && d2 >= 0 && d6 <= 0) {
       w = d2 / (d2 - d6);
       return target.copy(a).addScaledVector(_vac, w);
@@ -15820,12 +15820,12 @@ function equals(p12, p2) {
   return p12.x === p2.x && p12.y === p2.y;
 }
 function intersects(p12, q12, p2, q2) {
-  const o1 = sign(area(p12, q12, p2));
+  const o12 = sign(area(p12, q12, p2));
   const o2 = sign(area(p12, q12, q2));
   const o3 = sign(area(p2, q2, p12));
   const o4 = sign(area(p2, q2, q12));
-  if (o1 !== o2 && o3 !== o4) return true;
-  if (o1 === 0 && onSegment(p12, p2, q12)) return true;
+  if (o12 !== o2 && o3 !== o4) return true;
+  if (o12 === 0 && onSegment(p12, p2, q12)) return true;
   if (o2 === 0 && onSegment(p12, q2, q12)) return true;
   if (o3 === 0 && onSegment(p2, p12, q2)) return true;
   if (o4 === 0 && onSegment(p2, q12, q2)) return true;
@@ -17059,7 +17059,7 @@ var Interpolant = class {
   }
   evaluate(t) {
     const pp = this.parameterPositions;
-    let i12 = this._cachedIndex, t12 = pp[i12], t02 = pp[i12 - 1];
+    let i12 = this._cachedIndex, t12 = pp[i12], t0 = pp[i12 - 1];
     validate_interval: {
       seek: {
         let right;
@@ -17067,13 +17067,13 @@ var Interpolant = class {
           forward_scan: if (!(t < t12)) {
             for (let giveUpAt = i12 + 2; ; ) {
               if (t12 === void 0) {
-                if (t < t02) break forward_scan;
+                if (t < t0) break forward_scan;
                 i12 = pp.length;
                 this._cachedIndex = i12;
-                return this.afterEnd_(i12 - 1, t, t02);
+                return this.afterEnd_(i12 - 1, t, t0);
               }
               if (i12 === giveUpAt) break;
-              t02 = t12;
+              t0 = t12;
               t12 = pp[++i12];
               if (t < t12) {
                 break seek;
@@ -17082,21 +17082,21 @@ var Interpolant = class {
             right = pp.length;
             break linear_scan;
           }
-          if (!(t >= t02)) {
+          if (!(t >= t0)) {
             const t1global = pp[1];
             if (t < t1global) {
               i12 = 2;
-              t02 = t1global;
+              t0 = t1global;
             }
             for (let giveUpAt = i12 - 2; ; ) {
-              if (t02 === void 0) {
+              if (t0 === void 0) {
                 this._cachedIndex = 0;
                 return this.beforeStart_(0, t, t12);
               }
               if (i12 === giveUpAt) break;
-              t12 = t02;
-              t02 = pp[--i12 - 1];
-              if (t >= t02) {
+              t12 = t0;
+              t0 = pp[--i12 - 1];
+              if (t >= t0) {
                 break seek;
               }
             }
@@ -17115,21 +17115,21 @@ var Interpolant = class {
           }
         }
         t12 = pp[i12];
-        t02 = pp[i12 - 1];
-        if (t02 === void 0) {
+        t0 = pp[i12 - 1];
+        if (t0 === void 0) {
           this._cachedIndex = 0;
           return this.beforeStart_(0, t, t12);
         }
         if (t12 === void 0) {
           i12 = pp.length;
           this._cachedIndex = i12;
-          return this.afterEnd_(i12 - 1, t02, t);
+          return this.afterEnd_(i12 - 1, t0, t);
         }
       }
       this._cachedIndex = i12;
-      this.intervalChanged_(i12, t02, t12);
+      this.intervalChanged_(i12, t0, t12);
     }
-    return this.interpolate_(i12, t02, t, t12);
+    return this.interpolate_(i12, t0, t, t12);
   }
   getSettings_() {
     return this.settings || this.DefaultSettings_;
@@ -17162,18 +17162,18 @@ var CubicInterpolant = class extends Interpolant {
       endingEnd: ZeroCurvatureEnding
     };
   }
-  intervalChanged_(i12, t02, t12) {
+  intervalChanged_(i12, t0, t12) {
     const pp = this.parameterPositions;
     let iPrev = i12 - 2, iNext = i12 + 1, tPrev = pp[iPrev], tNext = pp[iNext];
     if (tPrev === void 0) {
       switch (this.getSettings_().endingStart) {
         case ZeroSlopeEnding:
           iPrev = i12;
-          tPrev = 2 * t02 - t12;
+          tPrev = 2 * t0 - t12;
           break;
         case WrapAroundEnding:
           iPrev = pp.length - 2;
-          tPrev = t02 + pp[iPrev] - pp[iPrev + 1];
+          tPrev = t0 + pp[iPrev] - pp[iPrev + 1];
           break;
         default:
           iPrev = i12;
@@ -17184,7 +17184,7 @@ var CubicInterpolant = class extends Interpolant {
       switch (this.getSettings_().endingEnd) {
         case ZeroSlopeEnding:
           iNext = i12;
-          tNext = 2 * t12 - t02;
+          tNext = 2 * t12 - t0;
           break;
         case WrapAroundEnding:
           iNext = 1;
@@ -17192,23 +17192,23 @@ var CubicInterpolant = class extends Interpolant {
           break;
         default:
           iNext = i12 - 1;
-          tNext = t02;
+          tNext = t0;
       }
     }
-    const halfDt = (t12 - t02) * 0.5, stride = this.valueSize;
-    this._weightPrev = halfDt / (t02 - tPrev);
+    const halfDt = (t12 - t0) * 0.5, stride = this.valueSize;
+    this._weightPrev = halfDt / (t0 - tPrev);
     this._weightNext = halfDt / (tNext - t12);
     this._offsetPrev = iPrev * stride;
     this._offsetNext = iNext * stride;
   }
-  interpolate_(i12, t02, t, t12) {
-    const result = this.resultBuffer, values = this.sampleValues, stride = this.valueSize, o1 = i12 * stride, o02 = o1 - stride, oP = this._offsetPrev, oN = this._offsetNext, wP = this._weightPrev, wN = this._weightNext, p = (t - t02) / (t12 - t02), pp = p * p, ppp = pp * p;
+  interpolate_(i12, t0, t, t12) {
+    const result = this.resultBuffer, values = this.sampleValues, stride = this.valueSize, o12 = i12 * stride, o02 = o12 - stride, oP = this._offsetPrev, oN = this._offsetNext, wP = this._weightPrev, wN = this._weightNext, p = (t - t0) / (t12 - t0), pp = p * p, ppp = pp * p;
     const sP = -wP * ppp + 2 * wP * pp - wP * p;
-    const s02 = (1 + wP) * ppp + (-1.5 - 2 * wP) * pp + (-0.5 + wP) * p + 1;
+    const s0 = (1 + wP) * ppp + (-1.5 - 2 * wP) * pp + (-0.5 + wP) * p + 1;
     const s12 = (-1 - wN) * ppp + (1.5 + wN) * pp + 0.5 * p;
     const sN = wN * ppp - wN * pp;
     for (let i = 0; i !== stride; ++i) {
-      result[i] = sP * values[oP + i] + s02 * values[o02 + i] + s12 * values[o1 + i] + sN * values[oN + i];
+      result[i] = sP * values[oP + i] + s0 * values[o02 + i] + s12 * values[o12 + i] + sN * values[oN + i];
     }
     return result;
   }
@@ -17217,8 +17217,8 @@ var LinearInterpolant = class extends Interpolant {
   constructor(parameterPositions, sampleValues, sampleSize, resultBuffer) {
     super(parameterPositions, sampleValues, sampleSize, resultBuffer);
   }
-  interpolate_(i12, t02, t, t12) {
-    const result = this.resultBuffer, values = this.sampleValues, stride = this.valueSize, offset1 = i12 * stride, offset0 = offset1 - stride, weight1 = (t - t02) / (t12 - t02), weight0 = 1 - weight1;
+  interpolate_(i12, t0, t, t12) {
+    const result = this.resultBuffer, values = this.sampleValues, stride = this.valueSize, offset1 = i12 * stride, offset0 = offset1 - stride, weight1 = (t - t0) / (t12 - t0), weight0 = 1 - weight1;
     for (let i = 0; i !== stride; ++i) {
       result[i] = values[offset0 + i] * weight0 + values[offset1 + i] * weight1;
     }
@@ -17477,8 +17477,8 @@ var QuaternionLinearInterpolant = class extends Interpolant {
   constructor(parameterPositions, sampleValues, sampleSize, resultBuffer) {
     super(parameterPositions, sampleValues, sampleSize, resultBuffer);
   }
-  interpolate_(i12, t02, t, t12) {
-    const result = this.resultBuffer, values = this.sampleValues, stride = this.valueSize, alpha = (t - t02) / (t12 - t02);
+  interpolate_(i12, t0, t, t12) {
+    const result = this.resultBuffer, values = this.sampleValues, stride = this.valueSize, alpha = (t - t0) / (t12 - t0);
     let offset = i12 * stride;
     for (let end = offset + stride; offset !== end; offset += 4) {
       Quaternion.slerpFlat(result, 0, values, offset - stride, values, offset, alpha);
@@ -18424,28 +18424,28 @@ var ArcCurve = class extends EllipseCurve {
 };
 ArcCurve.prototype.isArcCurve = true;
 function CubicPoly() {
-  let c02 = 0, c1 = 0, c2 = 0, c3 = 0;
-  function init(x02, x1, t02, t12) {
+  let c02 = 0, c12 = 0, c2 = 0, c3 = 0;
+  function init(x02, x12, t0, t12) {
     c02 = x02;
-    c1 = t02;
-    c2 = -3 * x02 + 3 * x1 - 2 * t02 - t12;
-    c3 = 2 * x02 - 2 * x1 + t02 + t12;
+    c12 = t0;
+    c2 = -3 * x02 + 3 * x12 - 2 * t0 - t12;
+    c3 = 2 * x02 - 2 * x12 + t0 + t12;
   }
   return {
-    initCatmullRom: function(x02, x1, x2, x3, tension) {
-      init(x1, x2, tension * (x2 - x02), tension * (x3 - x1));
+    initCatmullRom: function(x02, x12, x2, x3, tension) {
+      init(x12, x2, tension * (x2 - x02), tension * (x3 - x12));
     },
-    initNonuniformCatmullRom: function(x02, x1, x2, x3, dt0, dt1, dt2) {
-      let t12 = (x1 - x02) / dt0 - (x2 - x02) / (dt0 + dt1) + (x2 - x1) / dt1;
-      let t2 = (x2 - x1) / dt1 - (x3 - x1) / (dt1 + dt2) + (x3 - x2) / dt2;
+    initNonuniformCatmullRom: function(x02, x12, x2, x3, dt0, dt1, dt2) {
+      let t12 = (x12 - x02) / dt0 - (x2 - x02) / (dt0 + dt1) + (x2 - x12) / dt1;
+      let t2 = (x2 - x12) / dt1 - (x3 - x12) / (dt1 + dt2) + (x3 - x2) / dt2;
       t12 *= dt1;
       t2 *= dt1;
-      init(x1, x2, t12, t2);
+      init(x12, x2, t12, t2);
     },
     calc: function(t) {
       const t2 = t * t;
       const t3 = t2 * t;
-      return c02 + c1 * t + c2 * t2 + c3 * t3;
+      return c02 + c12 * t + c2 * t2 + c3 * t3;
     }
   };
 }
@@ -20166,9 +20166,9 @@ var HemisphereLightProbe = class extends LightProbe {
     const sky = new Vector3(color1.r, color1.g, color1.b);
     const ground = new Vector3(color2.r, color2.g, color2.b);
     const c02 = Math.sqrt(Math.PI);
-    const c1 = c02 * Math.sqrt(0.75);
+    const c12 = c02 * Math.sqrt(0.75);
     this.sh.coefficients[0].copy(sky).add(ground).multiplyScalar(c02);
-    this.sh.coefficients[1].copy(sky).sub(ground).multiplyScalar(c1);
+    this.sh.coefficients[1].copy(sky).sub(ground).multiplyScalar(c12);
   }
 };
 HemisphereLightProbe.prototype.isHemisphereLightProbe = true;
@@ -23210,31 +23210,31 @@ if (typeof window !== "undefined") {
 }
 
 // dist/index.esm.js
-var kt = Object.defineProperty;
+var St = Object.defineProperty;
 var F = (i, e) => {
-  for (var t in e) kt(i, t, { get: e[t], enumerable: true });
+  for (var t in e) St(i, t, { get: e[t], enumerable: true });
 };
-var D1 = {};
-F(D1, { algorithms: () => N, brickDepthForLimits: () => F1, createShader: () => G1, default: () => Nt, disposeGPU: () => h1, extractCPU: () => V, extractGPU: () => K });
-var St = [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0], [0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]];
-var zt = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]];
+var V1 = {};
+F(V1, { algorithms: () => V, brickDepthForLimits: () => N1, createShader: () => L1, default: () => qt, disposeGPU: () => v1, extractCPU: () => q, extractGPU: () => K });
+var Bt = [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0], [0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]];
+var Et = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]];
 var Qe = [[-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 8, 3, 9, 8, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 2, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 8, 3, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [9, 2, 10, 0, 2, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [2, 8, 3, 2, 10, 8, 10, 9, 8, -1, -1, -1, -1, -1, -1, -1], [3, 11, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 11, 2, 8, 11, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 9, 0, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 11, 2, 1, 9, 11, 9, 8, 11, -1, -1, -1, -1, -1, -1, -1], [3, 10, 1, 11, 10, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 10, 1, 0, 8, 10, 8, 11, 10, -1, -1, -1, -1, -1, -1, -1], [3, 9, 0, 3, 11, 9, 11, 10, 9, -1, -1, -1, -1, -1, -1, -1], [9, 8, 10, 10, 8, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 7, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 3, 0, 7, 3, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 1, 9, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 1, 9, 4, 7, 1, 7, 3, 1, -1, -1, -1, -1, -1, -1, -1], [1, 2, 10, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [3, 4, 7, 3, 0, 4, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1], [9, 2, 10, 9, 0, 2, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1], [2, 10, 9, 2, 9, 7, 2, 7, 3, 7, 9, 4, -1, -1, -1, -1], [8, 4, 7, 3, 11, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [11, 4, 7, 11, 2, 4, 2, 0, 4, -1, -1, -1, -1, -1, -1, -1], [9, 0, 1, 8, 4, 7, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1], [4, 7, 11, 9, 4, 11, 9, 11, 2, 9, 2, 1, -1, -1, -1, -1], [3, 10, 1, 3, 11, 10, 7, 8, 4, -1, -1, -1, -1, -1, -1, -1], [1, 11, 10, 1, 4, 11, 1, 0, 4, 7, 11, 4, -1, -1, -1, -1], [4, 7, 8, 9, 0, 11, 9, 11, 10, 11, 0, 3, -1, -1, -1, -1], [4, 7, 11, 4, 11, 9, 9, 11, 10, -1, -1, -1, -1, -1, -1, -1], [9, 5, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [9, 5, 4, 0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 5, 4, 1, 5, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [8, 5, 4, 8, 3, 5, 3, 1, 5, -1, -1, -1, -1, -1, -1, -1], [1, 2, 10, 9, 5, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [3, 0, 8, 1, 2, 10, 9, 5, 4, -1, -1, -1, -1, -1, -1, -1], [5, 2, 10, 5, 4, 2, 4, 0, 2, -1, -1, -1, -1, -1, -1, -1], [2, 10, 5, 3, 2, 5, 3, 5, 4, 3, 4, 8, -1, -1, -1, -1], [9, 5, 4, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 11, 2, 0, 8, 11, 4, 9, 5, -1, -1, -1, -1, -1, -1, -1], [0, 5, 4, 0, 1, 5, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1], [2, 1, 5, 2, 5, 8, 2, 8, 11, 4, 8, 5, -1, -1, -1, -1], [10, 3, 11, 10, 1, 3, 9, 5, 4, -1, -1, -1, -1, -1, -1, -1], [4, 9, 5, 0, 8, 1, 8, 10, 1, 8, 11, 10, -1, -1, -1, -1], [5, 4, 0, 5, 0, 11, 5, 11, 10, 11, 0, 3, -1, -1, -1, -1], [5, 4, 8, 5, 8, 10, 10, 8, 11, -1, -1, -1, -1, -1, -1, -1], [9, 7, 8, 5, 7, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [9, 3, 0, 9, 5, 3, 5, 7, 3, -1, -1, -1, -1, -1, -1, -1], [0, 7, 8, 0, 1, 7, 1, 5, 7, -1, -1, -1, -1, -1, -1, -1], [1, 5, 3, 3, 5, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [9, 7, 8, 9, 5, 7, 10, 1, 2, -1, -1, -1, -1, -1, -1, -1], [10, 1, 2, 9, 5, 0, 5, 3, 0, 5, 7, 3, -1, -1, -1, -1], [8, 0, 2, 8, 2, 5, 8, 5, 7, 10, 5, 2, -1, -1, -1, -1], [2, 10, 5, 2, 5, 3, 3, 5, 7, -1, -1, -1, -1, -1, -1, -1], [7, 9, 5, 7, 8, 9, 3, 11, 2, -1, -1, -1, -1, -1, -1, -1], [9, 5, 7, 9, 7, 2, 9, 2, 0, 2, 7, 11, -1, -1, -1, -1], [2, 3, 11, 0, 1, 8, 1, 7, 8, 1, 5, 7, -1, -1, -1, -1], [11, 2, 1, 11, 1, 7, 7, 1, 5, -1, -1, -1, -1, -1, -1, -1], [9, 5, 8, 8, 5, 7, 10, 1, 3, 10, 3, 11, -1, -1, -1, -1], [5, 7, 0, 5, 0, 9, 7, 11, 0, 1, 0, 10, 11, 10, 0, -1], [11, 10, 0, 11, 0, 3, 10, 5, 0, 8, 0, 7, 5, 7, 0, -1], [11, 10, 5, 7, 11, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [10, 6, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 8, 3, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [9, 0, 1, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 8, 3, 1, 9, 8, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1], [1, 6, 5, 2, 6, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 6, 5, 1, 2, 6, 3, 0, 8, -1, -1, -1, -1, -1, -1, -1], [9, 6, 5, 9, 0, 6, 0, 2, 6, -1, -1, -1, -1, -1, -1, -1], [5, 9, 8, 5, 8, 2, 5, 2, 6, 3, 2, 8, -1, -1, -1, -1], [2, 3, 11, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [11, 0, 8, 11, 2, 0, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1], [0, 1, 9, 2, 3, 11, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1], [5, 10, 6, 1, 9, 2, 9, 11, 2, 9, 8, 11, -1, -1, -1, -1], [6, 3, 11, 6, 5, 3, 5, 1, 3, -1, -1, -1, -1, -1, -1, -1], [0, 8, 11, 0, 11, 5, 0, 5, 1, 5, 11, 6, -1, -1, -1, -1], [3, 11, 6, 0, 3, 6, 0, 6, 5, 0, 5, 9, -1, -1, -1, -1], [6, 5, 9, 6, 9, 11, 11, 9, 8, -1, -1, -1, -1, -1, -1, -1], [5, 10, 6, 4, 7, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 3, 0, 4, 7, 3, 6, 5, 10, -1, -1, -1, -1, -1, -1, -1], [1, 9, 0, 5, 10, 6, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1], [10, 6, 5, 1, 9, 7, 1, 7, 3, 7, 9, 4, -1, -1, -1, -1], [6, 1, 2, 6, 5, 1, 4, 7, 8, -1, -1, -1, -1, -1, -1, -1], [1, 2, 5, 5, 2, 6, 3, 0, 4, 3, 4, 7, -1, -1, -1, -1], [8, 4, 7, 9, 0, 5, 0, 6, 5, 0, 2, 6, -1, -1, -1, -1], [7, 3, 9, 7, 9, 4, 3, 2, 9, 5, 9, 6, 2, 6, 9, -1], [3, 11, 2, 7, 8, 4, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1], [5, 10, 6, 4, 7, 2, 4, 2, 0, 2, 7, 11, -1, -1, -1, -1], [0, 1, 9, 4, 7, 8, 2, 3, 11, 5, 10, 6, -1, -1, -1, -1], [9, 2, 1, 9, 11, 2, 9, 4, 11, 7, 11, 4, 5, 10, 6, -1], [8, 4, 7, 3, 11, 5, 3, 5, 1, 5, 11, 6, -1, -1, -1, -1], [5, 1, 11, 5, 11, 6, 1, 0, 11, 7, 11, 4, 0, 4, 11, -1], [0, 5, 9, 0, 6, 5, 0, 3, 6, 11, 6, 3, 8, 4, 7, -1], [6, 5, 9, 6, 9, 11, 4, 7, 9, 7, 11, 9, -1, -1, -1, -1], [10, 4, 9, 6, 4, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 10, 6, 4, 9, 10, 0, 8, 3, -1, -1, -1, -1, -1, -1, -1], [10, 0, 1, 10, 6, 0, 6, 4, 0, -1, -1, -1, -1, -1, -1, -1], [8, 3, 1, 8, 1, 6, 8, 6, 4, 6, 1, 10, -1, -1, -1, -1], [1, 4, 9, 1, 2, 4, 2, 6, 4, -1, -1, -1, -1, -1, -1, -1], [3, 0, 8, 1, 2, 9, 2, 4, 9, 2, 6, 4, -1, -1, -1, -1], [0, 2, 4, 4, 2, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [8, 3, 2, 8, 2, 4, 4, 2, 6, -1, -1, -1, -1, -1, -1, -1], [10, 4, 9, 10, 6, 4, 11, 2, 3, -1, -1, -1, -1, -1, -1, -1], [0, 8, 2, 2, 8, 11, 4, 9, 10, 4, 10, 6, -1, -1, -1, -1], [3, 11, 2, 0, 1, 6, 0, 6, 4, 6, 1, 10, -1, -1, -1, -1], [6, 4, 1, 6, 1, 10, 4, 8, 1, 2, 1, 11, 8, 11, 1, -1], [9, 6, 4, 9, 3, 6, 9, 1, 3, 11, 6, 3, -1, -1, -1, -1], [8, 11, 1, 8, 1, 0, 11, 6, 1, 9, 1, 4, 6, 4, 1, -1], [3, 11, 6, 3, 6, 0, 0, 6, 4, -1, -1, -1, -1, -1, -1, -1], [6, 4, 8, 11, 6, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [7, 10, 6, 7, 8, 10, 8, 9, 10, -1, -1, -1, -1, -1, -1, -1], [0, 7, 3, 0, 10, 7, 0, 9, 10, 6, 7, 10, -1, -1, -1, -1], [10, 6, 7, 1, 10, 7, 1, 7, 8, 1, 8, 0, -1, -1, -1, -1], [10, 6, 7, 10, 7, 1, 1, 7, 3, -1, -1, -1, -1, -1, -1, -1], [1, 2, 6, 1, 6, 8, 1, 8, 9, 8, 6, 7, -1, -1, -1, -1], [2, 6, 9, 2, 9, 1, 6, 7, 9, 0, 9, 3, 7, 3, 9, -1], [7, 8, 0, 7, 0, 6, 6, 0, 2, -1, -1, -1, -1, -1, -1, -1], [7, 3, 2, 6, 7, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [2, 3, 11, 10, 6, 8, 10, 8, 9, 8, 6, 7, -1, -1, -1, -1], [2, 0, 7, 2, 7, 11, 0, 9, 7, 6, 7, 10, 9, 10, 7, -1], [1, 8, 0, 1, 7, 8, 1, 10, 7, 6, 7, 10, 2, 3, 11, -1], [11, 2, 1, 11, 1, 7, 10, 6, 1, 6, 7, 1, -1, -1, -1, -1], [8, 9, 6, 8, 6, 7, 9, 1, 6, 11, 6, 3, 1, 3, 6, -1], [0, 9, 1, 11, 6, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [7, 8, 0, 7, 0, 6, 3, 11, 0, 11, 6, 0, -1, -1, -1, -1], [7, 11, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [7, 6, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [3, 0, 8, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 1, 9, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [8, 1, 9, 8, 3, 1, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1], [10, 1, 2, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 2, 10, 3, 0, 8, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1], [2, 9, 0, 2, 10, 9, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1], [6, 11, 7, 2, 10, 3, 10, 8, 3, 10, 9, 8, -1, -1, -1, -1], [7, 2, 3, 6, 2, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [7, 0, 8, 7, 6, 0, 6, 2, 0, -1, -1, -1, -1, -1, -1, -1], [2, 7, 6, 2, 3, 7, 0, 1, 9, -1, -1, -1, -1, -1, -1, -1], [1, 6, 2, 1, 8, 6, 1, 9, 8, 8, 7, 6, -1, -1, -1, -1], [10, 7, 6, 10, 1, 7, 1, 3, 7, -1, -1, -1, -1, -1, -1, -1], [10, 7, 6, 1, 7, 10, 1, 8, 7, 1, 0, 8, -1, -1, -1, -1], [0, 3, 7, 0, 7, 10, 0, 10, 9, 6, 10, 7, -1, -1, -1, -1], [7, 6, 10, 7, 10, 8, 8, 10, 9, -1, -1, -1, -1, -1, -1, -1], [6, 8, 4, 11, 8, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [3, 6, 11, 3, 0, 6, 0, 4, 6, -1, -1, -1, -1, -1, -1, -1], [8, 6, 11, 8, 4, 6, 9, 0, 1, -1, -1, -1, -1, -1, -1, -1], [9, 4, 6, 9, 6, 3, 9, 3, 1, 11, 3, 6, -1, -1, -1, -1], [6, 8, 4, 6, 11, 8, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1], [1, 2, 10, 3, 0, 11, 0, 6, 11, 0, 4, 6, -1, -1, -1, -1], [4, 11, 8, 4, 6, 11, 0, 2, 9, 2, 10, 9, -1, -1, -1, -1], [10, 9, 3, 10, 3, 2, 9, 4, 3, 11, 3, 6, 4, 6, 3, -1], [8, 2, 3, 8, 4, 2, 4, 6, 2, -1, -1, -1, -1, -1, -1, -1], [0, 4, 2, 4, 6, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 9, 0, 2, 3, 4, 2, 4, 6, 4, 3, 8, -1, -1, -1, -1], [1, 9, 4, 1, 4, 2, 2, 4, 6, -1, -1, -1, -1, -1, -1, -1], [8, 1, 3, 8, 4, 1, 4, 6, 1, 6, 10, 1, -1, -1, -1, -1], [10, 1, 0, 10, 0, 6, 6, 0, 4, -1, -1, -1, -1, -1, -1, -1], [4, 6, 3, 4, 3, 8, 6, 10, 3, 0, 3, 9, 10, 9, 3, -1], [10, 9, 4, 6, 10, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 9, 5, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 8, 3, 4, 9, 5, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1], [5, 0, 1, 5, 4, 0, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1], [11, 7, 6, 8, 3, 4, 3, 5, 4, 3, 1, 5, -1, -1, -1, -1], [9, 5, 4, 10, 1, 2, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1], [6, 11, 7, 1, 2, 10, 0, 8, 3, 4, 9, 5, -1, -1, -1, -1], [7, 6, 11, 5, 4, 10, 4, 2, 10, 4, 0, 2, -1, -1, -1, -1], [3, 4, 8, 3, 5, 4, 3, 2, 5, 10, 5, 2, 11, 7, 6, -1], [7, 2, 3, 7, 6, 2, 5, 4, 9, -1, -1, -1, -1, -1, -1, -1], [9, 5, 4, 0, 8, 6, 0, 6, 2, 6, 8, 7, -1, -1, -1, -1], [3, 6, 2, 3, 7, 6, 1, 5, 0, 5, 4, 0, -1, -1, -1, -1], [6, 2, 8, 6, 8, 7, 2, 1, 8, 4, 8, 5, 1, 5, 8, -1], [9, 5, 4, 10, 1, 6, 1, 7, 6, 1, 3, 7, -1, -1, -1, -1], [1, 6, 10, 1, 7, 6, 1, 0, 7, 8, 7, 0, 9, 5, 4, -1], [4, 0, 10, 4, 10, 5, 0, 3, 10, 6, 10, 7, 3, 7, 10, -1], [7, 6, 10, 7, 10, 8, 5, 4, 10, 4, 8, 10, -1, -1, -1, -1], [6, 9, 5, 6, 11, 9, 11, 8, 9, -1, -1, -1, -1, -1, -1, -1], [3, 6, 11, 0, 6, 3, 0, 5, 6, 0, 9, 5, -1, -1, -1, -1], [0, 11, 8, 0, 5, 11, 0, 1, 5, 5, 6, 11, -1, -1, -1, -1], [6, 11, 3, 6, 3, 5, 5, 3, 1, -1, -1, -1, -1, -1, -1, -1], [1, 2, 10, 9, 5, 11, 9, 11, 8, 11, 5, 6, -1, -1, -1, -1], [0, 11, 3, 0, 6, 11, 0, 9, 6, 5, 6, 9, 1, 2, 10, -1], [11, 8, 5, 11, 5, 6, 8, 0, 5, 10, 5, 2, 0, 2, 5, -1], [6, 11, 3, 6, 3, 5, 2, 10, 3, 10, 5, 3, -1, -1, -1, -1], [5, 8, 9, 5, 2, 8, 5, 6, 2, 3, 8, 2, -1, -1, -1, -1], [9, 5, 6, 9, 6, 0, 0, 6, 2, -1, -1, -1, -1, -1, -1, -1], [1, 5, 8, 1, 8, 0, 5, 6, 8, 3, 8, 2, 6, 2, 8, -1], [1, 5, 6, 2, 1, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 3, 6, 1, 6, 10, 3, 8, 6, 5, 6, 9, 8, 9, 6, -1], [10, 1, 0, 10, 0, 6, 9, 5, 0, 5, 6, 0, -1, -1, -1, -1], [0, 3, 8, 5, 6, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [10, 5, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [11, 5, 10, 7, 5, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [11, 5, 10, 11, 7, 5, 8, 3, 0, -1, -1, -1, -1, -1, -1, -1], [5, 11, 7, 5, 10, 11, 1, 9, 0, -1, -1, -1, -1, -1, -1, -1], [10, 11, 7, 10, 7, 5, 9, 8, 1, 8, 3, 1, -1, -1, -1, -1], [11, 1, 2, 11, 7, 1, 7, 5, 1, -1, -1, -1, -1, -1, -1, -1], [0, 8, 3, 1, 2, 7, 1, 7, 5, 7, 2, 11, -1, -1, -1, -1], [9, 7, 5, 9, 2, 7, 9, 0, 2, 2, 11, 7, -1, -1, -1, -1], [7, 5, 2, 7, 2, 11, 5, 9, 2, 3, 2, 8, 9, 8, 2, -1], [2, 5, 10, 2, 3, 5, 3, 7, 5, -1, -1, -1, -1, -1, -1, -1], [8, 2, 0, 8, 5, 2, 8, 7, 5, 10, 2, 5, -1, -1, -1, -1], [9, 0, 1, 5, 10, 3, 5, 3, 7, 3, 10, 2, -1, -1, -1, -1], [9, 8, 2, 9, 2, 1, 8, 7, 2, 10, 2, 5, 7, 5, 2, -1], [1, 3, 5, 3, 7, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 8, 7, 0, 7, 1, 1, 7, 5, -1, -1, -1, -1, -1, -1, -1], [9, 0, 3, 9, 3, 5, 5, 3, 7, -1, -1, -1, -1, -1, -1, -1], [9, 8, 7, 5, 9, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [5, 8, 4, 5, 10, 8, 10, 11, 8, -1, -1, -1, -1, -1, -1, -1], [5, 0, 4, 5, 11, 0, 5, 10, 11, 11, 3, 0, -1, -1, -1, -1], [0, 1, 9, 8, 4, 10, 8, 10, 11, 10, 4, 5, -1, -1, -1, -1], [10, 11, 4, 10, 4, 5, 11, 3, 4, 9, 4, 1, 3, 1, 4, -1], [2, 5, 1, 2, 8, 5, 2, 11, 8, 4, 5, 8, -1, -1, -1, -1], [0, 4, 11, 0, 11, 3, 4, 5, 11, 2, 11, 1, 5, 1, 11, -1], [0, 2, 5, 0, 5, 9, 2, 11, 5, 4, 5, 8, 11, 8, 5, -1], [9, 4, 5, 2, 11, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [2, 5, 10, 3, 5, 2, 3, 4, 5, 3, 8, 4, -1, -1, -1, -1], [5, 10, 2, 5, 2, 4, 4, 2, 0, -1, -1, -1, -1, -1, -1, -1], [3, 10, 2, 3, 5, 10, 3, 8, 5, 4, 5, 8, 0, 1, 9, -1], [5, 10, 2, 5, 2, 4, 1, 9, 2, 9, 4, 2, -1, -1, -1, -1], [8, 4, 5, 8, 5, 3, 3, 5, 1, -1, -1, -1, -1, -1, -1, -1], [0, 4, 5, 1, 0, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [8, 4, 5, 8, 5, 3, 9, 0, 5, 0, 3, 5, -1, -1, -1, -1], [9, 4, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 11, 7, 4, 9, 11, 9, 10, 11, -1, -1, -1, -1, -1, -1, -1], [0, 8, 3, 4, 9, 7, 9, 11, 7, 9, 10, 11, -1, -1, -1, -1], [1, 10, 11, 1, 11, 4, 1, 4, 0, 7, 4, 11, -1, -1, -1, -1], [3, 1, 4, 3, 4, 8, 1, 10, 4, 7, 4, 11, 10, 11, 4, -1], [4, 11, 7, 9, 11, 4, 9, 2, 11, 9, 1, 2, -1, -1, -1, -1], [9, 7, 4, 9, 11, 7, 9, 1, 11, 2, 11, 1, 0, 8, 3, -1], [11, 7, 4, 11, 4, 2, 2, 4, 0, -1, -1, -1, -1, -1, -1, -1], [11, 7, 4, 11, 4, 2, 8, 3, 4, 3, 2, 4, -1, -1, -1, -1], [2, 9, 10, 2, 7, 9, 2, 3, 7, 7, 4, 9, -1, -1, -1, -1], [9, 10, 7, 9, 7, 4, 10, 2, 7, 8, 7, 0, 2, 0, 7, -1], [3, 7, 10, 3, 10, 2, 7, 4, 10, 1, 10, 0, 4, 0, 10, -1], [1, 10, 2, 8, 7, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 9, 1, 4, 1, 7, 7, 1, 3, -1, -1, -1, -1, -1, -1, -1], [4, 9, 1, 4, 1, 7, 0, 8, 1, 8, 7, 1, -1, -1, -1, -1], [4, 0, 3, 7, 4, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [4, 8, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [9, 10, 8, 10, 11, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [3, 0, 9, 3, 9, 11, 11, 9, 10, -1, -1, -1, -1, -1, -1, -1], [0, 1, 10, 0, 10, 8, 8, 10, 11, -1, -1, -1, -1, -1, -1, -1], [3, 1, 10, 11, 3, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 2, 11, 1, 11, 9, 9, 11, 8, -1, -1, -1, -1, -1, -1, -1], [3, 0, 9, 3, 9, 11, 1, 2, 9, 2, 11, 9, -1, -1, -1, -1], [0, 2, 11, 8, 0, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [3, 2, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [2, 3, 8, 2, 8, 10, 10, 8, 9, -1, -1, -1, -1, -1, -1, -1], [9, 10, 2, 0, 9, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [2, 3, 8, 2, 8, 10, 0, 1, 8, 1, 10, 8, -1, -1, -1, -1], [1, 10, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [1, 3, 8, 9, 1, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 9, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]];
-var Bt = Uint32Array.from(Qe.flat(), (i) => i >>> 0);
-var Et = { name: "Bourke", corners: St, edges: zt, maxVertices: 15, table: Bt, cornerBit: (i) => 1 << i, createPolygonizer() {
+var Ut = Uint32Array.from(Qe.flat(), (i) => i >>> 0);
+var At = { name: "Bourke", corners: Bt, edges: Et, maxVertices: 15, table: Ut, cornerBit: (i) => 1 << i, createPolygonizer() {
   return (i, e, t) => {
     let s = Qe[e], r = 0;
     for (; r < 15 && s[r] >= 0; ) t[r] = s[r], r++;
     return r;
   };
 } };
-var be = Et;
-var Ut = new Uint32Array([0, 2181, 2182, 2197, 2179, 6166, 2205, 2371, 2180, 2199, 6164, 2326, 2193, 2380, 2335, 1167, 2178, 2203, 6152, 2356, 10243, 14359, 14356, 1317, 6158, 2344, 18434, 1181, 14357, 1345, 24580, 272, 2177, 6154, 2201, 2338, 6150, 18432, 2323, 1177, 10242, 14350, 14353, 1341, 14349, 24578, 1313, 269, 2187, 2374, 2359, 1171, 14355, 24579, 1349, 302, 14351, 1329, 24586, 284, 20481, 12289, 12297, 135, 2176, 10241, 6148, 14343, 2191, 14347, 2347, 1337, 6146, 14342, 18438, 24577, 2341, 1309, 1173, 266, 6162, 14346, 18437, 24585, 14358, 20482, 24584, 12304, 18433, 24576, 28672, 16387, 24582, 12292, 16391, 4112, 2185, 14344, 2362, 1325, 2377, 24581, 1169, 305, 14348, 20480, 24587, 12306, 1353, 12290, 281, 141, 2311, 1333, 1185, 317, 1321, 12293, 320, 147, 24583, 12288, 16388, 4096, 12291, 8192, 4108, 127, 896, 265, 538, 2866, 2373, 1864, 1974, 1701, 4489, 312, 4762, 146, 6970, 794, 4784, 2944, 4165, 261, 6517, 2439, 4928, 884, 7077, 1973, 5254, 2920, 5653, 534, 5926, 1842, 5226, 2378, 6469, 56, 4361, 1864, 5797, 265, 6469, 538, 5797, 811, 6070, 538, 6070, 56, 6962, 1864, 4634, 56, 6962, 265, 5797, 2164, 6469, 1974, 6405, 4149, 5203, 2115, 6516, 6423, 6257, 129, 5637, 6480, 4458, 262, 6725, 6466, 4682, 402, 5029, 6998, 4906, 2869, 4518, 6066, 4631, 1649, 6022, 6150, 7008, 944, 6196, 4900, 5954, 2930, 4666, 5002, 4520, 24, 4393, 4793, 4251, 779, 5285, 6790, 5258, 1896, 7013, 6036, 6073, 1435, 5797, 896, 6070, 265, 4634, 1864, 6469, 2866, 4261, 6149, 6243, 5765, 5795, 928, 6038, 4534, 4457, 6512, 6064, 177, 5962, 6050, 6258, 6721, 5249, 386, 4789, 6964, 6467, 5556, 5522, 659, 7066, 6448, 2483, 6154, 4122, 2954, 6299, 6930, 2961, 4746, 4994, 2472, 4678, 5145, 1057, 6309, 5253, 2984, 4134, 4199, 120, 6213, 5432, 309, 5994, 6791, 2442, 5909, 4530, 379, 4469, 5896, 1808, 5158, 6194, 584, 4202, 5216, 266, 4425, 4468, 881, 5163, 5963, 36, 4773, 5426, 1845, 5685, 4971, 339, 5781, 5641, 518, 6453, 5008, 1875, 5046, 4960, 1030, 6586, 6068, 2964, 6054, 5914, 791, 6693, 4677, 66, 6501, 6582, 2233, 5226, 6804, 896, 5797, 4489, 312, 5797, 6155, 43, 7077, 5499, 56, 5653, 5665, 2051, 5797, 4148, 884, 6326, 5704, 265, 7077, 6069, 265, 4762, 6070, 146, 6070, 4489, 312, 5926, 5938, 265, 4165, 6070, 261, 4762, 4617, 1864, 6517, 4634, 2169, 5254, 4634, 2230, 4890, 6970, 2164, 4634, 4980, 1027, 5653, 4630, 2164, 6469, 4784, 2944, 6469, 6970, 794, 5226, 6474, 811, 6517, 6535, 691, 4165, 5392, 2866, 6469, 5926, 1842, 4970, 6410, 4244, 6148, 5764, 4998, 928, 6293, 4517, 4970, 5521, 5025, 6243, 2134, 4261, 6838, 4138, 6699, 6251, 5480, 88, 4261, 6021, 6267, 5003, 6715, 4154, 88, 5765, 4662, 4897, 4145, 5377, 6149, 2147, 4261, 5206, 4982, 5748, 4180, 5024, 2614, 5270, 6472, 4248, 6920, 4363, 5659, 361, 6037, 4517, 4538, 6421, 4247, 6919, 177, 6566, 5794, 7010, 4274, 6064, 6512, 1942, 6038, 4411, 6968, 6072, 6520, 4457, 438, 6038, 5936, 4146, 4354, 5650, 6422, 2416, 4453, 5957, 5974, 5892, 7009, 4273, 2823, 5274, 4616, 6153, 5257, 5962, 4730, 1832, 6565, 5978, 4521, 6169, 4632, 5928, 634, 5286, 6322, 4790, 6694, 4516, 6164, 386, 5146, 7034, 6067, 6259, 4483, 5249, 1191, 5146, 4116, 4355, 4627, 5923, 6695, 1191, 5701, 5141, 5958, 4726, 6258, 4482, 2068, 6437, 7044, 5248, 6464, 4752, 6994, 1460, 6565, 4889, 6426, 7002, 5211, 4939, 1081, 7018, 6982, 4794, 6442, 4905, 5177, 843, 4789, 5016, 4999, 6967, 5559, 6437, 659, 6981, 4389, 4624, 4896, 5168, 6964, 2898, 4709, 5492, 5479, 4935, 6467, 4755, 2341, 4970, 6410, 5024, 5764, 902, 5765, 4970, 6293, 4410, 2147, 4261, 6230, 4138, 6251, 88, 4261, 6021, 4184, 6715, 58, 5765, 4662, 6243, 5377, 2053, 4261, 6710, 4180, 4982, 928, 5270, 4457, 6920, 4363, 1563, 6037, 4538, 4273, 4247, 2823, 6566, 6038, 4274, 6064, 2416, 6038, 4411, 5659, 6520, 361, 6038, 4390, 5936, 6512, 2326, 4453, 5892, 6919, 7009, 177, 5274, 4616, 5928, 5962, 634, 6773, 4730, 6169, 4632, 1832, 5286, 6322, 4482, 4516, 2068, 5962, 7034, 4483, 5249, 2625, 5146, 4116, 5923, 6695, 1191, 5141, 4726, 6164, 6258, 386, 6437, 7044, 5556, 4752, 2898, 6837, 4889, 5177, 5211, 843, 6982, 6442, 4939, 4905, 1081, 4789, 5016, 4755, 5559, 2341, 4789, 4389, 5168, 6964, 1460, 4709, 6437, 5940, 6467, 659, 6469, 4634, 1974, 4787, 6260, 265, 5797, 6962, 2164, 6469, 4634, 56, 6469, 6070, 56, 5797, 6962, 265, 5797, 4361, 1864, 4634, 6070, 896, 7013, 6581, 4634, 6036, 2967, 7058, 6260, 6960, 6576, 2322, 5285, 6790, 6962, 6262, 2212, 6469, 5002, 6145, 6785, 2595, 7013, 4992, 6036, 7063, 2485, 5797, 4393, 7058, 6960, 2480, 5285, 6262, 4361, 6308, 2694, 6070, 4666, 6307, 6145, 2689, 6725, 6070, 4682, 4633, 1065, 4361, 5251, 4675, 4791, 1063, 5797, 4724, 4791, 5251, 579, 6725, 4152, 4633, 5161, 586, 6469, 6150, 5752, 4155, 1547, 5637, 4245, 4458, 4907, 97, 5637, 4245, 4458, 5960, 97, 6022, 4634, 4155, 5643, 104, 6469, 4518, 5910, 6066, 370, 4907, 5961, 4360, 5912, 377, 5029, 6998, 5960, 4955, 810, 6405, 4634, 4944, 4996, 1332, 6405, 5428, 6070, 4996, 848, 5029, 6998, 4361, 4906, 859, 5797, 5961, 4473, 4360, 1816, 4518, 4992, 6066, 4466, 1814, 7269, 7258, 6084, 7291, 7316, 7193, 7201, 7330, 3254, 7284, 7351, 7211, 4553, 7186, 7177, 7216, 7299, 3144, 7333, 7274, 7218, 7299, 7240, 7252, 7286, 7351, 3115, 6853, 7224, 7203, 7330, 7237, 7316, 7193, 7169, 3200, 7269, 6597, 7350, 7227, 7171, 7296, 6084, 7288, 3220, 5829, 7274, 7317, 7177, 7216, 7347, 7211, 7186, 3233, 7317, 7274, 7184, 7329, 7240, 7286, 7303, 7252, 3081, 7194, 6086, 7169, 7296, 7288, 7350, 7227, 7203, 3234, 7269, 7334, 7257, 4546, 7346, 6084, 7291, 7316, 3098, 7211, 4553, 7186, 7241, 7284, 7303, 7176, 7216, 3251, 7333, 7252, 7286, 7240, 7210, 7218, 7347, 7275, 3207, 7237, 4810, 7300, 7224, 7203, 7257, 7194, 7169, 3216, 7269, 7171, 7312, 7257, 7350, 6084, 7291, 7300, 3128, 7333, 7254, 7177, 7216, 7347, 7275, 7210, 7186, 3217, 7333, 7274, 7252, 7286, 7303, 7176, 4553, 7184, 3145, 7334, 6086, 7194, 7169, 7296, 7224, 7203, 7346, 3195, 6853, 7334, 7316, 7193, 7201, 7346, 7291, 7271, 3141, 7211, 4553, 7241, 7284, 7351, 7218, 7299, 7176, 3088, 7333, 7254, 7210, 7218, 7299, 7240, 7284, 7351, 3179, 6853, 4810, 7237, 7300, 7224, 7171, 7312, 7193, 3105, 7237, 7350, 7227, 7171, 7312, 7257, 7300, 7288, 3175, 5829, 7210, 5067, 7275, 7317, 7177, 7184, 7329, 3122, 5829, 7274, 7317, 7284, 6088, 7176, 7184, 7329, 3145, 7334, 7296, 7288, 7271, 7194, 7201, 7346, 7227, 3075, 6757, 5145, 4530, 6068, 1201, 5963, 4425, 4785, 4532, 2096, 4773, 5253, 7030, 6194, 1410, 6693, 4664, 5208, 5416, 25, 6501, 5008, 7011, 5779, 1924, 5781, 4394, 4243, 6966, 918, 5269, 5994, 4362, 6256, 1952, 6054, 6016, 4512, 6768, 946, 5221, 5209, 4634, 6834, 7078, 6070, 5238, 5537, 2385, 4228, 5960, 6327, 7043, 4787, 4361, 4400, 4387, 2308, 5797, 4907, 7043, 6260, 6327, 5494, 5447, 5810, 2658, 6469, 4442, 4152, 4131, 4609, 6689, 5401, 6408, 1176, 5221, 4992, 6288, 6532, 5524, 5703, 7015, 6019, 2931, 5797, 6805, 6561, 4241, 4882, 4865, 6962, 4774, 2854, 5797, 4361, 6561, 6805, 5972, 5989, 6260, 5264, 2112, 7078, 4992, 4984, 5947, 5755, 6834, 4514, 4656, 288, 7066, 2488, 5158, 36, 4981, 309, 6054, 4480, 6017, 2673, 6978, 4393, 5266, 1207, 6709, 5026, 6227, 1412, 6501, 5040, 4278, 105, 5226, 6474, 4136, 2091, 6053, 4489, 4993, 1978, 5669, 4928, 5955, 1313, 6214, 6410, 6251, 42, 6037, 4538, 6025, 945, 4117, 4662, 5440, 1891, 4714, 4137, 4777, 7010, 5816, 5224, 5257, 2057, 6565, 6025, 6487, 4521, 6675, 7075, 6967, 903, 5125, 5974, 4117, 4129, 4896, 4663, 5671, 1861, 5226, 6804, 6404, 5128, 7040, 6914, 6834, 2667, 7077, 4489, 4408, 5048, 6327, 5499, 4442, 405, 5221, 4438, 5665, 4657, 4400, 5123, 5175, 1607, 6602, 6854, 6412, 4140, 4796, 6347, 6220, 1132, 7317, 7354, 7291, 7255, 6600, 7224, 7187, 458, 7189, 4806, 7201, 5317, 7286, 6083, 7171, 3136, 7238, 7210, 7316, 7337, 4800, 7296, 7352, 3014, 7333, 6085, 7354, 7227, 4553, 5057, 7305, 2247, 5829, 4806, 4668, 5964, 4988, 4292, 4124, 348, 5813, 7040, 5552, 336, 6022, 4489, 4390, 1665, 4762, 6516, 6034, 882, 5285, 5050, 5028, 832, 6517, 6402, 6439, 1835, 4458, 6214, 6241, 2067, 5994, 6800, 6048, 880, 6938, 4416, 4532, 1867, 4389, 4741, 4792, 1112, 5781, 4662, 5014, 905, 5270, 4409, 4969, 1595, 4773, 6021, 6181, 2050, 4678, 4498, 5161, 56, 6469, 6170, 4480, 2954, 5797, 4393, 7058, 2203, 5797, 5961, 4473, 881, 4666, 6070, 6307, 2472, 5797, 4724, 5931, 36, 5909, 6066, 4466, 896, 6586, 6036, 7063, 2051, 5126, 4634, 4155, 1547, 6405, 4634, 4944, 1875, 4933, 6070, 4996, 309, 6469, 6022, 4200, 608, 4678, 4996, 4930, 400, 6725, 5288, 6315, 25, 5813, 5561, 4394, 2488, 5269, 4458, 5655, 1811, 6022, 5770, 6793, 571, 5285, 7030, 6722, 576, 5909, 4480, 6167, 2851, 6586, 5040, 4281, 1924, 4518, 4448, 4196, 946, 6709, 4666, 5431, 25, 7013, 6995, 4945, 1924, 4197, 6405, 5634, 1924, 6214, 6472, 6528, 6401, 6243, 4962, 4402, 259, 6837, 4441, 4517, 4496, 5556, 5304, 4168, 148, 5765, 4714, 5513, 4517, 4790, 5816, 4769, 345, 6565, 6710, 6426, 6675, 6484, 5687, 5223, 1110, 4714, 5944, 4987, 6025, 5042, 6038, 5786, 694, 4261, 7018, 5957, 5974, 5440, 5995, 6658, 2978, 4117, 4354, 4611, 4667, 4184, 6231, 7047, 2872, 5050, 6020, 4987, 5944, 5024, 4265, 5129, 1152, 7018, 7074, 6756, 6947, 6721, 4416, 4880, 801, 6565, 4896, 4129, 4663, 4121, 4730, 6773, 2330, 4453, 5206, 5223, 5240, 5659, 6931, 6323, 2171, 4709, 6153, 6292, 6402, 6215, 6437, 5974, 1861, 6470, 4882, 4115, 5665, 6147, 6497, 5272, 2312, 6469, 4442, 4228, 6404, 7040, 4528, 6833, 405, 5797, 4501, 6677, 6289, 4737, 7042, 6950, 678, 5797, 5988, 5446, 4980, 6452, 4409, 4506, 2394, 4774, 6950, 6562, 6070, 5010, 6291, 6199, 951, 5797, 6954, 5818, 4139, 5972, 5899, 5127, 1893, 6949, 6027, 5048, 5499, 4152, 4434, 4384, 560, 6474, 5264, 6208, 4992, 6052, 7079, 7027, 1923, 7078, 4400, 4657, 5123, 6689, 6979, 5707, 2858, 6805, 4506, 5977, 4634, 4217, 4976, 4866, 18, 5221, 5048, 6027, 4408, 5755, 5144, 5396, 1142, 6469, 5989, 5972, 4711, 6183, 4136, 4233, 2121, 4806, 7193, 4544, 5058, 6156, 6339, 6476, 1132, 6853, 4508, 5321, 5212, 6844, 4296, 7052, 448, 7333, 5484, 4780, 5820, 7052, 4553, 6300, 705, 7333, 6854, 5317, 5831, 4988, 4553, 4412, 2500, 4810, 7350, 5052, 6028, 5756, 6300, 6572, 962, 7333, 5452, 5996, 6854, 5132, 7106, 4140, 1995, 7189, 4668, 4124, 6339, 6156, 7111, 5500, 715, 7354, 7224, 6084, 7111, 7300, 7312, 7337, 960, 5834, 4546, 7171, 4811, 7227, 7232, 7268, 2753, 6853, 7193, 4546, 5056, 4297, 7223, 7285, 714, 7237, 6086, 6028, 7107, 5835, 4412, 5404, 1224, 7237, 7206, 6220, 6412, 5532, 4140, 6086, 2247, 5228, 6412, 6220, 5056, 5004, 4546, 5676, 2497, 7237, 4297, 5320, 5532, 7052, 4524, 6844, 448, 5829, 5804, 5577, 4554, 6300, 4796, 7052, 705, 5829, 5804, 6492, 6684, 4412, 7284, 4988, 2500, 5834, 4811, 6076, 6086, 6572, 5004, 6300, 962, 5829, 5578, 7110, 6850, 4140, 5964, 5132, 1995, 6085, 7227, 6343, 4156, 4296, 4636, 4444, 715, 6602, 7296, 7316, 6343, 7239, 7107, 7354, 960, 4810, 7350, 7203, 7107, 7268, 7169, 7232, 2753, 6597, 7194, 4544, 7312, 7285, 5058, 7223, 714, 7269, 6084, 7111, 7020, 5404, 6339, 4412, 1224, 7269, 6084, 6476, 6597, 4716, 6156, 4140, 2247, 6469, 4634, 6070, 896, 6757, 4496, 6947, 1924, 7013, 7001, 4634, 4992, 6036, 2967, 6469, 6070, 6170, 6145, 6712, 2595, 6469, 4634, 4278, 4155, 5760, 1656, 6469, 4518, 4152, 4466, 6066, 359, 6725, 6070, 4992, 5161, 4633, 1186, 6757, 6036, 4503, 5042, 6167, 2049, 6405, 4634, 4933, 6070, 4944, 900, 4197, 5520, 4518, 6020, 6947, 22, 7013, 4954, 6020, 4121, 6995, 2595, 6757, 4496, 4930, 4996, 5234, 1970, 6757, 6020, 4281, 4155, 6953, 537, 6725, 6310, 4496, 5042, 5288, 1656, 7269, 7257, 4634, 5321, 4296, 7288, 7239, 7227, 5835, 3075, 6469, 7334, 5056, 4546, 7346, 7227, 7296, 7288, 6086, 3098, 7269, 7334, 6597, 4524, 7201, 7346, 6084, 7111, 7316, 2051, 6469, 4810, 7350, 7227, 7203, 7194, 7169, 7288, 4296, 3175, 7269, 6764, 6084, 5532, 6476, 6028, 6156, 4524, 4544, 946, 6469, 7334, 6076, 6339, 7203, 7346, 7271, 7169, 6849, 3200, 7269, 7258, 7350, 4810, 6084, 7291, 7193, 5321, 7201, 56, 6853, 7334, 7237, 6086, 7316, 7193, 7346, 4546, 7291, 896, 6757, 7227, 6084, 6343, 6156, 4156, 6956, 7193, 4636, 2380, 6853, 7237, 6070, 4296, 5321, 7193, 7169, 7224, 7203, 714, 6757, 4508, 4544, 5058, 5004, 6156, 6476, 6076, 6084, 2860, 6853, 6764, 7193, 6476, 5212, 5756, 6156, 6343, 4124, 2851, 7269, 5834, 4811, 5532, 4636, 4524, 4156, 4297, 5052, 1924, 7237, 6086, 7257, 4634, 7300, 7288, 7350, 7227, 7312, 960, 7269, 6597, 4634, 7224, 6084, 7111, 7300, 7171, 7312, 3254, 7237, 5834, 4297, 5320, 5532, 4124, 4524, 5756, 6028, 571, 7269, 4810, 5058, 5532, 4544, 4524, 5052, 7020, 6412, 1924, 6597, 4810, 7237, 6070, 6849, 7169, 7312, 7300, 7203, 2243, 6757, 5320, 4297, 4156, 5004, 5244, 6076, 4636, 4811, 412, 6853, 5572, 6070, 7193, 4546, 5056, 7312, 7330, 7300, 3128, 6853, 7020, 7193, 6700, 4636, 6412, 4156, 7107, 5724, 1924, 6853, 5834, 4811, 5212, 5756, 6076, 4668, 5004, 5320, 25, 7269, 5548, 6084, 6076, 7020, 6700, 5004, 5058, 6220, 400, 6853, 7020, 5212, 7288, 7107, 5756, 6220, 6700, 4668, 25, 7269, 7258, 7312, 7171, 7224, 7300, 7239, 7291, 7350, 7330, 7201, 3097, 6853, 6764, 5004, 4668, 6956, 5212, 6076, 5756, 6476, 4508, 4124, 2060, 7269, 7334, 7346, 7257, 7201, 7194, 7316, 7239, 7288, 7296, 7171, 3131, 7237, 7020, 5532, 4524, 4124, 6412, 6220, 6028, 5756, 5052, 4668, 2604, 6757, 6020, 7047, 6323, 6148, 4244, 4496, 4880, 4627, 2851, 6469, 4442, 6070, 4992, 4866, 4114, 6408, 5272, 6481, 2593, 6757, 6565, 6801, 6694, 4790, 5042, 4402, 4145, 6401, 1924, 6469, 7078, 4992, 6199, 5047, 4656, 4384, 4634, 4779, 1659, 5221, 7078, 5401, 4634, 4779, 5537, 5524, 5238, 6070, 2051, 6757, 5042, 6323, 5492, 7047, 7010, 5794, 5974, 6215, 400, 5221, 5209, 4634, 4992, 4233, 6217, 6019, 7027, 6070, 1892, 6757, 4496, 6801, 6565, 6464, 5248, 6020, 5492, 5749, 946, 6757, 4992, 4633, 6466, 5298, 1972, 6709, 5508, 6070, 4496, 4666, 901, 6501, 4634, 6915, 7008, 5776, 1924, 6469, 6054, 5042, 4120, 4472, 423]);
-var l1 = Ut;
-var At = [[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 0, 1], [1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]];
-var Tt = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]];
-var me = class {
+var ye = At;
+var Tt = new Uint32Array([0, 2181, 2182, 2197, 2179, 6166, 2205, 2371, 2180, 2199, 6164, 2326, 2193, 2380, 2335, 1167, 2178, 2203, 6152, 2356, 10243, 14359, 14356, 1317, 6158, 2344, 18434, 1181, 14357, 1345, 24580, 272, 2177, 6154, 2201, 2338, 6150, 18432, 2323, 1177, 10242, 14350, 14353, 1341, 14349, 24578, 1313, 269, 2187, 2374, 2359, 1171, 14355, 24579, 1349, 302, 14351, 1329, 24586, 284, 20481, 12289, 12297, 135, 2176, 10241, 6148, 14343, 2191, 14347, 2347, 1337, 6146, 14342, 18438, 24577, 2341, 1309, 1173, 266, 6162, 14346, 18437, 24585, 14358, 20482, 24584, 12304, 18433, 24576, 28672, 16387, 24582, 12292, 16391, 4112, 2185, 14344, 2362, 1325, 2377, 24581, 1169, 305, 14348, 20480, 24587, 12306, 1353, 12290, 281, 141, 2311, 1333, 1185, 317, 1321, 12293, 320, 147, 24583, 12288, 16388, 4096, 12291, 8192, 4108, 127, 896, 265, 538, 2866, 2373, 1864, 1974, 1701, 4489, 312, 4762, 146, 6970, 794, 4784, 2944, 4165, 261, 6517, 2439, 4928, 884, 7077, 1973, 5254, 2920, 5653, 534, 5926, 1842, 5226, 2378, 6469, 56, 4361, 1864, 5797, 265, 6469, 538, 5797, 811, 6070, 538, 6070, 56, 6962, 1864, 4634, 56, 6962, 265, 5797, 2164, 6469, 1974, 6405, 4149, 5203, 2115, 6516, 6423, 6257, 129, 5637, 6480, 4458, 262, 6725, 6466, 4682, 402, 5029, 6998, 4906, 2869, 4518, 6066, 4631, 1649, 6022, 6150, 7008, 944, 6196, 4900, 5954, 2930, 4666, 5002, 4520, 24, 4393, 4793, 4251, 779, 5285, 6790, 5258, 1896, 7013, 6036, 6073, 1435, 5797, 896, 6070, 265, 4634, 1864, 6469, 2866, 4261, 6149, 6243, 5765, 5795, 928, 6038, 4534, 4457, 6512, 6064, 177, 5962, 6050, 6258, 6721, 5249, 386, 4789, 6964, 6467, 5556, 5522, 659, 7066, 6448, 2483, 6154, 4122, 2954, 6299, 6930, 2961, 4746, 4994, 2472, 4678, 5145, 1057, 6309, 5253, 2984, 4134, 4199, 120, 6213, 5432, 309, 5994, 6791, 2442, 5909, 4530, 379, 4469, 5896, 1808, 5158, 6194, 584, 4202, 5216, 266, 4425, 4468, 881, 5163, 5963, 36, 4773, 5426, 1845, 5685, 4971, 339, 5781, 5641, 518, 6453, 5008, 1875, 5046, 4960, 1030, 6586, 6068, 2964, 6054, 5914, 791, 6693, 4677, 66, 6501, 6582, 2233, 5226, 6804, 896, 5797, 4489, 312, 5797, 6155, 43, 7077, 5499, 56, 5653, 5665, 2051, 5797, 4148, 884, 6326, 5704, 265, 7077, 6069, 265, 4762, 6070, 146, 6070, 4489, 312, 5926, 5938, 265, 4165, 6070, 261, 4762, 4617, 1864, 6517, 4634, 2169, 5254, 4634, 2230, 4890, 6970, 2164, 4634, 4980, 1027, 5653, 4630, 2164, 6469, 4784, 2944, 6469, 6970, 794, 5226, 6474, 811, 6517, 6535, 691, 4165, 5392, 2866, 6469, 5926, 1842, 4970, 6410, 4244, 6148, 5764, 4998, 928, 6293, 4517, 4970, 5521, 5025, 6243, 2134, 4261, 6838, 4138, 6699, 6251, 5480, 88, 4261, 6021, 6267, 5003, 6715, 4154, 88, 5765, 4662, 4897, 4145, 5377, 6149, 2147, 4261, 5206, 4982, 5748, 4180, 5024, 2614, 5270, 6472, 4248, 6920, 4363, 5659, 361, 6037, 4517, 4538, 6421, 4247, 6919, 177, 6566, 5794, 7010, 4274, 6064, 6512, 1942, 6038, 4411, 6968, 6072, 6520, 4457, 438, 6038, 5936, 4146, 4354, 5650, 6422, 2416, 4453, 5957, 5974, 5892, 7009, 4273, 2823, 5274, 4616, 6153, 5257, 5962, 4730, 1832, 6565, 5978, 4521, 6169, 4632, 5928, 634, 5286, 6322, 4790, 6694, 4516, 6164, 386, 5146, 7034, 6067, 6259, 4483, 5249, 1191, 5146, 4116, 4355, 4627, 5923, 6695, 1191, 5701, 5141, 5958, 4726, 6258, 4482, 2068, 6437, 7044, 5248, 6464, 4752, 6994, 1460, 6565, 4889, 6426, 7002, 5211, 4939, 1081, 7018, 6982, 4794, 6442, 4905, 5177, 843, 4789, 5016, 4999, 6967, 5559, 6437, 659, 6981, 4389, 4624, 4896, 5168, 6964, 2898, 4709, 5492, 5479, 4935, 6467, 4755, 2341, 4970, 6410, 5024, 5764, 902, 5765, 4970, 6293, 4410, 2147, 4261, 6230, 4138, 6251, 88, 4261, 6021, 4184, 6715, 58, 5765, 4662, 6243, 5377, 2053, 4261, 6710, 4180, 4982, 928, 5270, 4457, 6920, 4363, 1563, 6037, 4538, 4273, 4247, 2823, 6566, 6038, 4274, 6064, 2416, 6038, 4411, 5659, 6520, 361, 6038, 4390, 5936, 6512, 2326, 4453, 5892, 6919, 7009, 177, 5274, 4616, 5928, 5962, 634, 6773, 4730, 6169, 4632, 1832, 5286, 6322, 4482, 4516, 2068, 5962, 7034, 4483, 5249, 2625, 5146, 4116, 5923, 6695, 1191, 5141, 4726, 6164, 6258, 386, 6437, 7044, 5556, 4752, 2898, 6837, 4889, 5177, 5211, 843, 6982, 6442, 4939, 4905, 1081, 4789, 5016, 4755, 5559, 2341, 4789, 4389, 5168, 6964, 1460, 4709, 6437, 5940, 6467, 659, 6469, 4634, 1974, 4787, 6260, 265, 5797, 6962, 2164, 6469, 4634, 56, 6469, 6070, 56, 5797, 6962, 265, 5797, 4361, 1864, 4634, 6070, 896, 7013, 6581, 4634, 6036, 2967, 7058, 6260, 6960, 6576, 2322, 5285, 6790, 6962, 6262, 2212, 6469, 5002, 6145, 6785, 2595, 7013, 4992, 6036, 7063, 2485, 5797, 4393, 7058, 6960, 2480, 5285, 6262, 4361, 6308, 2694, 6070, 4666, 6307, 6145, 2689, 6725, 6070, 4682, 4633, 1065, 4361, 5251, 4675, 4791, 1063, 5797, 4724, 4791, 5251, 579, 6725, 4152, 4633, 5161, 586, 6469, 6150, 5752, 4155, 1547, 5637, 4245, 4458, 4907, 97, 5637, 4245, 4458, 5960, 97, 6022, 4634, 4155, 5643, 104, 6469, 4518, 5910, 6066, 370, 4907, 5961, 4360, 5912, 377, 5029, 6998, 5960, 4955, 810, 6405, 4634, 4944, 4996, 1332, 6405, 5428, 6070, 4996, 848, 5029, 6998, 4361, 4906, 859, 5797, 5961, 4473, 4360, 1816, 4518, 4992, 6066, 4466, 1814, 7269, 7258, 6084, 7291, 7316, 7193, 7201, 7330, 3254, 7284, 7351, 7211, 4553, 7186, 7177, 7216, 7299, 3144, 7333, 7274, 7218, 7299, 7240, 7252, 7286, 7351, 3115, 6853, 7224, 7203, 7330, 7237, 7316, 7193, 7169, 3200, 7269, 6597, 7350, 7227, 7171, 7296, 6084, 7288, 3220, 5829, 7274, 7317, 7177, 7216, 7347, 7211, 7186, 3233, 7317, 7274, 7184, 7329, 7240, 7286, 7303, 7252, 3081, 7194, 6086, 7169, 7296, 7288, 7350, 7227, 7203, 3234, 7269, 7334, 7257, 4546, 7346, 6084, 7291, 7316, 3098, 7211, 4553, 7186, 7241, 7284, 7303, 7176, 7216, 3251, 7333, 7252, 7286, 7240, 7210, 7218, 7347, 7275, 3207, 7237, 4810, 7300, 7224, 7203, 7257, 7194, 7169, 3216, 7269, 7171, 7312, 7257, 7350, 6084, 7291, 7300, 3128, 7333, 7254, 7177, 7216, 7347, 7275, 7210, 7186, 3217, 7333, 7274, 7252, 7286, 7303, 7176, 4553, 7184, 3145, 7334, 6086, 7194, 7169, 7296, 7224, 7203, 7346, 3195, 6853, 7334, 7316, 7193, 7201, 7346, 7291, 7271, 3141, 7211, 4553, 7241, 7284, 7351, 7218, 7299, 7176, 3088, 7333, 7254, 7210, 7218, 7299, 7240, 7284, 7351, 3179, 6853, 4810, 7237, 7300, 7224, 7171, 7312, 7193, 3105, 7237, 7350, 7227, 7171, 7312, 7257, 7300, 7288, 3175, 5829, 7210, 5067, 7275, 7317, 7177, 7184, 7329, 3122, 5829, 7274, 7317, 7284, 6088, 7176, 7184, 7329, 3145, 7334, 7296, 7288, 7271, 7194, 7201, 7346, 7227, 3075, 6757, 5145, 4530, 6068, 1201, 5963, 4425, 4785, 4532, 2096, 4773, 5253, 7030, 6194, 1410, 6693, 4664, 5208, 5416, 25, 6501, 5008, 7011, 5779, 1924, 5781, 4394, 4243, 6966, 918, 5269, 5994, 4362, 6256, 1952, 6054, 6016, 4512, 6768, 946, 5221, 5209, 4634, 6834, 7078, 6070, 5238, 5537, 2385, 4228, 5960, 6327, 7043, 4787, 4361, 4400, 4387, 2308, 5797, 4907, 7043, 6260, 6327, 5494, 5447, 5810, 2658, 6469, 4442, 4152, 4131, 4609, 6689, 5401, 6408, 1176, 5221, 4992, 6288, 6532, 5524, 5703, 7015, 6019, 2931, 5797, 6805, 6561, 4241, 4882, 4865, 6962, 4774, 2854, 5797, 4361, 6561, 6805, 5972, 5989, 6260, 5264, 2112, 7078, 4992, 4984, 5947, 5755, 6834, 4514, 4656, 288, 7066, 2488, 5158, 36, 4981, 309, 6054, 4480, 6017, 2673, 6978, 4393, 5266, 1207, 6709, 5026, 6227, 1412, 6501, 5040, 4278, 105, 5226, 6474, 4136, 2091, 6053, 4489, 4993, 1978, 5669, 4928, 5955, 1313, 6214, 6410, 6251, 42, 6037, 4538, 6025, 945, 4117, 4662, 5440, 1891, 4714, 4137, 4777, 7010, 5816, 5224, 5257, 2057, 6565, 6025, 6487, 4521, 6675, 7075, 6967, 903, 5125, 5974, 4117, 4129, 4896, 4663, 5671, 1861, 5226, 6804, 6404, 5128, 7040, 6914, 6834, 2667, 7077, 4489, 4408, 5048, 6327, 5499, 4442, 405, 5221, 4438, 5665, 4657, 4400, 5123, 5175, 1607, 6602, 6854, 6412, 4140, 4796, 6347, 6220, 1132, 7317, 7354, 7291, 7255, 6600, 7224, 7187, 458, 7189, 4806, 7201, 5317, 7286, 6083, 7171, 3136, 7238, 7210, 7316, 7337, 4800, 7296, 7352, 3014, 7333, 6085, 7354, 7227, 4553, 5057, 7305, 2247, 5829, 4806, 4668, 5964, 4988, 4292, 4124, 348, 5813, 7040, 5552, 336, 6022, 4489, 4390, 1665, 4762, 6516, 6034, 882, 5285, 5050, 5028, 832, 6517, 6402, 6439, 1835, 4458, 6214, 6241, 2067, 5994, 6800, 6048, 880, 6938, 4416, 4532, 1867, 4389, 4741, 4792, 1112, 5781, 4662, 5014, 905, 5270, 4409, 4969, 1595, 4773, 6021, 6181, 2050, 4678, 4498, 5161, 56, 6469, 6170, 4480, 2954, 5797, 4393, 7058, 2203, 5797, 5961, 4473, 881, 4666, 6070, 6307, 2472, 5797, 4724, 5931, 36, 5909, 6066, 4466, 896, 6586, 6036, 7063, 2051, 5126, 4634, 4155, 1547, 6405, 4634, 4944, 1875, 4933, 6070, 4996, 309, 6469, 6022, 4200, 608, 4678, 4996, 4930, 400, 6725, 5288, 6315, 25, 5813, 5561, 4394, 2488, 5269, 4458, 5655, 1811, 6022, 5770, 6793, 571, 5285, 7030, 6722, 576, 5909, 4480, 6167, 2851, 6586, 5040, 4281, 1924, 4518, 4448, 4196, 946, 6709, 4666, 5431, 25, 7013, 6995, 4945, 1924, 4197, 6405, 5634, 1924, 6214, 6472, 6528, 6401, 6243, 4962, 4402, 259, 6837, 4441, 4517, 4496, 5556, 5304, 4168, 148, 5765, 4714, 5513, 4517, 4790, 5816, 4769, 345, 6565, 6710, 6426, 6675, 6484, 5687, 5223, 1110, 4714, 5944, 4987, 6025, 5042, 6038, 5786, 694, 4261, 7018, 5957, 5974, 5440, 5995, 6658, 2978, 4117, 4354, 4611, 4667, 4184, 6231, 7047, 2872, 5050, 6020, 4987, 5944, 5024, 4265, 5129, 1152, 7018, 7074, 6756, 6947, 6721, 4416, 4880, 801, 6565, 4896, 4129, 4663, 4121, 4730, 6773, 2330, 4453, 5206, 5223, 5240, 5659, 6931, 6323, 2171, 4709, 6153, 6292, 6402, 6215, 6437, 5974, 1861, 6470, 4882, 4115, 5665, 6147, 6497, 5272, 2312, 6469, 4442, 4228, 6404, 7040, 4528, 6833, 405, 5797, 4501, 6677, 6289, 4737, 7042, 6950, 678, 5797, 5988, 5446, 4980, 6452, 4409, 4506, 2394, 4774, 6950, 6562, 6070, 5010, 6291, 6199, 951, 5797, 6954, 5818, 4139, 5972, 5899, 5127, 1893, 6949, 6027, 5048, 5499, 4152, 4434, 4384, 560, 6474, 5264, 6208, 4992, 6052, 7079, 7027, 1923, 7078, 4400, 4657, 5123, 6689, 6979, 5707, 2858, 6805, 4506, 5977, 4634, 4217, 4976, 4866, 18, 5221, 5048, 6027, 4408, 5755, 5144, 5396, 1142, 6469, 5989, 5972, 4711, 6183, 4136, 4233, 2121, 4806, 7193, 4544, 5058, 6156, 6339, 6476, 1132, 6853, 4508, 5321, 5212, 6844, 4296, 7052, 448, 7333, 5484, 4780, 5820, 7052, 4553, 6300, 705, 7333, 6854, 5317, 5831, 4988, 4553, 4412, 2500, 4810, 7350, 5052, 6028, 5756, 6300, 6572, 962, 7333, 5452, 5996, 6854, 5132, 7106, 4140, 1995, 7189, 4668, 4124, 6339, 6156, 7111, 5500, 715, 7354, 7224, 6084, 7111, 7300, 7312, 7337, 960, 5834, 4546, 7171, 4811, 7227, 7232, 7268, 2753, 6853, 7193, 4546, 5056, 4297, 7223, 7285, 714, 7237, 6086, 6028, 7107, 5835, 4412, 5404, 1224, 7237, 7206, 6220, 6412, 5532, 4140, 6086, 2247, 5228, 6412, 6220, 5056, 5004, 4546, 5676, 2497, 7237, 4297, 5320, 5532, 7052, 4524, 6844, 448, 5829, 5804, 5577, 4554, 6300, 4796, 7052, 705, 5829, 5804, 6492, 6684, 4412, 7284, 4988, 2500, 5834, 4811, 6076, 6086, 6572, 5004, 6300, 962, 5829, 5578, 7110, 6850, 4140, 5964, 5132, 1995, 6085, 7227, 6343, 4156, 4296, 4636, 4444, 715, 6602, 7296, 7316, 6343, 7239, 7107, 7354, 960, 4810, 7350, 7203, 7107, 7268, 7169, 7232, 2753, 6597, 7194, 4544, 7312, 7285, 5058, 7223, 714, 7269, 6084, 7111, 7020, 5404, 6339, 4412, 1224, 7269, 6084, 6476, 6597, 4716, 6156, 4140, 2247, 6469, 4634, 6070, 896, 6757, 4496, 6947, 1924, 7013, 7001, 4634, 4992, 6036, 2967, 6469, 6070, 6170, 6145, 6712, 2595, 6469, 4634, 4278, 4155, 5760, 1656, 6469, 4518, 4152, 4466, 6066, 359, 6725, 6070, 4992, 5161, 4633, 1186, 6757, 6036, 4503, 5042, 6167, 2049, 6405, 4634, 4933, 6070, 4944, 900, 4197, 5520, 4518, 6020, 6947, 22, 7013, 4954, 6020, 4121, 6995, 2595, 6757, 4496, 4930, 4996, 5234, 1970, 6757, 6020, 4281, 4155, 6953, 537, 6725, 6310, 4496, 5042, 5288, 1656, 7269, 7257, 4634, 5321, 4296, 7288, 7239, 7227, 5835, 3075, 6469, 7334, 5056, 4546, 7346, 7227, 7296, 7288, 6086, 3098, 7269, 7334, 6597, 4524, 7201, 7346, 6084, 7111, 7316, 2051, 6469, 4810, 7350, 7227, 7203, 7194, 7169, 7288, 4296, 3175, 7269, 6764, 6084, 5532, 6476, 6028, 6156, 4524, 4544, 946, 6469, 7334, 6076, 6339, 7203, 7346, 7271, 7169, 6849, 3200, 7269, 7258, 7350, 4810, 6084, 7291, 7193, 5321, 7201, 56, 6853, 7334, 7237, 6086, 7316, 7193, 7346, 4546, 7291, 896, 6757, 7227, 6084, 6343, 6156, 4156, 6956, 7193, 4636, 2380, 6853, 7237, 6070, 4296, 5321, 7193, 7169, 7224, 7203, 714, 6757, 4508, 4544, 5058, 5004, 6156, 6476, 6076, 6084, 2860, 6853, 6764, 7193, 6476, 5212, 5756, 6156, 6343, 4124, 2851, 7269, 5834, 4811, 5532, 4636, 4524, 4156, 4297, 5052, 1924, 7237, 6086, 7257, 4634, 7300, 7288, 7350, 7227, 7312, 960, 7269, 6597, 4634, 7224, 6084, 7111, 7300, 7171, 7312, 3254, 7237, 5834, 4297, 5320, 5532, 4124, 4524, 5756, 6028, 571, 7269, 4810, 5058, 5532, 4544, 4524, 5052, 7020, 6412, 1924, 6597, 4810, 7237, 6070, 6849, 7169, 7312, 7300, 7203, 2243, 6757, 5320, 4297, 4156, 5004, 5244, 6076, 4636, 4811, 412, 6853, 5572, 6070, 7193, 4546, 5056, 7312, 7330, 7300, 3128, 6853, 7020, 7193, 6700, 4636, 6412, 4156, 7107, 5724, 1924, 6853, 5834, 4811, 5212, 5756, 6076, 4668, 5004, 5320, 25, 7269, 5548, 6084, 6076, 7020, 6700, 5004, 5058, 6220, 400, 6853, 7020, 5212, 7288, 7107, 5756, 6220, 6700, 4668, 25, 7269, 7258, 7312, 7171, 7224, 7300, 7239, 7291, 7350, 7330, 7201, 3097, 6853, 6764, 5004, 4668, 6956, 5212, 6076, 5756, 6476, 4508, 4124, 2060, 7269, 7334, 7346, 7257, 7201, 7194, 7316, 7239, 7288, 7296, 7171, 3131, 7237, 7020, 5532, 4524, 4124, 6412, 6220, 6028, 5756, 5052, 4668, 2604, 6757, 6020, 7047, 6323, 6148, 4244, 4496, 4880, 4627, 2851, 6469, 4442, 6070, 4992, 4866, 4114, 6408, 5272, 6481, 2593, 6757, 6565, 6801, 6694, 4790, 5042, 4402, 4145, 6401, 1924, 6469, 7078, 4992, 6199, 5047, 4656, 4384, 4634, 4779, 1659, 5221, 7078, 5401, 4634, 4779, 5537, 5524, 5238, 6070, 2051, 6757, 5042, 6323, 5492, 7047, 7010, 5794, 5974, 6215, 400, 5221, 5209, 4634, 4992, 4233, 6217, 6019, 7027, 6070, 1892, 6757, 4496, 6801, 6565, 6464, 5248, 6020, 5492, 5749, 946, 6757, 4992, 4633, 6466, 5298, 1972, 6709, 5508, 6070, 4496, 4666, 901, 6501, 4634, 6915, 7008, 5776, 1924, 6469, 6054, 5042, 4120, 4472, 423]);
+var p1 = Tt;
+var Gt = [[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 0, 1], [1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]];
+var Ct = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]];
+var we = class {
   constructor() {
-    this.table = l1, this.f_test_results = new Int32Array(6);
+    this.table = p1, this.f_test_results = new Int32Array(6);
   }
   signbf(e) {
     return e < 0;
@@ -23261,13 +23261,13 @@ var me = class {
     }
   }
   interior_test(e, t) {
-    let s = this.v, r = 1e-9, n = s[4] - s[0], a = s[5] - s[1], o = s[6] - s[2], c = s[7] - s[3], x = n * o - a * c;
+    let s = this.v, r = 1e-9, n = s[4] - s[0], o = s[5] - s[1], a = s[6] - s[2], c = s[7] - s[3], x = n * a - o * c;
     if (this.signbf(x)) {
       if (e & 1) return 0;
     } else if (!(e & 1) || Math.abs(x) < r) return 0;
-    let l = 0.5 * (s[3] * a + s[1] * c - s[2] * n - s[0] * o) / x;
+    let l = 0.5 * (s[3] * o + s[1] * c - s[2] * n - s[0] * a) / x;
     if (l <= r || l >= 1 - r) return 0;
-    let u = s[0] + n * l, f = s[1] + a * l, p = s[2] + o * l, h = s[3] + c * l, d = p * u, b = h * f;
+    let u = s[0] + n * l, f = s[1] + o * l, p = s[2] + a * l, h = s[3] + c * l, d = p * u, b = h * f;
     if (e & 1) {
       if (d < b && !this.signbf(b)) return (this.signbf(f) === this.signbf(s[e])) + t;
     } else if (d > b && !this.signbf(d)) return (this.signbf(u) === this.signbf(s[e])) + t;
@@ -23276,7 +23276,7 @@ var me = class {
   pattern(e) {
     let t = this.table, s = (e & 128) !== 0, r = s ? e ^ 255 : e, n = t[r];
     if (n === void 0) throw new Error(`MC33 lookup miss: ${r}`);
-    let a = (n & 2048) !== 0, o = s ? !a : a, c = o ? e : e ^ 255, x = n & 2047, l = n >>> 12, u;
+    let o = (n & 2048) !== 0, a = s ? !o : o, c = a ? e : e ^ 255, x = n & 2047, l = n >>> 12, u;
     switch (l) {
       case 0:
         u = x;
@@ -23321,68 +23321,68 @@ var me = class {
         } else u = 1839 + 2 * this.f_test_results[0];
       }
     }
-    return { offset: u + 1, reverse: o };
+    return { offset: u + 1, reverse: a };
   }
   triangles(e, t, s) {
     if (this.v = e, t === 0 || t === 255) return 0;
     let r = this.pattern(t), n = 0;
-    for (let a = r.offset; a < l1.length; a++) {
-      let o = l1[a], c = o & 15, x = o >> 4 & 15, l = o >> 8 & 15;
+    for (let o = r.offset; o < p1.length; o++) {
+      let a = p1[o], c = a & 15, x = a >> 4 & 15, l = a >> 8 & 15;
       if (c <= 12 && x <= 12 && l <= 12 && c !== x && x !== l && c !== l) {
         if (n + 3 > s.length) throw new Error("MC33 cell exceeds output capacity");
         s[n++] = c, s[n++] = r.reverse ? l : x, s[n++] = r.reverse ? x : l;
       }
-      if (!(o & 4096)) return n;
+      if (!(a & 4096)) return n;
     }
     throw new Error("MC33 pattern exceeds lookup table");
   }
 };
-var Ct = { name: "MC33", corners: At, edges: Tt, maxVertices: 36, table: l1, cornerBit: (i) => 128 >> i, createPolygonizer() {
-  let i = new me();
+var It = { name: "MC33", corners: Gt, edges: Ct, maxVertices: 36, table: p1, cornerBit: (i) => 128 >> i, createPolygonizer() {
+  let i = new we();
   return i.triangles.bind(i);
 } };
-var ve = Ct;
-var ge = {};
-F(ge, { cartesianSampler: () => Ke, createMapper: () => $, default: () => It, mapPositions: () => u1, sampleField: () => f1 });
-function $(i = { type: "cartesian" }) {
-  if (i.type === "cartesian") return (n, a, o) => [n, a, o];
+var Me = It;
+var Pe = {};
+F(Pe, { cartesianSampler: () => Ke, createMapper: () => j, default: () => Ft, mapPositions: () => b1, sampleField: () => m1 });
+function j(i = { type: "cartesian" }) {
+  if (i.type === "cartesian") return (n, o, a) => [n, o, a];
   if (i.type !== "spherical" && i.type !== "cube-sphere") throw new Error(`Unknown coordinates: ${i.type}`);
   let e = i.radius || [0.02, 0.7], t = i.center || [0.5, 0.5, 0.5];
   if (e.length !== 2 || !e.every(Number.isFinite) || e[0] < 0 || e[1] <= e[0]) throw new Error("Radius must be an increasing, nonnegative pair");
   if (t.length !== 3 || !t.every(Number.isFinite)) throw new Error("Center must contain three finite coordinates");
   if (i.type === "cube-sphere") {
     if (!Number.isInteger(i.face) || i.face < 0 || i.face > 5) throw new Error("Cube-sphere face must be 0..5");
-    return (n, a, o) => {
-      let c = 2 * n - 1, x = 2 * a - 1, u = [[1, x, -c], [-1, x, c], [c, 1, -x], [c, -1, x], [c, x, 1], [-c, x, -1]][i.face], p = (e[0] + o * (e[1] - e[0])) / Math.hypot(...u);
+    return (n, o, a) => {
+      let c = 2 * n - 1, x = 2 * o - 1, u = [[1, x, -c], [-1, x, c], [c, 1, -x], [c, -1, x], [c, x, 1], [-c, x, -1]][i.face], p = (e[0] + a * (e[1] - e[0])) / Math.hypot(...u);
       return u.map((h, d) => t[d] + h * p);
     };
   }
   let s = i.longitude || [-Math.PI, Math.PI], r = i.latitude || [-Math.PI / 2, Math.PI / 2];
   for (let n of [s, r]) if (n.length !== 2 || !n.every(Number.isFinite) || n[1] <= n[0]) throw new Error("Angular ranges must be increasing finite pairs in radians");
   if (r[0] < -Math.PI / 2 || r[1] > Math.PI / 2 || s[1] - s[0] > 2 * Math.PI + 1e-9) throw new Error("Latitude must be within \xB1pi/2 and longitude span at most 2*pi");
-  return (n, a, o) => {
-    let c = s[0] + n * (s[1] - s[0]), x = r[0] + a * (r[1] - r[0]), l = e[0] + o * (e[1] - e[0]), u = l * Math.cos(x);
+  return (n, o, a) => {
+    let c = s[0] + n * (s[1] - s[0]), x = r[0] + o * (r[1] - r[0]), l = e[0] + a * (e[1] - e[0]), u = l * Math.cos(x);
     return Math.abs(Math.cos(x)) < 1e-15 ? [t[0], t[1] + l * Math.sin(x), t[2]] : [t[0] + u * Math.cos(c), t[1] + l * Math.sin(x), t[2] + u * Math.sin(c)];
   };
 }
-function u1(i, e) {
+function b1(i, e) {
   if (!e || e.type === "cartesian") return i;
-  let t = $(e);
+  let t = j(e);
   for (let s = 0; s < i.length; s += 3) {
     let r = t(i[s], i[s + 1], i[s + 2]);
     i[s] = r[0], i[s + 1] = r[1], i[s + 2] = r[2];
   }
   return i;
 }
-function f1(i, e, t) {
-  let s = $(t), r = new Float32Array(i.x * i.y * i.z), n = t?.type === "spherical" && Math.abs((t.longitude || [-Math.PI, Math.PI])[1] - (t.longitude || [-Math.PI, Math.PI])[0] - 2 * Math.PI) < 1e-9;
-  for (let a = 0; a < i.z; a++) for (let o = 0; o < i.y; o++) for (let c = 0; c < i.x; c++) {
-    let x = (a * i.y + o) * i.x + c;
+function m1(i, e, t) {
+  let s = j(t), r = new Float32Array(i.x * i.y * i.z), n = t?.type === "spherical" && Math.abs((t.longitude || [-Math.PI, Math.PI])[1] - (t.longitude || [-Math.PI, Math.PI])[0] - 2 * Math.PI) < 1e-9;
+  for (let o = 0; o < i.z; o++) for (let a = 0; a < i.y; a++) for (let c = 0; c < i.x; c++) {
+    let x = (o * i.y + a) * i.x + c;
     if (n && c === i.x - 1) {
-      r[x] = r[(a * i.y + o) * i.x];
+      r[x] = r[(o * i.y + a) * i.x];
       continue;
     }
-    let l = s(c / (i.x - 1), o / (i.y - 1), a / (i.z - 1));
+    let l = s(c / (i.x - 1), a / (i.y - 1), o / (i.z - 1));
     r[x] = e(...l);
   }
   return r;
@@ -23390,16 +23390,16 @@ function f1(i, e, t) {
 function Ke(i, e) {
   return (t, s, r) => {
     if (t < 0 || t > 1 || s < 0 || s > 1 || r < 0 || r > 1) return 0;
-    let n = [t * (e.x - 1), s * (e.y - 1), r * (e.z - 1)], a = n.map(Math.floor), o = n.map((x, l) => x - a[l]), c = 0;
+    let n = [t * (e.x - 1), s * (e.y - 1), r * (e.z - 1)], o = n.map(Math.floor), a = n.map((x, l) => x - o[l]), c = 0;
     for (let x = 0; x < 2; x++) for (let l = 0; l < 2; l++) for (let u = 0; u < 2; u++) {
-      let f = Math.min(a[0] + u, e.x - 1), p = Math.min(a[1] + l, e.y - 1), h = Math.min(a[2] + x, e.z - 1);
-      c += i[(h * e.y + p) * e.x + f] * (u ? o[0] : 1 - o[0]) * (l ? o[1] : 1 - o[1]) * (x ? o[2] : 1 - o[2]);
+      let f = Math.min(o[0] + u, e.x - 1), p = Math.min(o[1] + l, e.y - 1), h = Math.min(o[2] + x, e.z - 1);
+      c += i[(h * e.y + p) * e.x + f] * (u ? a[0] : 1 - a[0]) * (l ? a[1] : 1 - a[1]) * (x ? a[2] : 1 - a[2]);
     }
     return c;
   };
 }
-var It = { createMapper: $, mapPositions: u1, sampleField: f1, cartesianSampler: Ke };
-var He = `struct Uniforms {
+var Ft = { createMapper: j, mapPositions: b1, sampleField: m1, cartesianSampler: Ke };
+var Ze = `struct Uniforms {
   isolevel: f32, dx: f32, dy: f32, dz: f32,
   gx: u32, gy: u32, gz: u32, zBase: f32,
 };
@@ -23410,7 +23410,7 @@ var He = `struct Uniforms {
 @group(0) @binding(4) var<storage, read_write> counter: atomic<u32>;
 struct TriangleCodes { count: u32, codes: array<vec3<u32>, 12> }
 `;
-var Ze = `struct CubeVals {
+var Je = `struct CubeVals {
   v0: f32,
   v1: f32,
   v2: f32,
@@ -23751,7 +23751,7 @@ fn get_face_result(ft: FaceTests, idx: u32) -> i32 {
   }
 }
 `;
-var Je = `fn cell_triangles(v: CubeVals, mask: u32) -> TriangleCodes {
+var et = `fn cell_triangles(v: CubeVals, mask: u32) -> TriangleCodes {
   let info = pattern_info(mask, v);
   var pcase = info.pcase;
   var result: TriangleCodes;
@@ -23771,7 +23771,7 @@ var Je = `fn cell_triangles(v: CubeVals, mask: u32) -> TriangleCodes {
   return result;
 }
 `;
-var et = `struct CubeVals { v0: f32, v1: f32, v2: f32, v3: f32, v4: f32, v5: f32, v6: f32, v7: f32 }
+var tt = `struct CubeVals { v0: f32, v1: f32, v2: f32, v3: f32, v4: f32, v5: f32, v6: f32, v7: f32 }
 fn corner_offset(c: u32) -> vec3<u32> {
   var offsets = array<vec3<u32>, 8>(vec3<u32>(0,0,0),vec3<u32>(1,0,0),vec3<u32>(1,1,0),vec3<u32>(0,1,0),vec3<u32>(0,0,1),vec3<u32>(1,0,1),vec3<u32>(1,1,1),vec3<u32>(0,1,1));
   return offsets[c];
@@ -23797,7 +23797,7 @@ fn cell_triangles(v: CubeVals, mask: u32) -> TriangleCodes {
   return result;
 }
 `;
-var tt = `fn sample_corner(cell: vec3<u32>, c: u32) -> f32 {
+var st = `fn sample_corner(cell: vec3<u32>, c: u32) -> f32 {
   let p = cell + corner_offset(c);
   return field[(p.z * uni.gy + p.y) * uni.gx + p.x] - uni.isolevel;
 }
@@ -23831,9 +23831,9 @@ fn cs(@builtin(global_invocation_id) cell: vec3<u32>) {
   }
 }
 `;
-var N = { bourke: be, mc33: ve };
-function st(i, e, t, s) {
-  let r = N[s];
+var V = { bourke: ye, mc33: Me };
+function it(i, e, t, s) {
+  let r = V[s];
   if (!r) throw new Error(`Unknown marching cubes algorithm: ${s}`);
   if (!["x", "y", "z"].every((n) => Number.isInteger(e[n]) && e[n] >= 2)) throw new Error("Grid dimensions must be integers of at least 2");
   if (!(i instanceof Float32Array) || i.length !== e.x * e.y * e.z) throw new Error("Expected a Float32Array with x*y*z samples, indexed as (z*y + y)*x + x");
@@ -23841,14 +23841,14 @@ function st(i, e, t, s) {
   for (let n of i) if (!Number.isFinite(n) || !Number.isFinite(Math.fround(n - t))) throw new Error("Field samples and their differences from the isolevel must be finite f32 values");
   return r;
 }
-function V(i, e, t = 0, s = "bourke", r = {}) {
-  t = Math.fround(t), r.coordinates && $(r.coordinates);
-  let n = st(i, e, t, s), { x: a, y: o, z: c } = e, x = n.createPolygonizer(), l = new Float32Array(8), u = new Uint8Array(n.maxVertices), f = new Float32Array(39), p = new Float32Array(65536), h = 0;
-  for (let d = 0; d < c - 1; d++) for (let b = 0; b < o - 1; b++) for (let m = 0; m < a - 1; m++) {
+function q(i, e, t = 0, s = "bourke", r = {}) {
+  t = Math.fround(t), r.coordinates && j(r.coordinates);
+  let n = it(i, e, t, s), { x: o, y: a, z: c } = e, x = n.createPolygonizer(), l = new Float32Array(8), u = new Uint8Array(n.maxVertices), f = new Float32Array(39), p = new Float32Array(65536), h = 0;
+  for (let d = 0; d < c - 1; d++) for (let b = 0; b < a - 1; b++) for (let m = 0; m < o - 1; m++) {
     let v = 0;
     for (let y = 0; y < 8; y++) {
       let w = n.corners[y];
-      l[y] = i[((d + w[2]) * o + b + w[1]) * a + m + w[0]] - t, l[y] < 0 && (v |= n.cornerBit(y));
+      l[y] = i[((d + w[2]) * a + b + w[1]) * o + m + w[0]] - t, l[y] < 0 && (v |= n.cornerBit(y));
     }
     if (v === 0 || v === 255) continue;
     let g = x(l, v, u);
@@ -23859,69 +23859,69 @@ function V(i, e, t = 0, s = "bourke", r = {}) {
     for (let y = 0; y < 12; y++) {
       let [w, M] = n.edges[y];
       if (l[w] < 0 == l[M] < 0) continue;
-      let P = l[w] - l[M], _ = Math.abs(P) < 1e-9 ? 0.5 : Math.max(0, Math.min(1, l[w] / P)), S = n.corners[w], z = n.corners[M];
-      f[y * 3] = (m + S[0] + _ * (z[0] - S[0])) / (a - 1), f[y * 3 + 1] = (b + S[1] + _ * (z[1] - S[1])) / (o - 1), f[y * 3 + 2] = (d + S[2] + _ * (z[2] - S[2])) / (c - 1);
+      let P = l[w] - l[M], _ = Math.abs(P) < 1e-9 ? 0.5 : Math.max(0, Math.min(1, l[w] / P)), k = n.corners[w], S = n.corners[M];
+      f[y * 3] = (m + k[0] + _ * (S[0] - k[0])) / (o - 1), f[y * 3 + 1] = (b + k[1] + _ * (S[1] - k[1])) / (a - 1), f[y * 3 + 2] = (d + k[2] + _ * (S[2] - k[2])) / (c - 1);
     }
-    f[36] = (m + 0.5) / (a - 1), f[37] = (b + 0.5) / (o - 1), f[38] = (d + 0.5) / (c - 1);
+    f[36] = (m + 0.5) / (o - 1), f[37] = (b + 0.5) / (a - 1), f[38] = (d + 0.5) / (c - 1);
     for (let y = 0; y < g; y++) {
       let w = u[y] * 3;
       p[h++] = f[w], p[h++] = f[w + 1], p[h++] = f[w + 2];
     }
   }
-  return u1(p.slice(0, h), r.coordinates);
+  return b1(p.slice(0, h), r.coordinates);
 }
-function G1(i) {
-  if (!N[i]) throw new Error(`Unknown marching cubes algorithm: ${i}`);
-  let e = i === "mc33" ? Ze + Je : et;
-  return He + e + tt;
+function L1(i) {
+  if (!V[i]) throw new Error(`Unknown marching cubes algorithm: ${i}`);
+  let e = i === "mc33" ? Je + et : tt;
+  return Ze + e + st;
 }
-var I1 = /* @__PURE__ */ new WeakMap();
-async function Lt(i, e) {
-  let t = I1.get(i);
-  if (t || (t = /* @__PURE__ */ new Map(), I1.set(i, t)), !t.has(e)) {
+var O1 = /* @__PURE__ */ new WeakMap();
+async function Vt(i, e) {
+  let t = O1.get(i);
+  if (t || (t = /* @__PURE__ */ new Map(), O1.set(i, t)), !t.has(e)) {
     let s = (async () => {
-      let r = i.createShaderModule({ code: G1(e), label: `${e} marching cubes` }), a = (await r.getCompilationInfo()).messages.filter((x) => x.type === "error");
-      if (a.length) throw new Error(a.map((x) => `${x.lineNum}: ${x.message}`).join(`
+      let r = i.createShaderModule({ code: L1(e), label: `${e} marching cubes` }), o = (await r.getCompilationInfo()).messages.filter((x) => x.type === "error");
+      if (o.length) throw new Error(o.map((x) => `${x.lineNum}: ${x.message}`).join(`
 `));
-      let o = await i.createComputePipelineAsync({ layout: "auto", compute: { module: r, entryPoint: "cs" } }), c = C1(i, N[e].table, GPUBufferUsage.STORAGE);
-      return { pipeline: o, table: c };
+      let a = await i.createComputePipelineAsync({ layout: "auto", compute: { module: r, entryPoint: "cs" } }), c = R1(i, V[e].table, GPUBufferUsage.STORAGE);
+      return { pipeline: a, table: c };
     })();
     t.set(e, s), s.catch(() => t.delete(e));
   }
   return t.get(e);
 }
-function C1(i, e, t) {
+function R1(i, e, t) {
   let s = i.createBuffer({ size: e.byteLength, usage: t, mappedAtCreation: true });
   return new Uint8Array(s.getMappedRange()).set(new Uint8Array(e.buffer, e.byteOffset, e.byteLength)), s.unmap(), s;
 }
-function F1(i, e, t) {
-  let s = Math.min(t.maxBufferSize, t.maxStorageBufferBindingSize), r = Math.floor(s / (i.x * i.y * 4)), n = Math.floor(s / ((i.x - 1) * (i.y - 1) * e.maxVertices * 16)), a = t.maxComputeWorkgroupsPerDimension * 4, o = Math.min(i.z, r, n + 1, a + 1);
-  if (o < 2 || i.x - 1 > a || i.y - 1 > a) throw new Error("Grid XY plane exceeds GPU limits; reduce the grid dimensions");
-  return o;
+function N1(i, e, t) {
+  let s = Math.min(t.maxBufferSize, t.maxStorageBufferBindingSize), r = Math.floor(s / (i.x * i.y * 4)), n = Math.floor(s / ((i.x - 1) * (i.y - 1) * e.maxVertices * 16)), o = t.maxComputeWorkgroupsPerDimension * 4, a = Math.min(i.z, r, n + 1, o + 1);
+  if (a < 2 || i.x - 1 > o || i.y - 1 > o) throw new Error("Grid XY plane exceeds GPU limits; reduce the grid dimensions");
+  return a;
 }
 async function K(i, e, t, s = 0, r = "bourke", n = {}) {
-  s = Math.fround(s), n.coordinates && $(n.coordinates);
-  let a = st(e, t, s, r), { x: o, y: c, z: x } = t, l = F1(t, a, i.limits);
+  s = Math.fround(s), n.coordinates && j(n.coordinates);
+  let o = it(e, t, s, r), { x: a, y: c, z: x } = t, l = N1(t, o, i.limits);
   if (n.brickDepth !== void 0) {
     if (!Number.isInteger(n.brickDepth) || n.brickDepth < 2) throw new Error("Brick depth must be at least 2");
     l = Math.min(l, n.brickDepth);
   }
-  let { pipeline: u, table: f } = await Lt(i, r), p = [], h = 0;
+  let { pipeline: u, table: f } = await Vt(i, r), p = [], h = 0;
   for (let m = 0; m < x - 1; m += l - 1) {
     let v = Math.min(l, x - m), g = [], y = (w) => (g.push(w), w);
     try {
-      let w = e.subarray(m * o * c, (m + v) * o * c), M = y(C1(i, w, GPUBufferUsage.STORAGE)), P = (o - 1) * (c - 1) * (v - 1) * a.maxVertices, _ = y(i.createBuffer({ size: P * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC })), S = y(C1(i, new Uint32Array([0]), GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC)), z = new Uint32Array(8), B = new Float32Array(z.buffer);
-      B.set([s, 1 / (o - 1), 1 / (c - 1), 1 / (x - 1)]), z.set([o, c, v], 4), B[7] = m / (x - 1);
-      let k = y(C1(i, z, GPUBufferUsage.UNIFORM)), E = i.createBindGroup({ layout: u.getBindGroupLayout(0), entries: [k, M, f, _, S].map((L, A1) => ({ binding: A1, resource: { buffer: L } })) }), U = y(i.createBuffer({ size: 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ })), C = i.createCommandEncoder(), A = C.beginComputePass();
-      A.setPipeline(u), A.setBindGroup(0, E), A.dispatchWorkgroups(Math.ceil((o - 1) / 4), Math.ceil((c - 1) / 4), Math.ceil((v - 1) / 4)), A.end(), C.copyBufferToBuffer(S, 0, U, 0, 4), i.queue.submit([C.finish()]), await U.mapAsync(GPUMapMode.READ);
+      let w = e.subarray(m * a * c, (m + v) * a * c), M = y(R1(i, w, GPUBufferUsage.STORAGE)), P = (a - 1) * (c - 1) * (v - 1) * o.maxVertices, _ = y(i.createBuffer({ size: P * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC })), k = y(R1(i, new Uint32Array([0]), GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC)), S = new Uint32Array(8), B = new Float32Array(S.buffer);
+      B.set([s, 1 / (a - 1), 1 / (c - 1), 1 / (x - 1)]), S.set([a, c, v], 4), B[7] = m / (x - 1);
+      let z = y(R1(i, S, GPUBufferUsage.UNIFORM)), E = i.createBindGroup({ layout: u.getBindGroupLayout(0), entries: [z, M, f, _, k].map((N, F1) => ({ binding: F1, resource: { buffer: N } })) }), U = y(i.createBuffer({ size: 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ })), G = i.createCommandEncoder(), A = G.beginComputePass();
+      A.setPipeline(u), A.setBindGroup(0, E), A.dispatchWorkgroups(Math.ceil((a - 1) / 4), Math.ceil((c - 1) / 4), Math.ceil((v - 1) / 4)), A.end(), G.copyBufferToBuffer(k, 0, U, 0, 4), i.queue.submit([G.finish()]), await U.mapAsync(GPUMapMode.READ);
       let T = new Uint32Array(U.getMappedRange())[0];
       if (U.unmap(), T > P || T % 3 !== 0) throw new Error("Invalid GPU vertex count");
       if (T) {
-        let L = y(i.createBuffer({ size: T * 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ })), A1 = i.createCommandEncoder();
-        A1.copyBufferToBuffer(_, 0, L, 0, T * 16), i.queue.submit([A1.finish()]), await L.mapAsync(GPUMapMode.READ);
-        let T1 = new Float32Array(L.getMappedRange()), c1 = new Float32Array(T * 3);
-        for (let x1 = 0, pe = 0; x1 < T1.length; x1 += 4) c1[pe++] = T1[x1], c1[pe++] = T1[x1 + 1], c1[pe++] = T1[x1 + 2];
-        L.unmap(), p.push(c1), h += c1.length;
+        let N = y(i.createBuffer({ size: T * 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ })), F1 = i.createCommandEncoder();
+        F1.copyBufferToBuffer(_, 0, N, 0, T * 16), i.queue.submit([F1.finish()]), await N.mapAsync(GPUMapMode.READ);
+        let D1 = new Float32Array(N.getMappedRange()), h1 = new Float32Array(T * 3);
+        for (let d1 = 0, ge = 0; d1 < D1.length; d1 += 4) h1[ge++] = D1[d1], h1[ge++] = D1[d1 + 1], h1[ge++] = D1[d1 + 2];
+        N.unmap(), p.push(h1), h += h1.length;
       }
     } finally {
       for (let w of g) w.destroy();
@@ -23929,44 +23929,44 @@ async function K(i, e, t, s = 0, r = "bourke", n = {}) {
   }
   let d = new Float32Array(h), b = 0;
   for (let m of p) d.set(m, b), b += m.length;
-  return u1(d, n.coordinates);
+  return b1(d, n.coordinates);
 }
-async function h1(i) {
-  let e = I1.get(i);
+async function v1(i) {
+  let e = O1.get(i);
   if (!e) return;
   let t = await Promise.allSettled(e.values());
   for (let s of t) s.status === "fulfilled" && s.value.table.destroy();
-  I1.delete(i);
+  O1.delete(i);
 }
-var Nt = { extractCPU: V, extractGPU: K, createShader: G1, disposeGPU: h1, algorithms: N, brickDepthForLimits: F1 };
-var nt = {};
-F(nt, { createScalarField: () => rt, default: () => Vt, fitSphere: () => R1, generateSpherePoints: () => it, refineSphereSurface: () => N1, sphereSampler: () => L1, sphereSurfaces: () => O1 });
-function it(i, e, t) {
-  let s = new Float32Array(i * 3), r = e.x, n = e.y, a = e.z;
-  for (let o = 0, c = 0; o < i; ++o, c += 3) {
+var qt = { extractCPU: q, extractGPU: K, createShader: L1, disposeGPU: v1, algorithms: V, brickDepthForLimits: N1 };
+var at = {};
+F(at, { createScalarField: () => nt, default: () => Wt, fitSphere: () => q1, generateSpherePoints: () => rt, refineSphereSurface: () => j1, sphereSampler: () => $1, sphereSurfaces: () => W1 });
+function rt(i, e, t) {
+  let s = new Float32Array(i * 3), r = e.x, n = e.y, o = e.z;
+  for (let a = 0, c = 0; a < i; ++a, c += 3) {
     let x = Math.random(), l = Math.random(), u = 2 * Math.PI * x, f = Math.acos(2 * l - 1), p = Math.sin(f);
-    s[c] = r + t * p * Math.cos(u), s[c + 1] = n + t * p * Math.sin(u), s[c + 2] = a + t * Math.cos(f);
+    s[c] = r + t * p * Math.cos(u), s[c + 1] = n + t * p * Math.sin(u), s[c + 2] = o + t * Math.cos(f);
   }
   return s;
 }
-function rt(i, e, t, s = 1e-4) {
-  let r = e.x, n = e.y, a = e.z, o = 1 / (r - 1), c = 1 / (n - 1), x = 1 / (a - 1), l = new Float32Array(r * n * a), u = (b, m, v) => v * (r * n) + m * r + b, f = Math.sqrt(-Math.log(s) / t), p = o, h = c, d = x;
+function nt(i, e, t, s = 1e-4) {
+  let r = e.x, n = e.y, o = e.z, a = 1 / (r - 1), c = 1 / (n - 1), x = 1 / (o - 1), l = new Float32Array(r * n * o), u = (b, m, v) => v * (r * n) + m * r + b, f = Math.sqrt(-Math.log(s) / t), p = a, h = c, d = x;
   for (let b = 0; b < i.length; b += 3) {
-    let m = i[b], v = i[b + 1], g = i[b + 2], y = Math.max(0, Math.floor((m - f) / p)), w = Math.min(r - 1, Math.ceil((m + f) / p)), M = Math.max(0, Math.floor((v - f) / h)), P = Math.min(n - 1, Math.ceil((v + f) / h)), _ = Math.max(0, Math.floor((g - f) / d)), S = Math.min(a - 1, Math.ceil((g + f) / d));
-    for (let z = y; z <= w; ++z) {
-      let B = z * o - m;
-      for (let k = M; k <= P; ++k) {
-        let E = k * c - v;
-        for (let U = _; U <= S; ++U) {
-          let C = U * x - g, A = B * B + E * E + C * C;
-          l[u(z, k, U)] += Math.exp(-t * A);
+    let m = i[b], v = i[b + 1], g = i[b + 2], y = Math.max(0, Math.floor((m - f) / p)), w = Math.min(r - 1, Math.ceil((m + f) / p)), M = Math.max(0, Math.floor((v - f) / h)), P = Math.min(n - 1, Math.ceil((v + f) / h)), _ = Math.max(0, Math.floor((g - f) / d)), k = Math.min(o - 1, Math.ceil((g + f) / d));
+    for (let S = y; S <= w; ++S) {
+      let B = S * a - m;
+      for (let z = M; z <= P; ++z) {
+        let E = z * c - v;
+        for (let U = _; U <= k; ++U) {
+          let G = U * x - g, A = B * B + E * E + G * G;
+          l[u(S, z, U)] += Math.exp(-t * A);
         }
       }
     }
   }
   return { data: l, idx: u };
 }
-function R1(i) {
+function q1(i) {
   if (i.length < 12 || i.length % 3) throw new Error("A sphere fit needs at least four xyz points");
   let e = [0, 0, 0], t = i.length / 3;
   for (let l = 0; l < i.length; l++) {
@@ -23994,33 +23994,33 @@ function R1(i) {
       for (let d = l; d < 5; d++) s[p][d] -= h * s[l][d];
     }
   }
-  let n = s.slice(0, 3).map((l) => l[4]), a = e.map((l, u) => l + n[u]), o = Math.sqrt(s[3][4] + n.reduce((l, u) => l + u * u, 0));
-  if (!Number.isFinite(o) || o <= 0) throw new Error("Sphere fit has no positive radius");
+  let n = s.slice(0, 3).map((l) => l[4]), o = e.map((l, u) => l + n[u]), a = Math.sqrt(s[3][4] + n.reduce((l, u) => l + u * u, 0));
+  if (!Number.isFinite(a) || a <= 0) throw new Error("Sphere fit has no positive radius");
   let c = 0, x = 0;
   for (let l = 0; l < i.length; l += 3) {
-    let u = Math.abs(Math.hypot(i[l] - a[0], i[l + 1] - a[1], i[l + 2] - a[2]) - o);
+    let u = Math.abs(Math.hypot(i[l] - o[0], i[l + 1] - o[1], i[l + 2] - o[2]) - a);
     c += u * u, x = Math.max(x, u);
   }
-  return { center: a, radius: o, rmsError: Math.sqrt(c / t), maxError: x };
+  return { center: o, radius: a, rmsError: Math.sqrt(c / t), maxError: x };
 }
-function O1(i, e = "outer", t = 4e-3, s = 0) {
+function W1(i, e = "outer", t = 4e-3, s = 0) {
   if (!["outer", "inner", "both"].includes(e)) throw new Error("Choose outer, inner or both surfaces");
   if (!Number.isFinite(s) || !Number.isFinite(t) || t <= 0) throw new Error("Use a finite offset and positive shell thickness");
   let r = i.radius + s, n = r - t;
   if (r <= 0 || n <= 0) throw new Error("Shell thickness must be smaller than the sphere radius plus offset");
-  return [{ side: "outer", radius: r, iso: s }, { side: "inner", radius: n, iso: s - t }].filter((o) => e === "both" || o.side === e);
+  return [{ side: "outer", radius: r, iso: s }, { side: "inner", radius: n, iso: s - t }].filter((a) => e === "both" || a.side === e);
 }
-function L1(i) {
+function $1(i) {
   return (e, t, s) => Math.hypot(e - i.center[0], t - i.center[1], s - i.center[2]) - i.radius;
 }
-function N1(i, e, t) {
-  let s = new Float32Array(i.length), r = new Float32Array(i.length), n = 0, a = t.side === "inner" ? -1 : 1;
-  for (let o = 0; o < i.length; o += 9) {
+function j1(i, e, t) {
+  let s = new Float32Array(i.length), r = new Float32Array(i.length), n = 0, o = t.side === "inner" ? -1 : 1;
+  for (let a = 0; a < i.length; a += 9) {
     let c = [], x = [];
     for (let d = 0; d < 3; d++) {
-      let b = [0, 1, 2].map((v) => i[o + d * 3 + v] - e.center[v]), m = Math.hypot(...b);
+      let b = [0, 1, 2].map((v) => i[a + d * 3 + v] - e.center[v]), m = Math.hypot(...b);
       if (!Number.isFinite(m) || m === 0) throw new Error("Invalid sphere vertex");
-      c.push(b.map((v, g) => e.center[g] + v / m * t.radius)), x.push(b.map((v) => v / m * a));
+      c.push(b.map((v, g) => e.center[g] + v / m * t.radius)), x.push(b.map((v) => v / m * o));
     }
     let l = c[1].map((d, b) => d - c[0][b]), u = c[2].map((d, b) => d - c[0][b]), f = [l[1] * u[2] - l[2] * u[1], l[2] * u[0] - l[0] * u[2], l[0] * u[1] - l[1] * u[0]];
     if (Math.hypot(...f) < t.radius * t.radius * 1e-12) continue;
@@ -24029,10 +24029,10 @@ function N1(i, e, t) {
   }
   return { positions: s.slice(0, n), normals: r.slice(0, n) };
 }
-var Vt = { generateSpherePoints: it, createScalarField: rt, fitSphere: R1, sphereSurfaces: O1, sphereSampler: L1, refineSphereSurface: N1 };
-var q = {};
-F(q, { bounds: () => m1, default: () => Wt, estimatedError: () => Y, hash: () => G, height: () => Z, heightGradient: () => H, noise: () => p1, noiseValue: () => b1, wgsl: () => j });
-var j = `fn terrain_hash(p: vec2<i32>, seed: u32) -> f32 {
+var Wt = { generateSpherePoints: rt, createScalarField: nt, fitSphere: q1, sphereSurfaces: W1, sphereSampler: $1, refineSphereSurface: j1 };
+var W = {};
+F(W, { bounds: () => L, default: () => jt, estimatedError: () => X, hash: () => I, height: () => J, heightGradient: () => Z, noise: () => y1, noiseValue: () => w1, wgsl: () => Y });
+var Y = `fn terrain_hash(p: vec2<i32>, seed: u32) -> f32 {
   var h = (bitcast<u32>(p.x)*0x8da6b343u) ^ (bitcast<u32>(p.y)*0xd8163841u) ^ (seed*0xcb1ab31fu);
   h = (h ^ (h >> 16u))*0x7feb352du;
   h = (h ^ (h >> 15u))*0x846ca68bu;
@@ -24060,84 +24060,84 @@ fn terrain_height_gradient(xz: vec2<f32>, seed: u32) -> vec3<f32> {
   return result;
 }
 `;
-var d1 = [[2400, 140], [1e3, 65], [420, 28], [180, 12], [72, 5], [28, 2], [10, 0.8]];
-var m1 = [-380, 480];
-function G(i, e, t = 7) {
+var g1 = [[2400, 140], [1e3, 65], [420, 28], [180, 12], [72, 5], [28, 2], [10, 0.8]];
+var L = [-380, 480];
+function I(i, e, t = 7) {
   let s = (Math.imul(i, 2376512323) ^ Math.imul(e, 3625334849) ^ Math.imul(t, 3407524639)) >>> 0;
   return s = Math.imul(s ^ s >>> 16, 2146121005) >>> 0, s = Math.imul(s ^ s >>> 15, 2221713035) >>> 0, ((s ^ s >>> 16) >>> 0) / 4294967295 * 2 - 1;
 }
-function p1(i, e, t) {
-  let s = Math.floor(i), r = Math.floor(e), n = i - s, a = e - r, o = n * n * (3 - 2 * n), c = a * a * (3 - 2 * a), x = 6 * n * (1 - n), l = 6 * a * (1 - a), u = G(s, r, t), f = G(s + 1, r, t), p = G(s, r + 1, t), h = G(s + 1, r + 1, t);
-  return [u + (f - u) * o + (p - u) * c + (u - f - p + h) * o * c, ((f - u) * (1 - c) + (h - p) * c) * x, ((p - u) * (1 - o) + (h - f) * o) * l];
+function y1(i, e, t) {
+  let s = Math.floor(i), r = Math.floor(e), n = i - s, o = e - r, a = n * n * (3 - 2 * n), c = o * o * (3 - 2 * o), x = 6 * n * (1 - n), l = 6 * o * (1 - o), u = I(s, r, t), f = I(s + 1, r, t), p = I(s, r + 1, t), h = I(s + 1, r + 1, t);
+  return [u + (f - u) * a + (p - u) * c + (u - f - p + h) * a * c, ((f - u) * (1 - c) + (h - p) * c) * x, ((p - u) * (1 - a) + (h - f) * a) * l];
 }
-function b1(i, e, t) {
-  let s = Math.floor(i), r = Math.floor(e), n = i - s, a = e - r, o = n * n * (3 - 2 * n), c = a * a * (3 - 2 * a), x = G(s, r, t), l = G(s + 1, r, t), u = G(s, r + 1, t), f = G(s + 1, r + 1, t);
-  return x + (l - x) * o + (u - x) * c + (x - l - u + f) * o * c;
-}
-function H(i, e, t = 7) {
-  let s = [25, 0, 0];
-  for (let o = 0; o < d1.length; o++) {
-    let [c, x] = d1[o], l = p1(i / c + 13.71, e / c - 8.29, t + o * 19);
-    s[0] += l[0] * x, s[1] += l[1] * x / c, s[2] += l[2] * x / c;
-  }
-  let r = p1(i / 620 - 2.7, e / 620 + 4.1, t + 101), n = 1 - Math.abs(r[0]);
-  s[0] += n * n * 100 - 50;
-  let a = -2 * n * Math.sign(r[0]) * 100 / 620;
-  return s[1] += a * r[1], s[2] += a * r[2], s;
-}
-function Y(i) {
-  let e = 0;
-  for (let [t, s] of d1) e += s * Math.min(1, 2 * (i / t) ** 2);
-  return e + 100 * Math.min(1, i / 620) * 0.15;
+function w1(i, e, t) {
+  let s = Math.floor(i), r = Math.floor(e), n = i - s, o = e - r, a = n * n * (3 - 2 * n), c = o * o * (3 - 2 * o), x = I(s, r, t), l = I(s + 1, r, t), u = I(s, r + 1, t), f = I(s + 1, r + 1, t);
+  return x + (l - x) * a + (u - x) * c + (x - l - u + f) * a * c;
 }
 function Z(i, e, t = 7) {
-  let s = 25;
-  for (let n = 0; n < d1.length; n++) {
-    let [a, o] = d1[n];
-    s += b1(i / a + 13.71, e / a - 8.29, t + n * 19) * o;
+  let s = [25, 0, 0];
+  for (let a = 0; a < g1.length; a++) {
+    let [c, x] = g1[a], l = y1(i / c + 13.71, e / c - 8.29, t + a * 19);
+    s[0] += l[0] * x, s[1] += l[1] * x / c, s[2] += l[2] * x / c;
   }
-  let r = 1 - Math.abs(b1(i / 620 - 2.7, e / 620 + 4.1, t + 101));
+  let r = y1(i / 620 - 2.7, e / 620 + 4.1, t + 101), n = 1 - Math.abs(r[0]);
+  s[0] += n * n * 100 - 50;
+  let o = -2 * n * Math.sign(r[0]) * 100 / 620;
+  return s[1] += o * r[1], s[2] += o * r[2], s;
+}
+function X(i) {
+  let e = 0;
+  for (let [t, s] of g1) e += s * Math.min(1, 2 * (i / t) ** 2);
+  return e + 100 * Math.min(1, i / 620) * 0.15;
+}
+function J(i, e, t = 7) {
+  let s = 25;
+  for (let n = 0; n < g1.length; n++) {
+    let [o, a] = g1[n];
+    s += w1(i / o + 13.71, e / o - 8.29, t + n * 19) * a;
+  }
+  let r = 1 - Math.abs(w1(i / 620 - 2.7, e / 620 + 4.1, t + 101));
   return s + (r * r * 100 - 50);
 }
-var Wt = { hash: G, heightGradient: H, height: Z, estimatedError: Y, bounds: m1, wgsl: j };
-var w1 = {};
-F(w1, { EAST: () => we, NORTH: () => Me, SOUTH: () => Pe, WEST: () => ye, balance: () => g1, default: () => $t, desiredLevel: () => ke, distanceTo: () => D, makeTiles: () => V1, moveTiles: () => W1, neighbors: () => _e, relativePlanes: () => $1, seams: () => y1, select: () => j1, shiftTileMap: () => v1, windowOffset: () => q1 });
-var ye = 1;
-var we = 2;
-var Me = 4;
-var Pe = 8;
-function V1(i = 8192, e = 128) {
+var jt = { hash: I, heightGradient: Z, height: J, estimatedError: X, bounds: L, wgsl: Y };
+var z1 = {};
+F(z1, { EAST: () => t1, NORTH: () => s1, SOUTH: () => i1, WEST: () => e1, balance: () => P1, default: () => Yt, desiredLevel: () => ze, distanceTo: () => D, makeTiles: () => Y1, moveTiles: () => H1, neighbors: () => _e, relativePlanes: () => Q1, seams: () => _1, select: () => K1, shiftTileMap: () => M1, windowOffset: () => X1 });
+var e1 = 1;
+var t1 = 2;
+var s1 = 4;
+var i1 = 8;
+function Y1(i = 8192, e = 128) {
   let t = i / e;
   if (!Number.isInteger(t) || t < 1) throw new Error("World size must be divisible by tile size");
   let s = [];
   for (let r = 0; r < t; r++) for (let n = 0; n < t; n++) {
-    let a = n * e - i / 2, o = r * e - i / 2;
-    s.push({ id: r * t + n, x: n, z: r, ox: a, oz: o, size: e, lo: [a, m1[0], o], hi: [a + e, m1[1], o + e] });
+    let o = n * e - i / 2, a = r * e - i / 2;
+    s.push({ id: r * t + n, x: n, z: r, ox: o, oz: a, size: e, lo: [o, L[0], a], hi: [o + e, L[1], a + e] });
   }
   return { tiles: s, side: t };
 }
 function _e(i, e) {
   let t = i % e, s = Math.floor(i / e);
-  return [[t > 0 ? i - 1 : -1, ye], [t < e - 1 ? i + 1 : -1, we], [s > 0 ? i - e : -1, Me], [s < e - 1 ? i + e : -1, Pe]];
+  return [[t > 0 ? i - 1 : -1, e1], [t < e - 1 ? i + 1 : -1, t1], [s > 0 ? i - e : -1, s1], [s < e - 1 ? i + e : -1, i1]];
 }
-function q1(i, e, t) {
+function X1(i, e, t) {
   let s = t * Math.max(1, Math.floor(e / t / 8));
   return [Math.round(i[0] / s) * s, Math.round(i[2] / s) * s];
 }
-function v1(i, e, t, s, r = () => {
+function M1(i, e, t, s, r = () => {
 }) {
   if (!Number.isInteger(t) || !Number.isInteger(s)) throw new Error("Window shifts must use whole tiles");
   let n = /* @__PURE__ */ new Map();
-  for (let [a, o] of i) {
-    let c = a % e - t, x = Math.floor(a / e) - s;
-    c >= 0 && x >= 0 && c < e && x < e ? n.set(x * e + c, o) : r(o);
+  for (let [o, a] of i) {
+    let c = o % e - t, x = Math.floor(o / e) - s;
+    c >= 0 && x >= 0 && c < e && x < e ? n.set(x * e + c, a) : r(a);
   }
   return n;
 }
-function W1(i, e, t) {
+function H1(i, e, t) {
   for (let s of i) s.ox += e, s.oz += t, s.lo[0] += e, s.hi[0] += e, s.lo[2] += t, s.hi[2] += t;
 }
-function $1(i, e) {
+function Q1(i, e) {
   return i.map((t) => [t[0], t[1], t[2], t[3] + t[0] * e[0] + t[2] * e[1]]);
 }
 function D(i, e) {
@@ -24148,10 +24148,10 @@ function D(i, e) {
   }
   return Math.sqrt(t);
 }
-function ke(i, e, t, s, r) {
-  let n = Math.max(1, D(i, e.position)), a = r ? 0 : e.height / (2 * Math.tan(e.fov / 2));
+function ze(i, e, t, s, r) {
+  let n = Math.max(1, D(i, e.position)), o = r ? 0 : e.height / (2 * Math.tan(e.fov / 2));
   if (Math.hypot(Math.max(i.ox - e.player[0], 0, e.player[0] - i.ox - i.size), Math.max(i.oz - e.player[2], 0, e.player[2] - i.oz - i.size)) < t.nearRadius) return 0;
-  let c = (l) => (r ? r[l] : Y(i.size / (t.maxDivs >> l)) * a) / n, x = 0;
+  let c = (l) => (r ? r[l] : X(i.size / (t.maxDivs >> l)) * o) / n, x = 0;
   for (; x < t.levels - 1 && c(x + 1) <= t.pixelError; ) x++;
   if (s !== void 0 && s < t.levels) {
     let l = c(s), u = s + 1 < t.levels ? c(s + 1) : 1 / 0;
@@ -24159,48 +24159,48 @@ function ke(i, e, t, s, r) {
   }
   return x;
 }
-function g1(i, e, t = "refine") {
-  let s = Array.from(i.keys()), r = (n, a) => {
-    let o = i.get(n), c = i.get(a);
-    if (c === void 0 || Math.abs(o - c) <= 1) return;
-    let x = t === "refine" ? o > c ? n : a : o < c ? n : a;
-    i.set(x, t === "refine" ? Math.min(o, c) + 1 : Math.max(o, c) - 1), s.push(x);
+function P1(i, e, t = "refine") {
+  let s = Array.from(i.keys()), r = (n, o) => {
+    let a = i.get(n), c = i.get(o);
+    if (c === void 0 || Math.abs(a - c) <= 1) return;
+    let x = t === "refine" ? a > c ? n : o : a < c ? n : o;
+    i.set(x, t === "refine" ? Math.min(a, c) + 1 : Math.max(a, c) - 1), s.push(x);
   };
   for (let n = 0; n < s.length; n++) {
-    let a = s[n], o = a % e;
-    o && r(a, a - 1), o < e - 1 && r(a, a + 1), a >= e && r(a, a - e), a + e < e * e && r(a, a + e);
+    let o = s[n], a = o % e;
+    a && r(o, o - 1), a < e - 1 && r(o, o + 1), o >= e && r(o, o - e), o + e < e * e && r(o, o + e);
   }
   return i;
 }
-function y1(i, e) {
+function _1(i, e) {
   let t = /* @__PURE__ */ new Map();
   for (let [s, r] of i) {
     let n = 0;
-    for (let [a, o] of _e(s, e)) i.get(a) === r + 1 && (n |= o);
+    for (let [o, a] of _e(s, e)) i.get(o) === r + 1 && (n |= a);
     t.set(s, n);
   }
   return t;
 }
-function j1(i, e, t, s, r, n = /* @__PURE__ */ new Map()) {
-  let a = /* @__PURE__ */ new Map(), o = s.height / (2 * Math.tan(s.fov / 2)), c = e.length ? Array.from({ length: r.levels }, (x, l) => Y(i[e[0]].size / (r.maxDivs >> l)) * o) : [];
-  for (let x of e) a.set(x, r.uniform ? 0 : ke(i[x], s, r, n.get(x), c));
-  return g1(a, t), { levels: a, masks: y1(a, t) };
+function K1(i, e, t, s, r, n = /* @__PURE__ */ new Map()) {
+  let o = /* @__PURE__ */ new Map(), a = s.height / (2 * Math.tan(s.fov / 2)), c = e.length ? Array.from({ length: r.levels }, (x, l) => X(i[e[0]].size / (r.maxDivs >> l)) * a) : [];
+  for (let x of e) o.set(x, r.uniform ? 0 : ze(i[x], s, r, n.get(x), c));
+  return P1(o, t), { levels: o, masks: _1(o, t) };
 }
-var $t = { makeTiles: V1, neighbors: _e, windowOffset: q1, shiftTileMap: v1, moveTiles: W1, relativePlanes: $1, distanceTo: D, desiredLevel: ke, balance: g1, seams: y1, select: j1, WEST: ye, EAST: we, NORTH: Me, SOUTH: Pe };
-var Q1 = {};
-F(Q1, { build: () => Y1, default: () => Yt, intersects: () => ze, query: () => X1 });
-function Se(i) {
+var Yt = { makeTiles: Y1, neighbors: _e, windowOffset: X1, shiftTileMap: M1, moveTiles: H1, relativePlanes: Q1, distanceTo: D, desiredLevel: ze, balance: P1, seams: _1, select: K1, WEST: e1, EAST: t1, NORTH: s1, SOUTH: i1 };
+var ee = {};
+F(ee, { build: () => Z1, default: () => Ht, intersects: () => Se, query: () => J1 });
+function ke(i) {
   let e = i & 1023;
   return e = (e | e << 16) & 50331903, e = (e | e << 8) & 50393103, e = (e | e << 4) & 51130563, (e | e << 2) & 153391689;
 }
-function at(i, e) {
+function ot(i, e) {
   return { lo: i.lo.map((t, s) => Math.min(t, e.lo[s])), hi: i.hi.map((t, s) => Math.max(t, e.hi[s])), left: i, right: e, id: -1 };
 }
-function jt(i) {
+function Xt(i) {
   let e = i.hi.map((t, s) => Math.max(0, t - i.lo[s]));
   return e[0] * e[1] + e[1] * e[2] + e[2] * e[0];
 }
-function Y1(i, e = 16) {
+function Z1(i, e = 16) {
   if (!Number.isInteger(e) || e < 2) throw new Error("Treelet width must be at least two");
   if (!i.length) return { bounds: new Float32Array(), escape: new Int32Array(), leaf: new Int32Array(), count: 0 };
   let t = [1 / 0, 1 / 0, 1 / 0], s = [-1 / 0, -1 / 0, -1 / 0];
@@ -24210,7 +24210,7 @@ function Y1(i, e = 16) {
   }
   let r = i.map((u) => {
     let f = u.lo.map((p, h) => Math.min(1023, Math.max(0, Math.floor(((p + u.hi[h]) * 0.5 - t[h]) / Math.max(s[h] - t[h], 1e-9) * 1024))));
-    return { ...u, key: (Se(f[0]) << 2 | Se(f[1]) << 1 | Se(f[2])) >>> 0 };
+    return { ...u, key: (ke(f[0]) << 2 | ke(f[1]) << 1 | ke(f[2])) >>> 0 };
   }).sort((u, f) => u.key - f.key || u.id - f.id);
   for (; r.length > 1; ) {
     let u = [];
@@ -24220,14 +24220,14 @@ function Y1(i, e = 16) {
         let h = p.map((m, v) => {
           let g = -1, y = 1 / 0;
           for (let w = 0; w < p.length; w++) if (v !== w) {
-            let M = jt(at(m, p[w]));
+            let M = Xt(ot(m, p[w]));
             (M < y || M === y && w < g) && (g = w, y = M);
           }
           return g;
         }), d = /* @__PURE__ */ new Set(), b = [];
         for (let m = 0; m < p.length; m++) {
           let v = h[m];
-          v > m && h[v] === m && (b.push(at(p[m], p[v])), d.add(m), d.add(v));
+          v > m && h[v] === m && (b.push(ot(p[m], p[v])), d.add(m), d.add(v));
         }
         if (!d.size) throw new Error("PLOC clustering did not make progress");
         p = p.filter((m, v) => !d.has(v)).concat(b);
@@ -24236,24 +24236,24 @@ function Y1(i, e = 16) {
     }
     r = u;
   }
-  let n = i.length * 2 - 1, a = new Float32Array(n * 6), o = new Int32Array(n), c = new Int32Array(n).fill(-1), x = 0;
+  let n = i.length * 2 - 1, o = new Float32Array(n * 6), a = new Int32Array(n), c = new Int32Array(n).fill(-1), x = 0;
   function l(u) {
     let f = x++;
-    a.set(u.lo, f * 6), a.set(u.hi, f * 6 + 3), c[f] = u.id, u.id < 0 && (l(u.left), l(u.right)), o[f] = x;
+    o.set(u.lo, f * 6), o.set(u.hi, f * 6 + 3), c[f] = u.id, u.id < 0 && (l(u.left), l(u.right)), a[f] = x;
   }
-  return l(r[0]), { bounds: a, escape: o, leaf: c, count: n };
+  return l(r[0]), { bounds: o, escape: a, leaf: c, count: n };
 }
-function ze(i, e, t) {
+function Se(i, e, t) {
   for (let s of t) {
-    let r = i[e + (s[0] >= 0 ? 3 : 0)], n = i[e + (s[1] >= 0 ? 4 : 1)], a = i[e + (s[2] >= 0 ? 5 : 2)];
-    if (s[0] * r + s[1] * n + s[2] * a + s[3] < 0) return false;
+    let r = i[e + (s[0] >= 0 ? 3 : 0)], n = i[e + (s[1] >= 0 ? 4 : 1)], o = i[e + (s[2] >= 0 ? 5 : 2)];
+    if (s[0] * r + s[1] * n + s[2] * o + s[3] < 0) return false;
   }
   return true;
 }
-function X1(i, e) {
+function J1(i, e) {
   let t = [], s = 0, r = 0;
   for (; s < i.count; ) {
-    if (r++, !ze(i.bounds, s * 6, e)) {
+    if (r++, !Se(i.bounds, s * 6, e)) {
       s = i.escape[s];
       continue;
     }
@@ -24261,32 +24261,32 @@ function X1(i, e) {
   }
   return { ids: t, visited: r };
 }
-var Yt = { build: Y1, query: X1, intersects: ze };
-var e1 = {};
-F(e1, { buildIndices: () => W, cellCorners: () => Be, default: () => Xt, lines: () => J });
+var Ht = { build: Z1, query: J1, intersects: Se };
+var n1 = {};
+F(n1, { buildIndices: () => $, cellCorners: () => Be, default: () => Qt, lines: () => r1 });
 function Be(i) {
-  let e = N[i];
+  let e = V[i];
   if (!e) throw new Error("Unknown terrain algorithm");
-  let t = Float32Array.from(e.corners, (o) => o[1] ? 1 : -1), s = 0;
-  t.forEach((o, c) => {
-    o < 0 && (s |= e.cornerBit(c));
+  let t = Float32Array.from(e.corners, (a) => a[1] ? 1 : -1), s = 0;
+  t.forEach((a, c) => {
+    a < 0 && (s |= e.cornerBit(c));
   });
-  let r = new Uint8Array(e.maxVertices), n = e.createPolygonizer()(t, s, r), a = [];
-  for (let o of r.slice(0, n)) {
-    if (o === 12) throw new Error("Heightfield template unexpectedly uses a center vertex");
-    let [c, x] = e.edges[o], l = e.corners[c], u = e.corners[x];
+  let r = new Uint8Array(e.maxVertices), n = e.createPolygonizer()(t, s, r), o = [];
+  for (let a of r.slice(0, n)) {
+    if (a === 12) throw new Error("Heightfield template unexpectedly uses a center vertex");
+    let [c, x] = e.edges[a], l = e.corners[c], u = e.corners[x];
     if (l[0] !== u[0] || l[2] !== u[2]) throw new Error("Heightfield crossing must be vertical");
-    a.push([l[0], l[2]]);
+    o.push([l[0], l[2]]);
   }
-  return a;
+  return o;
 }
-function W(i, e = 0, t = "mc33") {
+function $(i, e = 0, t = "mc33") {
   if (!Number.isInteger(i) || i < 2 || i & i - 1) throw new Error("Divisions must be a power of two of at least 2");
   if (!Number.isInteger(e) || e < 0 || e > 15) throw new Error("Seam mask must be 0..15");
-  let s = i + 1, r = Be(t), n = new Uint32Array(i * i * 6), a = 0;
-  function o(x) {
+  let s = i + 1, r = Be(t), n = new Uint32Array(i * i * 6), o = 0;
+  function a(x) {
     let l = x.map((f) => [f % s, Math.floor(f / s)]), u = (l[1][0] - l[0][0]) * (l[2][1] - l[0][1]) - (l[1][1] - l[0][1]) * (l[2][0] - l[0][0]);
-    u !== 0 && (u > 0 && ([x[1], x[2]] = [x[2], x[1]]), n.set(x, a), a += 3);
+    u !== 0 && (u > 0 && ([x[1], x[2]] = [x[2], x[1]]), n.set(x, o), o += 3);
   }
   let c = [];
   for (let x = 0; x < r.length; x += 3) {
@@ -24298,76 +24298,76 @@ function W(i, e = 0, t = "mc33") {
       let b = h === 0 && e & 1 || h === i && e & 2, m = d === 0 && e & 4 || d === i && e & 8;
       return !(b && d & 1) && !(m && h & 1);
     }).map(([h, d]) => d * s + h), p = (x + 1) * s + l + 1;
-    for (let h = 0; h < f.length; h++) o([p, f[h], f[(h + 1) % f.length]]);
-  } else for (let f = 0; f < 2; f++) for (let p = 0; p < 2; p++) for (let h = 0; h < c.length; h++) n[a++] = (x + f) * s + l + p + c[h];
-  return n.slice(0, a);
+    for (let h = 0; h < f.length; h++) a([p, f[h], f[(h + 1) % f.length]]);
+  } else for (let f = 0; f < 2; f++) for (let p = 0; p < 2; p++) for (let h = 0; h < c.length; h++) n[o++] = (x + f) * s + l + p + c[h];
+  return n.slice(0, o);
 }
-function J(i) {
+function r1(i) {
   let e = /* @__PURE__ */ new Map();
   for (let t = 0; t < i.length; t += 3) for (let s = 0; s < 3; s++) {
-    let r = i[t + s], n = i[t + (s + 1) % 3], a = r < n ? `${r},${n}` : `${n},${r}`;
-    e.has(a) || e.set(a, [r, n]);
+    let r = i[t + s], n = i[t + (s + 1) % 3], o = r < n ? `${r},${n}` : `${n},${r}`;
+    e.has(o) || e.set(o, [r, n]);
   }
   return Uint32Array.from(Array.from(e.values()).flat());
 }
-var Xt = { buildIndices: W, lines: J, cellCorners: Be };
-var ee = {};
-F(ee, { attachment: () => J1, default: () => Qt, geometry: () => Z1, level: () => H1, trees: () => K1 });
-function K1(i, e = 32, t = 7) {
+var Qt = { buildIndices: $, lines: r1, cellCorners: Be };
+var ne = {};
+F(ne, { attachment: () => re, default: () => Kt, geometry: () => ie, level: () => se, trees: () => te });
+function te(i, e = 32, t = 7) {
   let s = [], r = Math.round(i.ox / i.size), n = Math.round(i.oz / i.size);
-  for (let a = 0; a < e; a++) {
-    let o = (h) => (G(r * 53 + a, n * 71 - a, h + t - 7) + 1) * 0.5, c = 0.04 + o(307) * 0.92, x = 0.04 + o(619) * 0.92, l = i.ox + c * i.size, u = i.oz + x * i.size, f = H(l, u, t), p = (G(Math.floor(l / 220), Math.floor(u / 220), 103 + t - 7) + 1) * 0.5;
-    f[0] < -6 || f[0] > 200 || Math.hypot(f[1], f[2]) > 0.65 || o(821) > 0.35 + p * 0.65 || s.push({ id: `${t}:${r}:${n}:${a}`, x: l, z: u, u: c, v: x, height: 11 + o(937) * 14, yaw: o(1223) * Math.PI * 2, tint: o(1549) });
+  for (let o = 0; o < e; o++) {
+    let a = (h) => (I(r * 53 + o, n * 71 - o, h + t - 7) + 1) * 0.5, c = 0.04 + a(307) * 0.92, x = 0.04 + a(619) * 0.92, l = i.ox + c * i.size, u = i.oz + x * i.size, f = Z(l, u, t), p = (I(Math.floor(l / 220), Math.floor(u / 220), 103 + t - 7) + 1) * 0.5;
+    f[0] < -6 || f[0] > 200 || Math.hypot(f[1], f[2]) > 0.65 || a(821) > 0.35 + p * 0.65 || s.push({ id: `${t}:${r}:${n}:${o}`, x: l, z: u, u: c, v: x, height: 11 + a(937) * 14, yaw: a(1223) * Math.PI * 2, tint: a(1549) });
   }
   return s;
 }
-function H1(i, e, t) {
+function se(i, e, t) {
   let s = Math.max(1, Math.hypot(i.x - e.position[0], i.y + i.height * 0.5 - e.position[1], i.z - e.position[2])), r = i.height * e.height / (2 * Math.tan(e.fov / 2) * s), n = r > 42 ? 0 : r > 13 ? 1 : 2;
   return t === 0 && r > 36 ? n = 0 : t === 1 && r > 11 && r < 48 ? n = 1 : t === 2 && r < 15 && (n = 2), n;
 }
-function Z1(i) {
-  let e = [], t = (r, n, a) => e.push(...r, ...n, ...a);
-  function s(r, n, a, o, c, x = 0) {
-    for (let l = 0; l < o; l++) {
-      let u = l / o * Math.PI * 2, f = (l + 1) / o * Math.PI * 2, p = [Math.cos(u) * r, n, Math.sin(u) * r], h = [Math.cos(f) * r, n, Math.sin(f) * r], d = [Math.cos(u) * x, a, Math.sin(u) * x], b = [Math.cos(f) * x, a, Math.sin(f) * x], m = [Math.cos((u + f) / 2), r / (a - n), Math.sin((u + f) / 2)], v = Math.hypot(...m), g = m.map((y) => y / v);
+function ie(i) {
+  let e = [], t = (r, n, o) => e.push(...r, ...n, ...o);
+  function s(r, n, o, a, c, x = 0) {
+    for (let l = 0; l < a; l++) {
+      let u = l / a * Math.PI * 2, f = (l + 1) / a * Math.PI * 2, p = [Math.cos(u) * r, n, Math.sin(u) * r], h = [Math.cos(f) * r, n, Math.sin(f) * r], d = [Math.cos(u) * x, o, Math.sin(u) * x], b = [Math.cos(f) * x, o, Math.sin(f) * x], m = [Math.cos((u + f) / 2), r / (o - n), Math.sin((u + f) / 2)], v = Math.hypot(...m), g = m.map((y) => y / v);
       t(p, g, c), t(d, g, c), t(h, g, c), x && (t(h, g, c), t(d, g, c), t(b, g, c)), t(h, [0, -1, 0], c), t([0, n, 0], [0, -1, 0], c), t(p, [0, -1, 0], c);
     }
   }
   if (i === 2) for (let r = 0; r < 2; r++) {
-    let n = r * Math.PI / 2, a = Math.cos(n), o = Math.sin(n), c = [-o, 0, a], x = [0.09, 0.26, 0.12];
-    for (let l of [[-0.24, 0.14], [0, 1], [0.24, 0.14]]) t([l[0] * a, l[1], l[0] * o], c, x);
-    for (let l of [[-0.025, 0], [-0.025, 0.2], [0.025, 0.2], [-0.025, 0], [0.025, 0.2], [0.025, 0]]) t([l[0] * a, l[1], l[0] * o], c, [0.23, 0.14, 0.07]);
+    let n = r * Math.PI / 2, o = Math.cos(n), a = Math.sin(n), c = [-a, 0, o], x = [0.09, 0.26, 0.12];
+    for (let l of [[-0.24, 0.14], [0, 1], [0.24, 0.14]]) t([l[0] * o, l[1], l[0] * a], c, x);
+    for (let l of [[-0.025, 0], [-0.025, 0.2], [0.025, 0.2], [-0.025, 0], [0.025, 0.2], [0.025, 0]]) t([l[0] * o, l[1], l[0] * a], c, [0.23, 0.14, 0.07]);
   }
   else s(0.026, 0, 0.76, i === 0 ? 8 : 5, [0.26, 0.16, 0.08], 0.012), i === 0 ? (s(0.25, 0.18, 0.68, 8, [0.08, 0.25, 0.12]), s(0.2, 0.38, 0.86, 8, [0.1, 0.29, 0.14]), s(0.14, 0.6, 1, 8, [0.13, 0.34, 0.17])) : (s(0.25, 0.18, 0.77, 5, [0.09, 0.27, 0.13]), s(0.16, 0.5, 1, 5, [0.12, 0.32, 0.16]));
   return Float32Array.from(e);
 }
-var ot = /* @__PURE__ */ new Map();
-function J1(i, e, t, s, r) {
-  let n = s * i, a = r * i, o = Math.min(i - 2, Math.floor(n / 2) * 2), c = Math.min(i - 2, Math.floor(a / 2) * 2), x = (o === 0 ? e & 1 : 0) | (o === i - 2 ? e & 2 : 0) | (c === 0 ? e & 4 : 0) | (c === i - 2 ? e & 8 : 0), l = `${t}:${x}`, u = ot.get(l);
+var ct = /* @__PURE__ */ new Map();
+function re(i, e, t, s, r) {
+  let n = s * i, o = r * i, a = Math.min(i - 2, Math.floor(n / 2) * 2), c = Math.min(i - 2, Math.floor(o / 2) * 2), x = (a === 0 ? e & 1 : 0) | (a === i - 2 ? e & 2 : 0) | (c === 0 ? e & 4 : 0) | (c === i - 2 ? e & 8 : 0), l = `${t}:${x}`, u = ct.get(l);
   if (!u) {
-    let h = W(2, x, t);
+    let h = $(2, x, t);
     u = [];
     for (let d = 0; d < h.length; d += 3) u.push(Array.from(h.subarray(d, d + 3), (b) => [b % 3, Math.floor(b / 3)]));
-    ot.set(l, u);
+    ct.set(l, u);
   }
-  let f = n - o, p = a - c;
+  let f = n - a, p = o - c;
   for (let h of u) {
     let [d, b, m] = h, v = (b[1] - m[1]) * (d[0] - m[0]) + (m[0] - b[0]) * (d[1] - m[1]), g = ((b[1] - m[1]) * (f - m[0]) + (m[0] - b[0]) * (p - m[1])) / v, y = ((m[1] - d[1]) * (f - m[0]) + (d[0] - m[0]) * (p - m[1])) / v, w = 1 - g - y;
-    if (Math.min(g, y, w) >= -1e-6) return { ids: h.map(([M, P]) => (c + P) * (i + 1) + o + M), weights: [g, y, w] };
+    if (Math.min(g, y, w) >= -1e-6) return { ids: h.map(([M, P]) => (c + P) * (i + 1) + a + M), weights: [g, y, w] };
   }
   throw new Error("Tree root is outside its terrain triangle");
 }
-var Qt = { trees: K1, level: H1, geometry: Z1, attachment: J1 };
-async function te({ adapterOptions: i, requiredFeatures: e = [], requiredLimits: t, timestamps: s = true } = {}) {
+var Kt = { trees: te, level: se, geometry: ie, attachment: re };
+async function ae({ adapterOptions: i, requiredFeatures: e = [], requiredLimits: t, timestamps: s = true } = {}) {
   let r = globalThis.navigator?.gpu;
   if (!r) throw new Error("WebGPU is unavailable; use CPU extraction or a WebGPU browser over HTTPS.");
   let n = await r.requestAdapter(i);
   if (!n) throw new Error("No WebGPU adapter is available.");
-  let a = new Set(e);
-  return s && n.features.has("timestamp-query") && a.add("timestamp-query"), n.requestDevice({ requiredFeatures: [...a], requiredLimits: t });
+  let o = new Set(e);
+  return s && n.features.has("timestamp-query") && o.add("timestamp-query"), n.requestDevice({ requiredFeatures: [...o], requiredLimits: t });
 }
-async function t1(i) {
-  i.ownsDevice = !i.options.device, i.device = i.options.device || await te();
+async function a1(i) {
+  i.ownsDevice = !i.options.device, i.device = i.options.device || await ae();
   let e = i.device;
   i.onGPUError = (s) => i.errors.push(s.error.message), e.addEventListener("uncapturederror", i.onGPUError);
   let t = new WeakRef(i);
@@ -24377,21 +24377,21 @@ async function t1(i) {
   }), i.context = i.canvas.getContext("webgpu"), !i.context) throw new Error("Canvas cannot create a WebGPU context.");
   return i.format = i.options.format || globalThis.navigator.gpu.getPreferredCanvasFormat(), i.context.configure({ device: e, format: i.format, alphaMode: "opaque" }), e;
 }
-function s1(i) {
+function o1(i) {
   i.onGPUError && i.device?.removeEventListener("uncapturederror", i.onGPUError), i.context?.unconfigure(), i.ownsDevice && i.device?.destroy();
 }
-function i1(i, e = {}) {
+function c1(i, e = {}) {
   let t = e.pixelRatio ?? Math.min(globalThis.devicePixelRatio || 1, 1.5);
   if (!Number.isFinite(t) || t <= 0) throw new RangeError("pixelRatio must be positive and finite.");
   return { ratio: t, width: Math.max(1, Math.round(i.clientWidth === void 0 ? i.width : i.clientWidth * t)), height: Math.max(1, Math.round(i.clientHeight === void 0 ? i.height : i.clientHeight * t)) };
 }
-function se(i, e, t = 0.12) {
+function S1(i, e, t = 0.12) {
   return i.map((s, r) => r < 4 ? [s[0], s[1], s[2], s[3] + e * t] : s);
 }
-function ie(i, e, t = 0.08) {
-  return i.length !== e?.length || i.slice(0, 4).some((s, r) => s.slice(0, 3).reduce((n, a, o) => n + (a - e[r][o]) ** 2, 0) > t ** 2);
+function oe(i, e, t = 0.08) {
+  return i.length !== e?.length || i.slice(0, 4).some((s, r) => s.slice(0, 3).reduce((n, o, a) => n + (o - e[r][a]) ** 2, 0) > t ** 2);
 }
-var xt = `struct Vertex { position: vec4<f32>, normal: vec4<f32> }
+var ut = `struct Vertex { position: vec4<f32>, normal: vec4<f32> }
 struct BuildParams { origin: vec2<f32>, size: f32, divs: u32, base: u32, stride: u32, seed: u32, pad: u32 }
 @group(0) @binding(0) var<storage,read_write> buildVertices: array<Vertex>;
 @group(0) @binding(1) var<uniform> build: BuildParams;
@@ -24422,9 +24422,11 @@ struct Frame {
   viewProjection: mat4x4<f32>, camera: vec4<f32>, sun: vec4<f32>, reserved: vec4<f32>, settings: vec4<f32>
 }
 struct Instance { base:u32, storedDivs:u32, renderDivs:u32, lod:u32 }
+struct HorizonPatch { origin:vec2<f32>, size:f32, grade:u32 }
 @group(0) @binding(0) var<storage,read> renderVertices: array<Vertex>;
 @group(0) @binding(1) var<storage,read> instances: array<Instance>;
 @group(0) @binding(2) var<uniform> frame: Frame;
+@group(0) @binding(1) var<storage,read> horizon: array<HorizonPatch>;
 struct Varying {
   @builtin(position) clip:vec4<f32>, @location(0) world:vec3<f32>, @location(1) normal:vec3<f32>,
   @location(2) @interpolate(flat) lod:u32,
@@ -24439,10 +24441,23 @@ fn vertex_main(@builtin(vertex_index) vertex:u32,@builtin(instance_index) instan
   clip.z=(clip.z+clip.w)*0.5;
   return Varying(clip,v.position.xyz,v.normal.xyz,info.lod);
 }
+@vertex
+fn vertex_horizon(@builtin(vertex_index) vertex:u32,@builtin(instance_index) instance:u32)->Varying {
+  let tile=horizon[instance];
+  let xz=tile.origin+vec2<f32>(f32(vertex%3u),f32(vertex/3u))*(tile.size*0.5);
+  let h=terrain_height_gradient(xz,bitcast<u32>(frame.settings.x));
+  let world=vec3<f32>(xz.x,h.x,xz.y);
+  var clip=frame.viewProjection*vec4<f32>(world,1);
+  clip.z=(clip.z+clip.w)*0.5;
+  return Varying(clip,world,normalize(vec3<f32>(-h.y,1,-h.z)),16u+tile.grade);
+}
 fn lod_color(level:u32)->vec3<f32> {
   var colors=array<vec3<f32>,6>(vec3<f32>(.95,.25,.22),vec3<f32>(1,.62,.18),vec3<f32>(.8,.82,.2),
     vec3<f32>(.22,.7,.46),vec3<f32>(.2,.6,.9),vec3<f32>(.55,.38,.9));
-  return colors[min(level,5u)];
+  if(level<16u){return colors[min(level,5u)];}
+  var distant=array<vec3<f32>,4>(vec3<f32>(.72,.48,.83),vec3<f32>(.52,.64,.86),
+    vec3<f32>(.41,.75,.73),vec3<f32>(.65,.69,.82));
+  return distant[(level-16u)%4u];
 }
 @fragment
 fn fragment_main(input:Varying)->@location(0) vec4<f32> {
@@ -24459,16 +24474,16 @@ fn fragment_main(input:Varying)->@location(0) vec4<f32> {
   return vec4<f32>(pow(color*light,vec3<f32>(1.0/2.2)),1);
 }
 `;
-var e0 = j + xt;
-var k1 = {};
-F(k1, { cellSize: () => t0, chooseLOD: () => xe, chunk: () => re, default: () => r0, field: () => O, gradient: () => oe, hash: () => Ue, heroes: () => Ae, maxRadius: () => s0, meshColors: () => ut, meshDivisions: () => ce, meshLevels: () => I, pointColors: () => ft, pointTiers: () => R, random: () => _1, sectors: () => ae, visibleSphere: () => ne });
-var t0 = 2400;
-var s0 = 900;
-function Ue(i, e, t, s = 0) {
+var i0 = Y + ut;
+var U1 = {};
+F(U1, { cellSize: () => r0, chooseLOD: () => he, chunk: () => ce, default: () => o0, field: () => O, gradient: () => ue, hash: () => Ae, heroes: () => Te, maxRadius: () => n0, meshColors: () => ht, meshDivisions: () => fe, meshLevels: () => C, pointColors: () => dt, pointTiers: () => R, random: () => E1, sectors: () => le, visibleSphere: () => xe });
+var r0 = 2400;
+var n0 = 900;
+function Ae(i, e, t, s = 0) {
   let r = (Math.imul(i, 73856093) ^ Math.imul(e, 19349663) ^ Math.imul(t, 83492791) ^ Math.imul(s + 31, 1597334677)) >>> 0;
   return r = Math.imul(r ^ r >>> 16, 2146121005) >>> 0, r = Math.imul(r ^ r >>> 15, 2221713035) >>> 0, (r ^ r >>> 16) >>> 0;
 }
-function _1(i) {
+function E1(i) {
   let e = i >>> 0;
   return () => {
     e = e + 1831565813 >>> 0;
@@ -24476,31 +24491,31 @@ function _1(i) {
     return t ^= t + Math.imul(t ^ t >>> 7, t | 61), ((t ^ t >>> 14) >>> 0) / 4294967296;
   };
 }
-function i0(i) {
+function a0(i) {
   let e = i(), t = i() * Math.PI * 2, s = i() * Math.PI * 2;
   return [Math.sqrt(1 - e) * Math.sin(t), Math.sqrt(1 - e) * Math.cos(t), Math.sqrt(e) * Math.sin(s), Math.sqrt(e) * Math.cos(s)];
 }
-var Ae = [{ id: "island", kind: 2, variant: 0, position: [420, -70, -250], radius: 440, rotation: [0, 0, 0, 1], tint: [0.68, 0.87, 0.78] }, { id: "planet", kind: 1, variant: 0, position: [-1300, 430, -1900], radius: 880, rotation: [0.25, 0.08, 0.14, Math.sqrt(1 - 0.25 ** 2 - 0.08 ** 2 - 0.14 ** 2)], tint: [0.45, 0.72, 0.91] }, { id: "asteroid", kind: 0, variant: 2, position: [-230, 100, 500], radius: 185, rotation: [0.16, 0.34, 0.11, Math.sqrt(1 - 0.16 ** 2 - 0.34 ** 2 - 0.11 ** 2)], tint: [0.63, 0.51, 0.39] }];
-function re(i, e, t) {
-  let s = _1(Ue(i, e, t)), r = [];
+var Te = [{ id: "island", kind: 2, variant: 0, position: [420, -70, -250], radius: 440, rotation: [0, 0, 0, 1], tint: [0.68, 0.87, 0.78] }, { id: "planet", kind: 1, variant: 0, position: [-1300, 430, -1900], radius: 880, rotation: [0.25, 0.08, 0.14, Math.sqrt(1 - 0.25 ** 2 - 0.08 ** 2 - 0.14 ** 2)], tint: [0.45, 0.72, 0.91] }, { id: "asteroid", kind: 0, variant: 2, position: [-230, 100, 500], radius: 185, rotation: [0.16, 0.34, 0.11, Math.sqrt(1 - 0.16 ** 2 - 0.34 ** 2 - 0.11 ** 2)], tint: [0.63, 0.51, 0.39] }];
+function ce(i, e, t) {
+  let s = E1(Ae(i, e, t)), r = [];
   for (let n = 0; n < 7; n++) {
-    let a = s(), o = a < 0.07 ? 1 : a < 0.17 ? 2 : 0;
-    r.push({ id: `${i}:${e}:${t}:${n}`, kind: o, variant: Math.floor(s() * 4), position: [(i + s()) * 2400, (e + s()) * 2400, (t + s()) * 2400], radius: o === 1 ? 350 + s() * 500 : o === 2 ? 180 + s() * 300 : 35 + s() * 125, rotation: i0(s), tint: o === 0 ? [0.42 + s() * 0.3, 0.36 + s() * 0.2, 0.3 + s() * 0.2] : [0.4 + s() * 0.3, 0.65 + s() * 0.2, 0.7 + s() * 0.25] });
+    let o = s(), a = o < 0.07 ? 1 : o < 0.17 ? 2 : 0;
+    r.push({ id: `${i}:${e}:${t}:${n}`, kind: a, variant: Math.floor(s() * 4), position: [(i + s()) * 2400, (e + s()) * 2400, (t + s()) * 2400], radius: a === 1 ? 350 + s() * 500 : a === 2 ? 180 + s() * 300 : 35 + s() * 125, rotation: a0(s), tint: a === 0 ? [0.42 + s() * 0.3, 0.36 + s() * 0.2, 0.3 + s() * 0.2] : [0.4 + s() * 0.3, 0.65 + s() * 0.2, 0.7 + s() * 0.25] });
   }
-  for (let n of Ae) n.position.every((a, o) => Math.floor(a / 2400) === [i, e, t][o]) && r.push({ ...n, position: n.position.slice(), rotation: n.rotation.slice(), tint: n.tint.slice() });
+  for (let n of Te) n.position.every((o, a) => Math.floor(o / 2400) === [i, e, t][a]) && r.push({ ...n, position: n.position.slice(), rotation: n.rotation.slice(), tint: n.tint.slice() });
   return r;
 }
-function ne(i, e, t) {
+function xe(i, e, t) {
   return t.every((s) => s[0] * i[0] + s[1] * i[1] + s[2] * i[2] + s[3] >= -e);
 }
-function ae(i, e, t, s = 2048) {
-  let r = i.map((x) => Math.floor(x / 2400)), n = Math.ceil((t + 900) / 2400), a = [], o = 0, c = Math.sqrt(3) * 2400 / 2 + 900;
+function le(i, e, t, s = 2048) {
+  let r = i.map((x) => Math.floor(x / 2400)), n = Math.ceil((t + 900) / 2400), o = [], a = 0, c = Math.sqrt(3) * 2400 / 2 + 900;
   for (let x = -n; x <= n; x++) {
     let l = r[2] + x, u = (l + 0.5) * 2400 - i[2], f = Math.max(0, Math.abs(u) - 2400 / 2);
     for (let p = -n; p <= n; p++) {
       let h = r[1] + p, d = (h + 0.5) * 2400 - i[1], b = Math.max(0, Math.abs(d) - 2400 / 2);
       for (let m = -n; m <= n; m++) {
-        o++;
+        a++;
         let v = r[0] + m, g = (v + 0.5) * 2400 - i[0], y = Math.max(0, Math.abs(g) - 2400 / 2), w = Math.hypot(y, b, f);
         if (w > t + 900) continue;
         let M = true;
@@ -24508,75 +24523,75 @@ function ae(i, e, t, s = 2048) {
           M = false;
           break;
         }
-        M && a.push({ key: `${v}:${h}:${l}`, cell: [v, h, l], distance: w });
+        M && o.push({ key: `${v}:${h}:${l}`, cell: [v, h, l], distance: w });
       }
     }
   }
-  return a.sort((x, l) => x.distance - l.distance || x.key.localeCompare(l.key)), { cells: a.slice(0, s), examined: o, requested: a.length, limited: a.length > s };
+  return o.sort((x, l) => x.distance - l.distance || x.key.localeCompare(l.key)), { cells: o.slice(0, s), examined: a, requested: o.length, limited: o.length > s };
 }
 function O(i, e, t, s, r, { caves: n = false } = {}) {
-  let a = e * 1.713, o = Math.sin(t * 5.3 + a) * Math.cos(s * 4.1 - a) * Math.sin(r * 6.2 + 1.3);
+  let o = e * 1.713, a = Math.sin(t * 5.3 + o) * Math.cos(s * 4.1 - o) * Math.sin(r * 6.2 + 1.3);
   if (i === 0) {
-    let p = Math.hypot(t / 1.05, s / 0.87, r / 0.96), h = 0.055 * o + 0.025 * Math.sin(t * 13 + a) * Math.sin(s * 11) * Math.cos(r * 9), d = 0.07 * Math.exp(-65 * ((t - 0.46) ** 2 + (s - 0.22) ** 2 + (r - 0.35) ** 2));
+    let p = Math.hypot(t / 1.05, s / 0.87, r / 0.96), h = 0.055 * a + 0.025 * Math.sin(t * 13 + o) * Math.sin(s * 11) * Math.cos(r * 9), d = 0.07 * Math.exp(-65 * ((t - 0.46) ** 2 + (s - 0.22) ** 2 + (r - 0.35) ** 2));
     return p - 0.67 - h + d;
   }
   if (i === 1) {
-    let p = e % 2 === 0, h = Math.hypot(t, s, r), d = h - (p ? 0.6 : 0.75) - 0.025 * o - 0.012 * Math.sin(t * 17 + a) * Math.cos(r * 13);
+    let p = e % 2 === 0, h = Math.hypot(t, s, r), d = h - (p ? 0.6 : 0.75) - 0.025 * a - 0.012 * Math.sin(t * 17 + o) * Math.cos(r * 13);
     return p ? Math.min(d, Math.hypot(Math.hypot(t, r) - 0.82, s) - 0.055) : d;
   }
-  let c = Math.hypot(t, r), x = 0.7 + 0.05 * Math.sin(t * 8 + a) * Math.cos(r * 7), l = 0.23 + 0.09 * Math.sin(t * 5 + a) * Math.cos(r * 6), u = -0.78 + 0.8 * Math.pow(c, 1.1) + 0.035 * o, f = Math.max(c - x, s - l, u - s);
+  let c = Math.hypot(t, r), x = 0.7 + 0.05 * Math.sin(t * 8 + o) * Math.cos(r * 7), l = 0.23 + 0.09 * Math.sin(t * 5 + o) * Math.cos(r * 6), u = -0.78 + 0.8 * Math.pow(c, 1.1) + 0.035 * a, f = Math.max(c - x, s - l, u - s);
   return n ? Math.max(f, 0.235 - Math.hypot(t - 0.48, s + 0.1, r - 0.04)) : f;
 }
-function oe(i, e, t, s, r, n) {
-  let o = [O(i, e, t + 15e-4, s, r, n) - O(i, e, t - 15e-4, s, r, n), O(i, e, t, s + 15e-4, r, n) - O(i, e, t, s - 15e-4, r, n), O(i, e, t, s, r + 15e-4, n) - O(i, e, t, s, r - 15e-4, n)], c = Math.hypot(...o) || 1;
-  return o.map((x) => x / c);
+function ue(i, e, t, s, r, n) {
+  let a = [O(i, e, t + 15e-4, s, r, n) - O(i, e, t - 15e-4, s, r, n), O(i, e, t, s + 15e-4, r, n) - O(i, e, t, s - 15e-4, r, n), O(i, e, t, s, r + 15e-4, n) - O(i, e, t, s, r - 15e-4, n)], c = Math.hypot(...a) || 1;
+  return a.map((x) => x / c);
 }
-var ce = [[48, 36, 28, 20, 16, 10, 6, 4, 3, 2], [64, 48, 36, 28, 24, 16, 12, 8, 6, 4], [64, 48, 32, 24, 16, 10, 6, 4, 3, 2]];
-var I = 10;
-var ut = ["#ff4d30", "#ffa52e", "#ebd948", "#43b879", "#288fff", "#36cbd9", "#8276ff", "#bd70e8", "#da91b6", "#b7bac9"];
-var ft = ["#43ebd9", "#7178ff", "#b855fa", "#d9a6ff", "#f09dc8", "#beb8e8", "#9aa9cc", "#778399"];
+var fe = [[48, 36, 28, 20, 16, 10, 6, 4, 3, 2], [64, 48, 36, 28, 24, 16, 12, 8, 6, 4], [64, 48, 32, 24, 16, 10, 6, 4, 3, 2]];
+var C = 10;
+var ht = ["#ff4d30", "#ffa52e", "#ebd948", "#43b879", "#288fff", "#36cbd9", "#8276ff", "#bd70e8", "#da91b6", "#b7bac9"];
+var dt = ["#43ebd9", "#7178ff", "#b855fa", "#d9a6ff", "#f09dc8", "#beb8e8", "#9aa9cc", "#778399"];
 var R = [8192, 2048, 512, 128, 32, 8, 2, 1];
-var Ee = [0.12, 0.25, 0.5, 1, 1.5, 2, 3, 4, 6];
-var lt = [[5e-3, 9e-3, 0.016, 0.027, 0.05, 0.08, 0.14, 0.25, 0.34, 0.5], [3e-3, 5e-3, 0.01, 0.018, 0.028, 0.04, 0.065, 0.12, 0.18, 0.3], [3e-3, 6e-3, 0.013, 0.024, 0.045, 0.08, 0.14, 0.25, 0.34, 0.5]];
-function xe(i, e, t, { mode: s = "mesh", quality: r = 3, uniform: n = false, pointSize: a = 2, lodDistance: o = 4e3, nearRadius: c = 250, maxMeshLevel: x = I - 1 }, l) {
+var Ue = [0.12, 0.25, 0.5, 1, 1.5, 2, 3, 4, 6];
+var ft = [[5e-3, 9e-3, 0.016, 0.027, 0.05, 0.08, 0.14, 0.25, 0.34, 0.5], [3e-3, 5e-3, 0.01, 0.018, 0.028, 0.04, 0.065, 0.12, 0.18, 0.3], [3e-3, 6e-3, 0.013, 0.024, 0.045, 0.08, 0.14, 0.25, 0.34, 0.5]];
+function he(i, e, t, { mode: s = "mesh", quality: r = 3, uniform: n = false, pointSize: o = 2, lodDistance: a = 4e3, nearRadius: c = 250, maxMeshLevel: x = C - 1 }, l) {
   let u = Math.hypot(i.position[0] - e[0], i.position[1] - e[1], i.position[2] - e[2]), f = Math.max(0, u - i.radius), p = Math.max(1, u - i.radius * 0.45), h = 2 * i.radius * 0.8 * t / p, d = s === "mesh" || s === "hybrid" && (n || h > (l?.representation === "mesh" ? 30 : 42)), b;
   if (d) {
-    let m = lt[i.kind] || lt[0], v = (_) => m[_] * h / 2, g = Math.max(1, o), y = Math.max(0, Math.min(I - 1, x)), w = 0;
+    let m = ft[i.kind] || ft[0], v = (_) => m[_] * h / 2, g = Math.max(1, a), y = Math.max(0, Math.min(C - 1, x)), w = 0;
     for (; w < y && v(w + 1) <= r * 0.35; ) w++;
     let M = 0;
-    for (; M < y && f > Ee[M] * g; ) M++;
+    for (; M < y && f > Ue[M] * g; ) M++;
     let P = n || f <= c ? 0 : Math.min(M, w);
     if (!n && f > c && l?.representation === "mesh") {
-      let _ = l.level, S = _ === 0 ? 0 : Ee[_ - 1] * g * 0.85, z = _ === I - 1 ? 1 / 0 : Ee[_] * g * 1.15;
-      _ <= y && v(_) <= r * 0.42 && f >= S && f <= z && (_ === y || v(_ + 1) >= r * 0.28 || _ === M) && (P = _);
+      let _ = l.level, k = _ === 0 ? 0 : Ue[_ - 1] * g * 0.85, S = _ === C - 1 ? 1 / 0 : Ue[_] * g * 1.15;
+      _ <= y && v(_) <= r * 0.42 && f >= k && f <= S && (_ === y || v(_ + 1) >= r * 0.28 || _ === M) && (P = _);
     }
     b = { representation: "mesh", level: P, rank: P, pixels: h };
   } else {
-    let m = s === "hybrid" ? Math.min(r, a * 0.7) : r, v = n ? 8192 : Math.PI * (h / (2 * m)) ** 2, g = R.length - 1;
+    let m = s === "hybrid" ? Math.min(r, o * 0.7) : r, v = n ? 8192 : Math.PI * (h / (2 * m)) ** 2, g = R.length - 1;
     for (; g > 0 && R[g] < v; ) g--;
-    !n && l?.representation === "points" && R[l.level] >= v * 0.8 && (l.level === R.length - 1 || R[l.level + 1] < v * 1.2) && (g = l.level), b = { representation: "points", level: g, rank: g + I, pixels: h };
+    !n && l?.representation === "points" && R[l.level] >= v * 0.8 && (l.level === R.length - 1 || R[l.level + 1] < v * 1.2) && (g = l.level), b = { representation: "points", level: g, rank: g + C, pixels: h };
   }
   return b;
 }
-var r0 = { cellSize: 2400, maxRadius: 900, hash: Ue, random: _1, chunk: re, heroes: Ae, visibleSphere: ne, sectors: ae, field: O, gradient: oe, meshDivisions: ce, meshLevels: I, meshColors: ut, pointColors: ft, pointTiers: R, chooseLOD: xe };
-var Te = {};
-F(Te, { build: () => ht, default: () => o0, pointCloud: () => dt });
-function n0(i, e) {
+var o0 = { cellSize: 2400, maxRadius: 900, hash: Ae, random: E1, chunk: ce, heroes: Te, visibleSphere: xe, sectors: le, field: O, gradient: ue, meshDivisions: fe, meshLevels: C, meshColors: ht, pointColors: dt, pointTiers: R, chooseLOD: he };
+var Ge = {};
+F(Ge, { build: () => pt, default: () => l0, pointCloud: () => bt });
+function c0(i, e) {
   let t = [], s = e / 2, r = i % 2 === 0;
-  function n(o, c) {
-    let x = [Math.sin(o) * Math.cos(c), Math.cos(o), Math.sin(o) * Math.sin(c)], l = r ? 0.5 : 0.66, u = r ? 0.69 : 0.84;
+  function n(a, c) {
+    let x = [Math.sin(a) * Math.cos(c), Math.cos(a), Math.sin(a) * Math.sin(c)], l = r ? 0.5 : 0.66, u = r ? 0.69 : 0.84;
     for (let f = 0; f < 14; f++) {
       let p = (l + u) / 2;
       O(1, i, ...x.map((h) => h * p)) < 0 ? l = p : u = p;
     }
     return x.map((f) => f * (l + u) / 2);
   }
-  function a(o, c, x) {
-    t.push(...o, ...c, ...x);
+  function o(a, c, x) {
+    t.push(...a, ...c, ...x);
   }
-  for (let o = 0; o < s; o++) for (let c = 0; c < e; c++) {
-    let x = o * Math.PI / s, l = (o + 1) * Math.PI / s, u = c * 2 * Math.PI / e, f = (c + 1) % e * 2 * Math.PI / e, p = n(x, u), h = n(x, f), d = n(l, f), b = n(l, u);
-    o > 0 && a(p, h, b), o < s - 1 && a(h, d, b);
+  for (let a = 0; a < s; a++) for (let c = 0; c < e; c++) {
+    let x = a * Math.PI / s, l = (a + 1) * Math.PI / s, u = c * 2 * Math.PI / e, f = (c + 1) % e * 2 * Math.PI / e, p = n(x, u), h = n(x, f), d = n(l, f), b = n(l, u);
+    a > 0 && o(p, h, b), a < s - 1 && o(h, d, b);
   }
   if (r) {
     let c = (x, l) => {
@@ -24585,46 +24600,46 @@ function n0(i, e) {
     };
     for (let x = 0; x < e; x++) for (let l = 0; l < 4; l++) {
       let u = x * 2 * Math.PI / e, f = (x + 1) % e * 2 * Math.PI / e, p = l * 2 * Math.PI / 4, h = (l + 1) % 4 * 2 * Math.PI / 4, d = c(u, p), b = c(f, p), m = c(f, h), v = c(u, h);
-      a(d, v, b), a(b, v, m);
+      o(d, v, b), o(b, v, m);
     }
   }
-  return Float32Array.from(t, (o) => (o + 1) / 2);
+  return Float32Array.from(t, (a) => (a + 1) / 2);
 }
-function a0(i, e) {
+function x0(i, e) {
   let t = /* @__PURE__ */ new Map(), s = (r) => r.every((n) => Math.abs(n * e - Math.floor(n * e) - 0.5) < 1e-5);
   for (let r = 0; r < i.length; r += 9) {
-    let n = [0, 1, 2].map((a) => Array.from(i.subarray(r + a * 3, r + a * 3 + 3)));
-    for (let a = 0; a < 3; a++) if (s(n[a])) {
-      let o = n[a].join(",");
-      t.has(o) || t.set(o, { boundary: /* @__PURE__ */ new Map(), offsets: [] });
-      let c = t.get(o);
-      c.offsets.push(r + a * 3);
-      for (let x = 0; x < 3; x++) x !== a && c.boundary.set(n[x].join(","), n[x]);
+    let n = [0, 1, 2].map((o) => Array.from(i.subarray(r + o * 3, r + o * 3 + 3)));
+    for (let o = 0; o < 3; o++) if (s(n[o])) {
+      let a = n[o].join(",");
+      t.has(a) || t.set(a, { boundary: /* @__PURE__ */ new Map(), offsets: [] });
+      let c = t.get(a);
+      c.offsets.push(r + o * 3);
+      for (let x = 0; x < 3; x++) x !== o && c.boundary.set(n[x].join(","), n[x]);
     }
   }
   for (let r of t.values()) {
     let n = [0, 0, 0];
-    for (let a of r.boundary.values()) for (let o = 0; o < 3; o++) n[o] += a[o] / r.boundary.size;
-    for (let a of r.offsets) i.set(n, a);
+    for (let o of r.boundary.values()) for (let a = 0; a < 3; a++) n[a] += o[a] / r.boundary.size;
+    for (let o of r.offsets) i.set(n, o);
   }
   return t.size;
 }
-function ht(i, e, t, s = "mc33", r = {}) {
-  let n = ce[i]?.[t];
+function pt(i, e, t, s = "mc33", r = {}) {
+  let n = fe[i]?.[t];
   if (!n) throw new Error("Invalid body mesh level");
-  let a = i === 1 && t >= 5, o;
-  if (a) o = n0(e, n);
+  let o = i === 1 && t >= 5, a;
+  if (o) a = c0(e, n);
   else {
     let f = n + 1, p = { x: f, y: f, z: f }, h = new Float32Array(f * f * f);
     for (let d = 0; d < f; d++) for (let b = 0; b < f; b++) for (let m = 0; m < f; m++) h[(d * f + b) * f + m] = O(i, e, m / n * 2 - 1, b / n * 2 - 1, d / n * 2 - 1, r);
-    o = V(h, p, 0, s);
+    a = q(h, p, 0, s);
   }
-  let c = new Float32Array(o.length / 3 * 8), x = 0, l = 0, u = !a && s === "mc33" ? a0(o, n) : 0;
-  for (let f = 0; f < o.length; f += 9) {
+  let c = new Float32Array(a.length / 3 * 8), x = 0, l = 0, u = !o && s === "mc33" ? x0(a, n) : 0;
+  for (let f = 0; f < a.length; f += 9) {
     let p = [], h = [];
     for (let v = 0; v < 3; v++) {
-      let g = [0, 1, 2].map((y) => o[f + v * 3 + y] * 2 - 1);
-      p.push(g), h.push(oe(i, e, ...g, r));
+      let g = [0, 1, 2].map((y) => a[f + v * 3 + y] * 2 - 1);
+      p.push(g), h.push(ue(i, e, ...g, r));
     }
     let d = p[1].map((v, g) => v - p[0][g]), b = p[2].map((v, g) => v - p[0][g]), m = [d[1] * b[2] - d[2] * b[1], d[2] * b[0] - d[0] * b[2], d[0] * b[1] - d[1] * b[0]];
     if (!(Math.hypot(...m) < 1e-12)) {
@@ -24639,27 +24654,27 @@ function ht(i, e, t, s = "mc33", r = {}) {
     let h = c[f + 8 + p];
     c[f + 8 + p] = c[f + 16 + p], c[f + 16 + p] = h;
   }
-  return { vertices: c.slice(0, x * 8), count: x, divisions: n, interiorVertices: u, proxy: a };
+  return { vertices: c.slice(0, x * 8), count: x, divisions: n, interiorVertices: u, proxy: o };
 }
-function dt(i, e = 8192, t = 7) {
+function bt(i, e = 8192, t = 7) {
   let s = /* @__PURE__ */ new Map();
   for (let c = 0; c < i.length; c += 8) {
     let x = [i[c], i[c + 1], i[c + 2]].map((l) => Math.round(l * 1e6)).join(":");
     s.has(x) || s.set(x, c);
   }
-  let r = Array.from(s.values()), n = _1(t);
+  let r = Array.from(s.values()), n = E1(t);
   for (let c = r.length - 1; c > 0; c--) {
     let x = Math.floor(n() * (c + 1));
     [r[c], r[x]] = [r[x], r[c]];
   }
-  let a = Math.min(e, r.length), o = new Float32Array(a * 8);
-  return r.slice(0, a).forEach((c, x) => o.set(i.subarray(c, c + 8), x * 8)), { vertices: o, count: a };
+  let o = Math.min(e, r.length), a = new Float32Array(o * 8);
+  return r.slice(0, o).forEach((c, x) => a.set(i.subarray(c, c + 8), x * 8)), { vertices: a, count: o };
 }
-var o0 = { build: ht, pointCloud: dt };
-var c0 = '(()=>{function I(n){let a=n>>>0;return()=>{a=a+1831565813>>>0;let x=Math.imul(a^a>>>15,a|1);return x^=x+Math.imul(x^x>>>7,x|61),((x^x>>>14)>>>0)/4294967296}}var e1=[{id:"island",kind:2,variant:0,position:[420,-70,-250],radius:440,rotation:[0,0,0,1],tint:[.68,.87,.78]},{id:"planet",kind:1,variant:0,position:[-1300,430,-1900],radius:880,rotation:[.25,.08,.14,Math.sqrt(1-.25**2-.08**2-.14**2)],tint:[.45,.72,.91]},{id:"asteroid",kind:0,variant:2,position:[-230,100,500],radius:185,rotation:[.16,.34,.11,Math.sqrt(1-.16**2-.34**2-.11**2)],tint:[.63,.51,.39]}];function g(n,a,x,c,e,{caves:s=!1}={}){let i=a*1.713,o=Math.sin(x*5.3+i)*Math.cos(c*4.1-i)*Math.sin(e*6.2+1.3);if(n===0){let f=Math.hypot(x/1.05,c/.87,e/.96),u=.055*o+.025*Math.sin(x*13+i)*Math.sin(c*11)*Math.cos(e*9),d=.07*Math.exp(-65*((x-.46)**2+(c-.22)**2+(e-.35)**2));return f-.67-u+d}if(n===1){let f=a%2===0,u=Math.hypot(x,c,e),d=u-(f?.6:.75)-.025*o-.012*Math.sin(x*17+i)*Math.cos(e*13);return f?Math.min(d,Math.hypot(Math.hypot(x,e)-.82,c)-.055):d}let r=Math.hypot(x,e),t=.7+.05*Math.sin(x*8+i)*Math.cos(e*7),l=.23+.09*Math.sin(x*5+i)*Math.cos(e*6),h=-.78+.8*Math.pow(r,1.1)+.035*o,b=Math.max(r-t,c-l,h-c);return s?Math.max(b,.235-Math.hypot(x-.48,c+.1,e-.04)):b}function G(n,a,x,c,e,s){let o=[g(n,a,x+.0015,c,e,s)-g(n,a,x-.0015,c,e,s),g(n,a,x,c+.0015,e,s)-g(n,a,x,c-.0015,e,s),g(n,a,x,c,e+.0015,s)-g(n,a,x,c,e-.0015,s)],r=Math.hypot(...o)||1;return o.map(t=>t/r)}var F=[[48,36,28,20,16,10,6,4,3,2],[64,48,36,28,24,16,12,8,6,4],[64,48,32,24,16,10,6,4,3,2]],R=10;var W=[[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]],j=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]],L=[[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,8,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,1,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,8,3,9,8,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,2,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,8,3,1,2,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,2,10,0,2,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[2,8,3,2,10,8,10,9,8,-1,-1,-1,-1,-1,-1,-1],[3,11,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,11,2,8,11,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,9,0,2,3,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,11,2,1,9,11,9,8,11,-1,-1,-1,-1,-1,-1,-1],[3,10,1,11,10,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,10,1,0,8,10,8,11,10,-1,-1,-1,-1,-1,-1,-1],[3,9,0,3,11,9,11,10,9,-1,-1,-1,-1,-1,-1,-1],[9,8,10,10,8,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,7,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,3,0,7,3,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,1,9,8,4,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,1,9,4,7,1,7,3,1,-1,-1,-1,-1,-1,-1,-1],[1,2,10,8,4,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,4,7,3,0,4,1,2,10,-1,-1,-1,-1,-1,-1,-1],[9,2,10,9,0,2,8,4,7,-1,-1,-1,-1,-1,-1,-1],[2,10,9,2,9,7,2,7,3,7,9,4,-1,-1,-1,-1],[8,4,7,3,11,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[11,4,7,11,2,4,2,0,4,-1,-1,-1,-1,-1,-1,-1],[9,0,1,8,4,7,2,3,11,-1,-1,-1,-1,-1,-1,-1],[4,7,11,9,4,11,9,11,2,9,2,1,-1,-1,-1,-1],[3,10,1,3,11,10,7,8,4,-1,-1,-1,-1,-1,-1,-1],[1,11,10,1,4,11,1,0,4,7,11,4,-1,-1,-1,-1],[4,7,8,9,0,11,9,11,10,11,0,3,-1,-1,-1,-1],[4,7,11,4,11,9,9,11,10,-1,-1,-1,-1,-1,-1,-1],[9,5,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,5,4,0,8,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,5,4,1,5,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[8,5,4,8,3,5,3,1,5,-1,-1,-1,-1,-1,-1,-1],[1,2,10,9,5,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,0,8,1,2,10,9,5,4,-1,-1,-1,-1,-1,-1,-1],[5,2,10,5,4,2,4,0,2,-1,-1,-1,-1,-1,-1,-1],[2,10,5,3,2,5,3,5,4,3,4,8,-1,-1,-1,-1],[9,5,4,2,3,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,11,2,0,8,11,4,9,5,-1,-1,-1,-1,-1,-1,-1],[0,5,4,0,1,5,2,3,11,-1,-1,-1,-1,-1,-1,-1],[2,1,5,2,5,8,2,8,11,4,8,5,-1,-1,-1,-1],[10,3,11,10,1,3,9,5,4,-1,-1,-1,-1,-1,-1,-1],[4,9,5,0,8,1,8,10,1,8,11,10,-1,-1,-1,-1],[5,4,0,5,0,11,5,11,10,11,0,3,-1,-1,-1,-1],[5,4,8,5,8,10,10,8,11,-1,-1,-1,-1,-1,-1,-1],[9,7,8,5,7,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,3,0,9,5,3,5,7,3,-1,-1,-1,-1,-1,-1,-1],[0,7,8,0,1,7,1,5,7,-1,-1,-1,-1,-1,-1,-1],[1,5,3,3,5,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,7,8,9,5,7,10,1,2,-1,-1,-1,-1,-1,-1,-1],[10,1,2,9,5,0,5,3,0,5,7,3,-1,-1,-1,-1],[8,0,2,8,2,5,8,5,7,10,5,2,-1,-1,-1,-1],[2,10,5,2,5,3,3,5,7,-1,-1,-1,-1,-1,-1,-1],[7,9,5,7,8,9,3,11,2,-1,-1,-1,-1,-1,-1,-1],[9,5,7,9,7,2,9,2,0,2,7,11,-1,-1,-1,-1],[2,3,11,0,1,8,1,7,8,1,5,7,-1,-1,-1,-1],[11,2,1,11,1,7,7,1,5,-1,-1,-1,-1,-1,-1,-1],[9,5,8,8,5,7,10,1,3,10,3,11,-1,-1,-1,-1],[5,7,0,5,0,9,7,11,0,1,0,10,11,10,0,-1],[11,10,0,11,0,3,10,5,0,8,0,7,5,7,0,-1],[11,10,5,7,11,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[10,6,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,8,3,5,10,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,0,1,5,10,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,8,3,1,9,8,5,10,6,-1,-1,-1,-1,-1,-1,-1],[1,6,5,2,6,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,6,5,1,2,6,3,0,8,-1,-1,-1,-1,-1,-1,-1],[9,6,5,9,0,6,0,2,6,-1,-1,-1,-1,-1,-1,-1],[5,9,8,5,8,2,5,2,6,3,2,8,-1,-1,-1,-1],[2,3,11,10,6,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[11,0,8,11,2,0,10,6,5,-1,-1,-1,-1,-1,-1,-1],[0,1,9,2,3,11,5,10,6,-1,-1,-1,-1,-1,-1,-1],[5,10,6,1,9,2,9,11,2,9,8,11,-1,-1,-1,-1],[6,3,11,6,5,3,5,1,3,-1,-1,-1,-1,-1,-1,-1],[0,8,11,0,11,5,0,5,1,5,11,6,-1,-1,-1,-1],[3,11,6,0,3,6,0,6,5,0,5,9,-1,-1,-1,-1],[6,5,9,6,9,11,11,9,8,-1,-1,-1,-1,-1,-1,-1],[5,10,6,4,7,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,3,0,4,7,3,6,5,10,-1,-1,-1,-1,-1,-1,-1],[1,9,0,5,10,6,8,4,7,-1,-1,-1,-1,-1,-1,-1],[10,6,5,1,9,7,1,7,3,7,9,4,-1,-1,-1,-1],[6,1,2,6,5,1,4,7,8,-1,-1,-1,-1,-1,-1,-1],[1,2,5,5,2,6,3,0,4,3,4,7,-1,-1,-1,-1],[8,4,7,9,0,5,0,6,5,0,2,6,-1,-1,-1,-1],[7,3,9,7,9,4,3,2,9,5,9,6,2,6,9,-1],[3,11,2,7,8,4,10,6,5,-1,-1,-1,-1,-1,-1,-1],[5,10,6,4,7,2,4,2,0,2,7,11,-1,-1,-1,-1],[0,1,9,4,7,8,2,3,11,5,10,6,-1,-1,-1,-1],[9,2,1,9,11,2,9,4,11,7,11,4,5,10,6,-1],[8,4,7,3,11,5,3,5,1,5,11,6,-1,-1,-1,-1],[5,1,11,5,11,6,1,0,11,7,11,4,0,4,11,-1],[0,5,9,0,6,5,0,3,6,11,6,3,8,4,7,-1],[6,5,9,6,9,11,4,7,9,7,11,9,-1,-1,-1,-1],[10,4,9,6,4,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,10,6,4,9,10,0,8,3,-1,-1,-1,-1,-1,-1,-1],[10,0,1,10,6,0,6,4,0,-1,-1,-1,-1,-1,-1,-1],[8,3,1,8,1,6,8,6,4,6,1,10,-1,-1,-1,-1],[1,4,9,1,2,4,2,6,4,-1,-1,-1,-1,-1,-1,-1],[3,0,8,1,2,9,2,4,9,2,6,4,-1,-1,-1,-1],[0,2,4,4,2,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[8,3,2,8,2,4,4,2,6,-1,-1,-1,-1,-1,-1,-1],[10,4,9,10,6,4,11,2,3,-1,-1,-1,-1,-1,-1,-1],[0,8,2,2,8,11,4,9,10,4,10,6,-1,-1,-1,-1],[3,11,2,0,1,6,0,6,4,6,1,10,-1,-1,-1,-1],[6,4,1,6,1,10,4,8,1,2,1,11,8,11,1,-1],[9,6,4,9,3,6,9,1,3,11,6,3,-1,-1,-1,-1],[8,11,1,8,1,0,11,6,1,9,1,4,6,4,1,-1],[3,11,6,3,6,0,0,6,4,-1,-1,-1,-1,-1,-1,-1],[6,4,8,11,6,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[7,10,6,7,8,10,8,9,10,-1,-1,-1,-1,-1,-1,-1],[0,7,3,0,10,7,0,9,10,6,7,10,-1,-1,-1,-1],[10,6,7,1,10,7,1,7,8,1,8,0,-1,-1,-1,-1],[10,6,7,10,7,1,1,7,3,-1,-1,-1,-1,-1,-1,-1],[1,2,6,1,6,8,1,8,9,8,6,7,-1,-1,-1,-1],[2,6,9,2,9,1,6,7,9,0,9,3,7,3,9,-1],[7,8,0,7,0,6,6,0,2,-1,-1,-1,-1,-1,-1,-1],[7,3,2,6,7,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[2,3,11,10,6,8,10,8,9,8,6,7,-1,-1,-1,-1],[2,0,7,2,7,11,0,9,7,6,7,10,9,10,7,-1],[1,8,0,1,7,8,1,10,7,6,7,10,2,3,11,-1],[11,2,1,11,1,7,10,6,1,6,7,1,-1,-1,-1,-1],[8,9,6,8,6,7,9,1,6,11,6,3,1,3,6,-1],[0,9,1,11,6,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[7,8,0,7,0,6,3,11,0,11,6,0,-1,-1,-1,-1],[7,11,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[7,6,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,0,8,11,7,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,1,9,11,7,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[8,1,9,8,3,1,11,7,6,-1,-1,-1,-1,-1,-1,-1],[10,1,2,6,11,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,2,10,3,0,8,6,11,7,-1,-1,-1,-1,-1,-1,-1],[2,9,0,2,10,9,6,11,7,-1,-1,-1,-1,-1,-1,-1],[6,11,7,2,10,3,10,8,3,10,9,8,-1,-1,-1,-1],[7,2,3,6,2,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[7,0,8,7,6,0,6,2,0,-1,-1,-1,-1,-1,-1,-1],[2,7,6,2,3,7,0,1,9,-1,-1,-1,-1,-1,-1,-1],[1,6,2,1,8,6,1,9,8,8,7,6,-1,-1,-1,-1],[10,7,6,10,1,7,1,3,7,-1,-1,-1,-1,-1,-1,-1],[10,7,6,1,7,10,1,8,7,1,0,8,-1,-1,-1,-1],[0,3,7,0,7,10,0,10,9,6,10,7,-1,-1,-1,-1],[7,6,10,7,10,8,8,10,9,-1,-1,-1,-1,-1,-1,-1],[6,8,4,11,8,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,6,11,3,0,6,0,4,6,-1,-1,-1,-1,-1,-1,-1],[8,6,11,8,4,6,9,0,1,-1,-1,-1,-1,-1,-1,-1],[9,4,6,9,6,3,9,3,1,11,3,6,-1,-1,-1,-1],[6,8,4,6,11,8,1,2,10,-1,-1,-1,-1,-1,-1,-1],[1,2,10,3,0,11,0,6,11,0,4,6,-1,-1,-1,-1],[4,11,8,4,6,11,0,2,9,2,10,9,-1,-1,-1,-1],[10,9,3,10,3,2,9,4,3,11,3,6,4,6,3,-1],[8,2,3,8,4,2,4,6,2,-1,-1,-1,-1,-1,-1,-1],[0,4,2,4,6,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,9,0,2,3,4,2,4,6,4,3,8,-1,-1,-1,-1],[1,9,4,1,4,2,2,4,6,-1,-1,-1,-1,-1,-1,-1],[8,1,3,8,4,1,4,6,1,6,10,1,-1,-1,-1,-1],[10,1,0,10,0,6,6,0,4,-1,-1,-1,-1,-1,-1,-1],[4,6,3,4,3,8,6,10,3,0,3,9,10,9,3,-1],[10,9,4,6,10,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,9,5,7,6,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,8,3,4,9,5,11,7,6,-1,-1,-1,-1,-1,-1,-1],[5,0,1,5,4,0,7,6,11,-1,-1,-1,-1,-1,-1,-1],[11,7,6,8,3,4,3,5,4,3,1,5,-1,-1,-1,-1],[9,5,4,10,1,2,7,6,11,-1,-1,-1,-1,-1,-1,-1],[6,11,7,1,2,10,0,8,3,4,9,5,-1,-1,-1,-1],[7,6,11,5,4,10,4,2,10,4,0,2,-1,-1,-1,-1],[3,4,8,3,5,4,3,2,5,10,5,2,11,7,6,-1],[7,2,3,7,6,2,5,4,9,-1,-1,-1,-1,-1,-1,-1],[9,5,4,0,8,6,0,6,2,6,8,7,-1,-1,-1,-1],[3,6,2,3,7,6,1,5,0,5,4,0,-1,-1,-1,-1],[6,2,8,6,8,7,2,1,8,4,8,5,1,5,8,-1],[9,5,4,10,1,6,1,7,6,1,3,7,-1,-1,-1,-1],[1,6,10,1,7,6,1,0,7,8,7,0,9,5,4,-1],[4,0,10,4,10,5,0,3,10,6,10,7,3,7,10,-1],[7,6,10,7,10,8,5,4,10,4,8,10,-1,-1,-1,-1],[6,9,5,6,11,9,11,8,9,-1,-1,-1,-1,-1,-1,-1],[3,6,11,0,6,3,0,5,6,0,9,5,-1,-1,-1,-1],[0,11,8,0,5,11,0,1,5,5,6,11,-1,-1,-1,-1],[6,11,3,6,3,5,5,3,1,-1,-1,-1,-1,-1,-1,-1],[1,2,10,9,5,11,9,11,8,11,5,6,-1,-1,-1,-1],[0,11,3,0,6,11,0,9,6,5,6,9,1,2,10,-1],[11,8,5,11,5,6,8,0,5,10,5,2,0,2,5,-1],[6,11,3,6,3,5,2,10,3,10,5,3,-1,-1,-1,-1],[5,8,9,5,2,8,5,6,2,3,8,2,-1,-1,-1,-1],[9,5,6,9,6,0,0,6,2,-1,-1,-1,-1,-1,-1,-1],[1,5,8,1,8,0,5,6,8,3,8,2,6,2,8,-1],[1,5,6,2,1,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,3,6,1,6,10,3,8,6,5,6,9,8,9,6,-1],[10,1,0,10,0,6,9,5,0,5,6,0,-1,-1,-1,-1],[0,3,8,5,6,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[10,5,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[11,5,10,7,5,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[11,5,10,11,7,5,8,3,0,-1,-1,-1,-1,-1,-1,-1],[5,11,7,5,10,11,1,9,0,-1,-1,-1,-1,-1,-1,-1],[10,11,7,10,7,5,9,8,1,8,3,1,-1,-1,-1,-1],[11,1,2,11,7,1,7,5,1,-1,-1,-1,-1,-1,-1,-1],[0,8,3,1,2,7,1,7,5,7,2,11,-1,-1,-1,-1],[9,7,5,9,2,7,9,0,2,2,11,7,-1,-1,-1,-1],[7,5,2,7,2,11,5,9,2,3,2,8,9,8,2,-1],[2,5,10,2,3,5,3,7,5,-1,-1,-1,-1,-1,-1,-1],[8,2,0,8,5,2,8,7,5,10,2,5,-1,-1,-1,-1],[9,0,1,5,10,3,5,3,7,3,10,2,-1,-1,-1,-1],[9,8,2,9,2,1,8,7,2,10,2,5,7,5,2,-1],[1,3,5,3,7,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,8,7,0,7,1,1,7,5,-1,-1,-1,-1,-1,-1,-1],[9,0,3,9,3,5,5,3,7,-1,-1,-1,-1,-1,-1,-1],[9,8,7,5,9,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[5,8,4,5,10,8,10,11,8,-1,-1,-1,-1,-1,-1,-1],[5,0,4,5,11,0,5,10,11,11,3,0,-1,-1,-1,-1],[0,1,9,8,4,10,8,10,11,10,4,5,-1,-1,-1,-1],[10,11,4,10,4,5,11,3,4,9,4,1,3,1,4,-1],[2,5,1,2,8,5,2,11,8,4,5,8,-1,-1,-1,-1],[0,4,11,0,11,3,4,5,11,2,11,1,5,1,11,-1],[0,2,5,0,5,9,2,11,5,4,5,8,11,8,5,-1],[9,4,5,2,11,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[2,5,10,3,5,2,3,4,5,3,8,4,-1,-1,-1,-1],[5,10,2,5,2,4,4,2,0,-1,-1,-1,-1,-1,-1,-1],[3,10,2,3,5,10,3,8,5,4,5,8,0,1,9,-1],[5,10,2,5,2,4,1,9,2,9,4,2,-1,-1,-1,-1],[8,4,5,8,5,3,3,5,1,-1,-1,-1,-1,-1,-1,-1],[0,4,5,1,0,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[8,4,5,8,5,3,9,0,5,0,3,5,-1,-1,-1,-1],[9,4,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,11,7,4,9,11,9,10,11,-1,-1,-1,-1,-1,-1,-1],[0,8,3,4,9,7,9,11,7,9,10,11,-1,-1,-1,-1],[1,10,11,1,11,4,1,4,0,7,4,11,-1,-1,-1,-1],[3,1,4,3,4,8,1,10,4,7,4,11,10,11,4,-1],[4,11,7,9,11,4,9,2,11,9,1,2,-1,-1,-1,-1],[9,7,4,9,11,7,9,1,11,2,11,1,0,8,3,-1],[11,7,4,11,4,2,2,4,0,-1,-1,-1,-1,-1,-1,-1],[11,7,4,11,4,2,8,3,4,3,2,4,-1,-1,-1,-1],[2,9,10,2,7,9,2,3,7,7,4,9,-1,-1,-1,-1],[9,10,7,9,7,4,10,2,7,8,7,0,2,0,7,-1],[3,7,10,3,10,2,7,4,10,1,10,0,4,0,10,-1],[1,10,2,8,7,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,9,1,4,1,7,7,1,3,-1,-1,-1,-1,-1,-1,-1],[4,9,1,4,1,7,0,8,1,8,7,1,-1,-1,-1,-1],[4,0,3,7,4,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,8,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,10,8,10,11,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,0,9,3,9,11,11,9,10,-1,-1,-1,-1,-1,-1,-1],[0,1,10,0,10,8,8,10,11,-1,-1,-1,-1,-1,-1,-1],[3,1,10,11,3,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,2,11,1,11,9,9,11,8,-1,-1,-1,-1,-1,-1,-1],[3,0,9,3,9,11,1,2,9,2,11,9,-1,-1,-1,-1],[0,2,11,8,0,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,2,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[2,3,8,2,8,10,10,8,9,-1,-1,-1,-1,-1,-1,-1],[9,10,2,0,9,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[2,3,8,2,8,10,0,1,8,1,10,8,-1,-1,-1,-1],[1,10,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,3,8,9,1,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,9,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,3,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]],V=Uint32Array.from(L.flat(),n=>n>>>0),Y={name:"Bourke",corners:W,edges:j,maxVertices:15,table:V,cornerBit:n=>1<<n,createPolygonizer(){return(n,a,x)=>{let c=L[a],e=0;for(;e<15&&c[e]>=0;)x[e]=c[e],e++;return e}}};var $=Y;var z=new Uint32Array([0,2181,2182,2197,2179,6166,2205,2371,2180,2199,6164,2326,2193,2380,2335,1167,2178,2203,6152,2356,10243,14359,14356,1317,6158,2344,18434,1181,14357,1345,24580,272,2177,6154,2201,2338,6150,18432,2323,1177,10242,14350,14353,1341,14349,24578,1313,269,2187,2374,2359,1171,14355,24579,1349,302,14351,1329,24586,284,20481,12289,12297,135,2176,10241,6148,14343,2191,14347,2347,1337,6146,14342,18438,24577,2341,1309,1173,266,6162,14346,18437,24585,14358,20482,24584,12304,18433,24576,28672,16387,24582,12292,16391,4112,2185,14344,2362,1325,2377,24581,1169,305,14348,20480,24587,12306,1353,12290,281,141,2311,1333,1185,317,1321,12293,320,147,24583,12288,16388,4096,12291,8192,4108,127,896,265,538,2866,2373,1864,1974,1701,4489,312,4762,146,6970,794,4784,2944,4165,261,6517,2439,4928,884,7077,1973,5254,2920,5653,534,5926,1842,5226,2378,6469,56,4361,1864,5797,265,6469,538,5797,811,6070,538,6070,56,6962,1864,4634,56,6962,265,5797,2164,6469,1974,6405,4149,5203,2115,6516,6423,6257,129,5637,6480,4458,262,6725,6466,4682,402,5029,6998,4906,2869,4518,6066,4631,1649,6022,6150,7008,944,6196,4900,5954,2930,4666,5002,4520,24,4393,4793,4251,779,5285,6790,5258,1896,7013,6036,6073,1435,5797,896,6070,265,4634,1864,6469,2866,4261,6149,6243,5765,5795,928,6038,4534,4457,6512,6064,177,5962,6050,6258,6721,5249,386,4789,6964,6467,5556,5522,659,7066,6448,2483,6154,4122,2954,6299,6930,2961,4746,4994,2472,4678,5145,1057,6309,5253,2984,4134,4199,120,6213,5432,309,5994,6791,2442,5909,4530,379,4469,5896,1808,5158,6194,584,4202,5216,266,4425,4468,881,5163,5963,36,4773,5426,1845,5685,4971,339,5781,5641,518,6453,5008,1875,5046,4960,1030,6586,6068,2964,6054,5914,791,6693,4677,66,6501,6582,2233,5226,6804,896,5797,4489,312,5797,6155,43,7077,5499,56,5653,5665,2051,5797,4148,884,6326,5704,265,7077,6069,265,4762,6070,146,6070,4489,312,5926,5938,265,4165,6070,261,4762,4617,1864,6517,4634,2169,5254,4634,2230,4890,6970,2164,4634,4980,1027,5653,4630,2164,6469,4784,2944,6469,6970,794,5226,6474,811,6517,6535,691,4165,5392,2866,6469,5926,1842,4970,6410,4244,6148,5764,4998,928,6293,4517,4970,5521,5025,6243,2134,4261,6838,4138,6699,6251,5480,88,4261,6021,6267,5003,6715,4154,88,5765,4662,4897,4145,5377,6149,2147,4261,5206,4982,5748,4180,5024,2614,5270,6472,4248,6920,4363,5659,361,6037,4517,4538,6421,4247,6919,177,6566,5794,7010,4274,6064,6512,1942,6038,4411,6968,6072,6520,4457,438,6038,5936,4146,4354,5650,6422,2416,4453,5957,5974,5892,7009,4273,2823,5274,4616,6153,5257,5962,4730,1832,6565,5978,4521,6169,4632,5928,634,5286,6322,4790,6694,4516,6164,386,5146,7034,6067,6259,4483,5249,1191,5146,4116,4355,4627,5923,6695,1191,5701,5141,5958,4726,6258,4482,2068,6437,7044,5248,6464,4752,6994,1460,6565,4889,6426,7002,5211,4939,1081,7018,6982,4794,6442,4905,5177,843,4789,5016,4999,6967,5559,6437,659,6981,4389,4624,4896,5168,6964,2898,4709,5492,5479,4935,6467,4755,2341,4970,6410,5024,5764,902,5765,4970,6293,4410,2147,4261,6230,4138,6251,88,4261,6021,4184,6715,58,5765,4662,6243,5377,2053,4261,6710,4180,4982,928,5270,4457,6920,4363,1563,6037,4538,4273,4247,2823,6566,6038,4274,6064,2416,6038,4411,5659,6520,361,6038,4390,5936,6512,2326,4453,5892,6919,7009,177,5274,4616,5928,5962,634,6773,4730,6169,4632,1832,5286,6322,4482,4516,2068,5962,7034,4483,5249,2625,5146,4116,5923,6695,1191,5141,4726,6164,6258,386,6437,7044,5556,4752,2898,6837,4889,5177,5211,843,6982,6442,4939,4905,1081,4789,5016,4755,5559,2341,4789,4389,5168,6964,1460,4709,6437,5940,6467,659,6469,4634,1974,4787,6260,265,5797,6962,2164,6469,4634,56,6469,6070,56,5797,6962,265,5797,4361,1864,4634,6070,896,7013,6581,4634,6036,2967,7058,6260,6960,6576,2322,5285,6790,6962,6262,2212,6469,5002,6145,6785,2595,7013,4992,6036,7063,2485,5797,4393,7058,6960,2480,5285,6262,4361,6308,2694,6070,4666,6307,6145,2689,6725,6070,4682,4633,1065,4361,5251,4675,4791,1063,5797,4724,4791,5251,579,6725,4152,4633,5161,586,6469,6150,5752,4155,1547,5637,4245,4458,4907,97,5637,4245,4458,5960,97,6022,4634,4155,5643,104,6469,4518,5910,6066,370,4907,5961,4360,5912,377,5029,6998,5960,4955,810,6405,4634,4944,4996,1332,6405,5428,6070,4996,848,5029,6998,4361,4906,859,5797,5961,4473,4360,1816,4518,4992,6066,4466,1814,7269,7258,6084,7291,7316,7193,7201,7330,3254,7284,7351,7211,4553,7186,7177,7216,7299,3144,7333,7274,7218,7299,7240,7252,7286,7351,3115,6853,7224,7203,7330,7237,7316,7193,7169,3200,7269,6597,7350,7227,7171,7296,6084,7288,3220,5829,7274,7317,7177,7216,7347,7211,7186,3233,7317,7274,7184,7329,7240,7286,7303,7252,3081,7194,6086,7169,7296,7288,7350,7227,7203,3234,7269,7334,7257,4546,7346,6084,7291,7316,3098,7211,4553,7186,7241,7284,7303,7176,7216,3251,7333,7252,7286,7240,7210,7218,7347,7275,3207,7237,4810,7300,7224,7203,7257,7194,7169,3216,7269,7171,7312,7257,7350,6084,7291,7300,3128,7333,7254,7177,7216,7347,7275,7210,7186,3217,7333,7274,7252,7286,7303,7176,4553,7184,3145,7334,6086,7194,7169,7296,7224,7203,7346,3195,6853,7334,7316,7193,7201,7346,7291,7271,3141,7211,4553,7241,7284,7351,7218,7299,7176,3088,7333,7254,7210,7218,7299,7240,7284,7351,3179,6853,4810,7237,7300,7224,7171,7312,7193,3105,7237,7350,7227,7171,7312,7257,7300,7288,3175,5829,7210,5067,7275,7317,7177,7184,7329,3122,5829,7274,7317,7284,6088,7176,7184,7329,3145,7334,7296,7288,7271,7194,7201,7346,7227,3075,6757,5145,4530,6068,1201,5963,4425,4785,4532,2096,4773,5253,7030,6194,1410,6693,4664,5208,5416,25,6501,5008,7011,5779,1924,5781,4394,4243,6966,918,5269,5994,4362,6256,1952,6054,6016,4512,6768,946,5221,5209,4634,6834,7078,6070,5238,5537,2385,4228,5960,6327,7043,4787,4361,4400,4387,2308,5797,4907,7043,6260,6327,5494,5447,5810,2658,6469,4442,4152,4131,4609,6689,5401,6408,1176,5221,4992,6288,6532,5524,5703,7015,6019,2931,5797,6805,6561,4241,4882,4865,6962,4774,2854,5797,4361,6561,6805,5972,5989,6260,5264,2112,7078,4992,4984,5947,5755,6834,4514,4656,288,7066,2488,5158,36,4981,309,6054,4480,6017,2673,6978,4393,5266,1207,6709,5026,6227,1412,6501,5040,4278,105,5226,6474,4136,2091,6053,4489,4993,1978,5669,4928,5955,1313,6214,6410,6251,42,6037,4538,6025,945,4117,4662,5440,1891,4714,4137,4777,7010,5816,5224,5257,2057,6565,6025,6487,4521,6675,7075,6967,903,5125,5974,4117,4129,4896,4663,5671,1861,5226,6804,6404,5128,7040,6914,6834,2667,7077,4489,4408,5048,6327,5499,4442,405,5221,4438,5665,4657,4400,5123,5175,1607,6602,6854,6412,4140,4796,6347,6220,1132,7317,7354,7291,7255,6600,7224,7187,458,7189,4806,7201,5317,7286,6083,7171,3136,7238,7210,7316,7337,4800,7296,7352,3014,7333,6085,7354,7227,4553,5057,7305,2247,5829,4806,4668,5964,4988,4292,4124,348,5813,7040,5552,336,6022,4489,4390,1665,4762,6516,6034,882,5285,5050,5028,832,6517,6402,6439,1835,4458,6214,6241,2067,5994,6800,6048,880,6938,4416,4532,1867,4389,4741,4792,1112,5781,4662,5014,905,5270,4409,4969,1595,4773,6021,6181,2050,4678,4498,5161,56,6469,6170,4480,2954,5797,4393,7058,2203,5797,5961,4473,881,4666,6070,6307,2472,5797,4724,5931,36,5909,6066,4466,896,6586,6036,7063,2051,5126,4634,4155,1547,6405,4634,4944,1875,4933,6070,4996,309,6469,6022,4200,608,4678,4996,4930,400,6725,5288,6315,25,5813,5561,4394,2488,5269,4458,5655,1811,6022,5770,6793,571,5285,7030,6722,576,5909,4480,6167,2851,6586,5040,4281,1924,4518,4448,4196,946,6709,4666,5431,25,7013,6995,4945,1924,4197,6405,5634,1924,6214,6472,6528,6401,6243,4962,4402,259,6837,4441,4517,4496,5556,5304,4168,148,5765,4714,5513,4517,4790,5816,4769,345,6565,6710,6426,6675,6484,5687,5223,1110,4714,5944,4987,6025,5042,6038,5786,694,4261,7018,5957,5974,5440,5995,6658,2978,4117,4354,4611,4667,4184,6231,7047,2872,5050,6020,4987,5944,5024,4265,5129,1152,7018,7074,6756,6947,6721,4416,4880,801,6565,4896,4129,4663,4121,4730,6773,2330,4453,5206,5223,5240,5659,6931,6323,2171,4709,6153,6292,6402,6215,6437,5974,1861,6470,4882,4115,5665,6147,6497,5272,2312,6469,4442,4228,6404,7040,4528,6833,405,5797,4501,6677,6289,4737,7042,6950,678,5797,5988,5446,4980,6452,4409,4506,2394,4774,6950,6562,6070,5010,6291,6199,951,5797,6954,5818,4139,5972,5899,5127,1893,6949,6027,5048,5499,4152,4434,4384,560,6474,5264,6208,4992,6052,7079,7027,1923,7078,4400,4657,5123,6689,6979,5707,2858,6805,4506,5977,4634,4217,4976,4866,18,5221,5048,6027,4408,5755,5144,5396,1142,6469,5989,5972,4711,6183,4136,4233,2121,4806,7193,4544,5058,6156,6339,6476,1132,6853,4508,5321,5212,6844,4296,7052,448,7333,5484,4780,5820,7052,4553,6300,705,7333,6854,5317,5831,4988,4553,4412,2500,4810,7350,5052,6028,5756,6300,6572,962,7333,5452,5996,6854,5132,7106,4140,1995,7189,4668,4124,6339,6156,7111,5500,715,7354,7224,6084,7111,7300,7312,7337,960,5834,4546,7171,4811,7227,7232,7268,2753,6853,7193,4546,5056,4297,7223,7285,714,7237,6086,6028,7107,5835,4412,5404,1224,7237,7206,6220,6412,5532,4140,6086,2247,5228,6412,6220,5056,5004,4546,5676,2497,7237,4297,5320,5532,7052,4524,6844,448,5829,5804,5577,4554,6300,4796,7052,705,5829,5804,6492,6684,4412,7284,4988,2500,5834,4811,6076,6086,6572,5004,6300,962,5829,5578,7110,6850,4140,5964,5132,1995,6085,7227,6343,4156,4296,4636,4444,715,6602,7296,7316,6343,7239,7107,7354,960,4810,7350,7203,7107,7268,7169,7232,2753,6597,7194,4544,7312,7285,5058,7223,714,7269,6084,7111,7020,5404,6339,4412,1224,7269,6084,6476,6597,4716,6156,4140,2247,6469,4634,6070,896,6757,4496,6947,1924,7013,7001,4634,4992,6036,2967,6469,6070,6170,6145,6712,2595,6469,4634,4278,4155,5760,1656,6469,4518,4152,4466,6066,359,6725,6070,4992,5161,4633,1186,6757,6036,4503,5042,6167,2049,6405,4634,4933,6070,4944,900,4197,5520,4518,6020,6947,22,7013,4954,6020,4121,6995,2595,6757,4496,4930,4996,5234,1970,6757,6020,4281,4155,6953,537,6725,6310,4496,5042,5288,1656,7269,7257,4634,5321,4296,7288,7239,7227,5835,3075,6469,7334,5056,4546,7346,7227,7296,7288,6086,3098,7269,7334,6597,4524,7201,7346,6084,7111,7316,2051,6469,4810,7350,7227,7203,7194,7169,7288,4296,3175,7269,6764,6084,5532,6476,6028,6156,4524,4544,946,6469,7334,6076,6339,7203,7346,7271,7169,6849,3200,7269,7258,7350,4810,6084,7291,7193,5321,7201,56,6853,7334,7237,6086,7316,7193,7346,4546,7291,896,6757,7227,6084,6343,6156,4156,6956,7193,4636,2380,6853,7237,6070,4296,5321,7193,7169,7224,7203,714,6757,4508,4544,5058,5004,6156,6476,6076,6084,2860,6853,6764,7193,6476,5212,5756,6156,6343,4124,2851,7269,5834,4811,5532,4636,4524,4156,4297,5052,1924,7237,6086,7257,4634,7300,7288,7350,7227,7312,960,7269,6597,4634,7224,6084,7111,7300,7171,7312,3254,7237,5834,4297,5320,5532,4124,4524,5756,6028,571,7269,4810,5058,5532,4544,4524,5052,7020,6412,1924,6597,4810,7237,6070,6849,7169,7312,7300,7203,2243,6757,5320,4297,4156,5004,5244,6076,4636,4811,412,6853,5572,6070,7193,4546,5056,7312,7330,7300,3128,6853,7020,7193,6700,4636,6412,4156,7107,5724,1924,6853,5834,4811,5212,5756,6076,4668,5004,5320,25,7269,5548,6084,6076,7020,6700,5004,5058,6220,400,6853,7020,5212,7288,7107,5756,6220,6700,4668,25,7269,7258,7312,7171,7224,7300,7239,7291,7350,7330,7201,3097,6853,6764,5004,4668,6956,5212,6076,5756,6476,4508,4124,2060,7269,7334,7346,7257,7201,7194,7316,7239,7288,7296,7171,3131,7237,7020,5532,4524,4124,6412,6220,6028,5756,5052,4668,2604,6757,6020,7047,6323,6148,4244,4496,4880,4627,2851,6469,4442,6070,4992,4866,4114,6408,5272,6481,2593,6757,6565,6801,6694,4790,5042,4402,4145,6401,1924,6469,7078,4992,6199,5047,4656,4384,4634,4779,1659,5221,7078,5401,4634,4779,5537,5524,5238,6070,2051,6757,5042,6323,5492,7047,7010,5794,5974,6215,400,5221,5209,4634,4992,4233,6217,6019,7027,6070,1892,6757,4496,6801,6565,6464,5248,6020,5492,5749,946,6757,4992,4633,6466,5298,1972,6709,5508,6070,4496,4666,901,6501,4634,6915,7008,5776,1924,6469,6054,5042,4120,4472,423]);var A=z;var X=[[0,0,0],[0,1,0],[0,1,1],[0,0,1],[1,0,0],[1,1,0],[1,1,1],[1,0,1]],H=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]],B=class{constructor(){this.table=A,this.f_test_results=new Int32Array(6)}signbf(a){return a<0}face_tests(a){let x=this.v,c=this.f_test_results;return c.fill(0),a&128?(c[0]=(a&204)===132?x[0]*x[5]<x[1]*x[4]?-1:1:0,c[3]=(a&153)===129?x[0]*x[7]<x[3]*x[4]?-1:1:0,c[4]=(a&240)===160?x[0]*x[2]<x[1]*x[3]?-1:1:0):(c[0]=(a&204)===72?x[0]*x[5]<x[1]*x[4]?1:-1:0,c[3]=(a&153)===24?x[0]*x[7]<x[3]*x[4]?1:-1:0,c[4]=(a&240)===80?x[0]*x[2]<x[1]*x[3]?1:-1:0),a&2?(c[1]=(a&102)===66?x[1]*x[6]<x[2]*x[5]?-1:1:0,c[2]=(a&51)===18?x[3]*x[6]<x[2]*x[7]?-1:1:0,c[5]=(a&15)===10?x[4]*x[6]<x[5]*x[7]?-1:1:0):(c[1]=(a&102)===36?x[1]*x[6]<x[2]*x[5]?1:-1:0,c[2]=(a&51)===33?x[3]*x[6]<x[2]*x[7]?1:-1:0,c[5]=(a&15)===5?x[4]*x[6]<x[5]*x[7]?1:-1:0),c[0]+c[1]+c[2]+c[3]+c[4]+c[5]}face_test1(a){let x=this.v;switch(a){case 0:return x[0]*x[5]<x[1]*x[4]?72:132;case 1:return x[1]*x[6]<x[2]*x[5]?36:66;case 2:return x[3]*x[6]<x[2]*x[7]?33:18;case 3:return x[0]*x[7]<x[3]*x[4]?24:129;case 4:return x[0]*x[2]<x[1]*x[3]?80:160;default:return x[4]*x[6]<x[5]*x[7]?5:10}}interior_test(a,x){let c=this.v,e=1e-9,s=c[4]-c[0],i=c[5]-c[1],o=c[6]-c[2],r=c[7]-c[3],t=s*o-i*r;if(this.signbf(t)){if(a&1)return 0}else if(!(a&1)||Math.abs(t)<e)return 0;let l=.5*(c[3]*i+c[1]*r-c[2]*s-c[0]*o)/t;if(l<=e||l>=1-e)return 0;let h=c[0]+s*l,b=c[1]+i*l,f=c[2]+o*l,u=c[3]+r*l,d=f*h,p=u*b;if(a&1){if(d<p&&!this.signbf(p))return(this.signbf(b)===this.signbf(c[a]))+x}else if(d>p&&!this.signbf(d))return(this.signbf(h)===this.signbf(c[a]))+x;return 0}pattern(a){let x=this.table,c=(a&128)!==0,e=c?a^255:a,s=x[e];if(s===void 0)throw new Error(`MC33 lookup miss: ${e}`);let i=(s&2048)!==0,o=c?!i:i,r=o?a:a^255,t=s&2047,l=s>>>12,h;switch(l){case 0:h=t;break;case 1:h=r&this.face_test1(t>>2)?183+(t<<1):159+t;break;case 2:h=this.interior_test(t,0)?239+6*t:231+(t<<1);break;case 3:r&this.face_test1(t%6)?h=575+5*t:h=this.interior_test(Math.floor(t/6),0)?407+7*t:335+3*t;break;case 4:{let b=this.face_tests(r);b===-3?h=695+3*t:b===-1?h=(this.f_test_results[4]+this.f_test_results[5]<0?this.f_test_results[0]+this.f_test_results[2]<0?759:799:719)+5*t:b===1?h=(this.f_test_results[4]+this.f_test_results[5]<0?983:this.f_test_results[0]+this.f_test_results[2]<0?839:911)+9*t:h=this.interior_test(t>>1,0)?1095+9*t:1055+5*t;break}case 5:{let b=this.face_tests(r);b===-2?h=(t&2?this.interior_test(0,0):this.interior_test(0,0)||this.interior_test(t?1:3,0))?1213+(t<<3):1189+(t<<2):b===0?h=(this.f_test_results[2+t]<0?1261:1285)+(t<<3):h=(t&2?this.interior_test(1,0):this.interior_test(2,0)||this.interior_test(t?3:1,0))?1237+(t<<3):1201+(t<<2);break}case 6:{let b=this.face_tests(r);b===-2?h=this.interior_test(14287116>>(t<<1)&3,0)?1453+(t<<3):1357+(t<<2):b===0?h=(this.f_test_results[t>>1]<0?1645:1741)+(t<<3):h=this.interior_test(10991589>>(t<<1)&3,0)?1549+(t<<3):1405+(t<<2);break}default:{let b=Math.abs(this.face_tests(r));if(b===0){let f=(this.f_test_results[1]<0)<<1|this.f_test_results[5]<0;if(this.f_test_results[0]*this.f_test_results[1]===this.f_test_results[5])h=2157+12*f;else{let u=this.interior_test(f,1);h=2285+(u?10*f-40*u:6*f)}}else if(b===2)h=1917+10*((this.f_test_results[0]<0?this.f_test_results[2]>0:12+(this.f_test_results[2]<0))+(this.f_test_results[1]<0?this.f_test_results[3]<0:6+(this.f_test_results[3]>0))),this.f_test_results[4]>0&&(h+=30);else if(b===4){let f=21+11*this.f_test_results[0]+4*this.f_test_results[1]+3*this.f_test_results[2]+2*this.f_test_results[3]+this.f_test_results[4];f>>4&&(f-=f&32?20:10),h=1845+3*f}else h=1839+2*this.f_test_results[0]}}return{offset:h+1,reverse:o}}triangles(a,x,c){if(this.v=a,x===0||x===255)return 0;let e=this.pattern(x),s=0;for(let i=e.offset;i<A.length;i++){let o=A[i],r=o&15,t=o>>4&15,l=o>>8&15;if(r<=12&&t<=12&&l<=12&&r!==t&&t!==l&&r!==l){if(s+3>c.length)throw new Error("MC33 cell exceeds output capacity");c[s++]=r,c[s++]=e.reverse?l:t,c[s++]=e.reverse?t:l}if(!(o&4096))return s}throw new Error("MC33 pattern exceeds lookup table")}},J={name:"MC33",corners:X,edges:H,maxVertices:36,table:A,cornerBit:n=>128>>n,createPolygonizer(){let n=new B;return n.triangles.bind(n)}};var T=J;function v(n={type:"cartesian"}){if(n.type==="cartesian")return(s,i,o)=>[s,i,o];if(n.type!=="spherical"&&n.type!=="cube-sphere")throw new Error(`Unknown coordinates: ${n.type}`);let a=n.radius||[.02,.7],x=n.center||[.5,.5,.5];if(a.length!==2||!a.every(Number.isFinite)||a[0]<0||a[1]<=a[0])throw new Error("Radius must be an increasing, nonnegative pair");if(x.length!==3||!x.every(Number.isFinite))throw new Error("Center must contain three finite coordinates");if(n.type==="cube-sphere"){if(!Number.isInteger(n.face)||n.face<0||n.face>5)throw new Error("Cube-sphere face must be 0..5");return(s,i,o)=>{let r=2*s-1,t=2*i-1,h=[[1,t,-r],[-1,t,r],[r,1,-t],[r,-1,t],[r,t,1],[-r,t,-1]][n.face],f=(a[0]+o*(a[1]-a[0]))/Math.hypot(...h);return h.map((u,d)=>x[d]+u*f)}}let c=n.longitude||[-Math.PI,Math.PI],e=n.latitude||[-Math.PI/2,Math.PI/2];for(let s of[c,e])if(s.length!==2||!s.every(Number.isFinite)||s[1]<=s[0])throw new Error("Angular ranges must be increasing finite pairs in radians");if(e[0]<-Math.PI/2||e[1]>Math.PI/2||c[1]-c[0]>2*Math.PI+1e-9)throw new Error("Latitude must be within \\xB1pi/2 and longitude span at most 2*pi");return(s,i,o)=>{let r=c[0]+s*(c[1]-c[0]),t=e[0]+i*(e[1]-e[0]),l=a[0]+o*(a[1]-a[0]),h=l*Math.cos(t);return Math.abs(Math.cos(t))<1e-15?[x[0],x[1]+l*Math.sin(t),x[2]]:[x[0]+h*Math.cos(r),x[1]+l*Math.sin(t),x[2]+h*Math.sin(r)]}}function q(n,a){if(!a||a.type==="cartesian")return n;let x=v(a);for(let c=0;c<n.length;c+=3){let e=x(n[c],n[c+1],n[c+2]);n[c]=e[0],n[c+1]=e[1],n[c+2]=e[2]}return n}var Q={bourke:$,mc33:T};function Z(n,a,x,c){let e=Q[c];if(!e)throw new Error(`Unknown marching cubes algorithm: ${c}`);if(!["x","y","z"].every(s=>Number.isInteger(a[s])&&a[s]>=2))throw new Error("Grid dimensions must be integers of at least 2");if(!(n instanceof Float32Array)||n.length!==a.x*a.y*a.z)throw new Error("Expected a Float32Array with x*y*z samples, indexed as (z*y + y)*x + x");if(!Number.isFinite(x))throw new Error("Isolevel must be finite");for(let s of n)if(!Number.isFinite(s)||!Number.isFinite(Math.fround(s-x)))throw new Error("Field samples and their differences from the isolevel must be finite f32 values");return e}function N(n,a,x=0,c="bourke",e={}){x=Math.fround(x),e.coordinates&&v(e.coordinates);let s=Z(n,a,x,c),{x:i,y:o,z:r}=a,t=s.createPolygonizer(),l=new Float32Array(8),h=new Uint8Array(s.maxVertices),b=new Float32Array(39),f=new Float32Array(65536),u=0;for(let d=0;d<r-1;d++)for(let p=0;p<o-1;p++)for(let y=0;y<i-1;y++){let M=0;for(let m=0;m<8;m++){let _=s.corners[m];l[m]=n[((d+_[2])*o+p+_[1])*i+y+_[0]]-x,l[m]<0&&(M|=s.cornerBit(m))}if(M===0||M===255)continue;let w=t(l,M,h);if(u+w*3>f.length){let m=new Float32Array(Math.max(f.length*2,u+w*3));m.set(f),f=m}for(let m=0;m<12;m++){let[_,k]=s.edges[m];if(l[_]<0==l[k]<0)continue;let E=l[_]-l[k],U=Math.abs(E)<1e-9?.5:Math.max(0,Math.min(1,l[_]/E)),P=s.corners[_],S=s.corners[k];b[m*3]=(y+P[0]+U*(S[0]-P[0]))/(i-1),b[m*3+1]=(p+P[1]+U*(S[1]-P[1]))/(o-1),b[m*3+2]=(d+P[2]+U*(S[2]-P[2]))/(r-1)}b[36]=(y+.5)/(i-1),b[37]=(p+.5)/(o-1),b[38]=(d+.5)/(r-1);for(let m=0;m<w;m++){let _=h[m]*3;f[u++]=b[_],f[u++]=b[_+1],f[u++]=b[_+2]}}return q(f.slice(0,u),e.coordinates)}function c1(n,a){let x=[],c=a/2,e=n%2===0;function s(o,r){let t=[Math.sin(o)*Math.cos(r),Math.cos(o),Math.sin(o)*Math.sin(r)],l=e?.5:.66,h=e?.69:.84;for(let b=0;b<14;b++){let f=(l+h)/2;g(1,n,...t.map(u=>u*f))<0?l=f:h=f}return t.map(b=>b*(l+h)/2)}function i(o,r,t){x.push(...o,...r,...t)}for(let o=0;o<c;o++)for(let r=0;r<a;r++){let t=o*Math.PI/c,l=(o+1)*Math.PI/c,h=r*2*Math.PI/a,b=(r+1)%a*2*Math.PI/a,f=s(t,h),u=s(t,b),d=s(l,b),p=s(l,h);o>0&&i(f,u,p),o<c-1&&i(u,d,p)}if(e){let r=(t,l)=>{let h=.82+.055*Math.cos(l);return[h*Math.cos(t),.055*Math.sin(l),h*Math.sin(t)]};for(let t=0;t<a;t++)for(let l=0;l<4;l++){let h=t*2*Math.PI/a,b=(t+1)%a*2*Math.PI/a,f=l*2*Math.PI/4,u=(l+1)%4*2*Math.PI/4,d=r(h,f),p=r(b,f),y=r(b,u),M=r(h,u);i(d,M,p),i(p,M,y)}}return Float32Array.from(x,o=>(o+1)/2)}function t1(n,a){let x=new Map,c=e=>e.every(s=>Math.abs(s*a-Math.floor(s*a)-.5)<1e-5);for(let e=0;e<n.length;e+=9){let s=[0,1,2].map(i=>Array.from(n.subarray(e+i*3,e+i*3+3)));for(let i=0;i<3;i++)if(c(s[i])){let o=s[i].join(",");x.has(o)||x.set(o,{boundary:new Map,offsets:[]});let r=x.get(o);r.offsets.push(e+i*3);for(let t=0;t<3;t++)t!==i&&r.boundary.set(s[t].join(","),s[t])}}for(let e of x.values()){let s=[0,0,0];for(let i of e.boundary.values())for(let o=0;o<3;o++)s[o]+=i[o]/e.boundary.size;for(let i of e.offsets)n.set(s,i)}return x.size}function O(n,a,x,c="mc33",e={}){let s=F[n]?.[x];if(!s)throw new Error("Invalid body mesh level");let i=n===1&&x>=5,o;if(i)o=c1(a,s);else{let b=s+1,f={x:b,y:b,z:b},u=new Float32Array(b*b*b);for(let d=0;d<b;d++)for(let p=0;p<b;p++)for(let y=0;y<b;y++)u[(d*b+p)*b+y]=g(n,a,y/s*2-1,p/s*2-1,d/s*2-1,e);o=N(u,f,0,c)}let r=new Float32Array(o.length/3*8),t=0,l=0,h=!i&&c==="mc33"?t1(o,s):0;for(let b=0;b<o.length;b+=9){let f=[],u=[];for(let M=0;M<3;M++){let w=[0,1,2].map(m=>o[b+M*3+m]*2-1);f.push(w),u.push(G(n,a,...w,e))}let d=f[1].map((M,w)=>M-f[0][w]),p=f[2].map((M,w)=>M-f[0][w]),y=[d[1]*p[2]-d[2]*p[1],d[2]*p[0]-d[0]*p[2],d[0]*p[1]-d[1]*p[0]];if(!(Math.hypot(...y)<1e-12)){l+=y.reduce((M,w,m)=>M+w*(u[0][m]+u[1][m]+u[2][m]),0);for(let M=0;M<3;M++){let w=t++*8;r.set([...f[M],1,...u[M],0],w)}}}if(l<0)for(let b=0;b<t*8;b+=24)for(let f=0;f<8;f++){let u=r[b+8+f];r[b+8+f]=r[b+16+f],r[b+16+f]=u}return{vertices:r.slice(0,t*8),count:t,divisions:s,interiorVertices:h,proxy:i}}function C(n,a=8192,x=7){let c=new Map;for(let r=0;r<n.length;r+=8){let t=[n[r],n[r+1],n[r+2]].map(l=>Math.round(l*1e6)).join(":");c.has(t)||c.set(t,r)}let e=Array.from(c.values()),s=I(x);for(let r=e.length-1;r>0;r--){let t=Math.floor(s()*(r+1));[e[r],e[t]]=[e[t],e[r]]}let i=Math.min(a,e.length),o=new Float32Array(i*8);return e.slice(0,i).forEach((r,t)=>o.set(n.subarray(r,r+8),t*8)),{vertices:o,count:i}}self.onmessage=n=>{let{key:a,kind:x,variant:c,level:e,algorithm:s,caves:i}=n.data;try{let o=performance.now(),r=O(x,c,e==="points"?0:e,s,{caves:i}),t=e==="points"?C(r.vertices,8192,x*71+c):r,l=e===R-1?C(r.vertices,512,x*71+c):null;self.postMessage({key:a,...t,fallback:l,ms:performance.now()-o},l?[t.vertices.buffer,l.vertices.buffer]:[t.vertices.buffer])}catch(o){self.postMessage({key:a,error:o.message})}};;if(typeof import_meta !== \'undefined\')import_meta.url=location.origin+"/dist/";})();\n';
-var x0 = URL.createObjectURL(new globalThis.Blob([c0], { type: "text/javascript" }));
-var pt = x0;
-var bt = `struct Vertex { position:vec4<f32>, normal:vec4<f32> }
+var l0 = { build: pt, pointCloud: bt };
+var u0 = '(()=>{function I(n){let a=n>>>0;return()=>{a=a+1831565813>>>0;let x=Math.imul(a^a>>>15,a|1);return x^=x+Math.imul(x^x>>>7,x|61),((x^x>>>14)>>>0)/4294967296}}var e1=[{id:"island",kind:2,variant:0,position:[420,-70,-250],radius:440,rotation:[0,0,0,1],tint:[.68,.87,.78]},{id:"planet",kind:1,variant:0,position:[-1300,430,-1900],radius:880,rotation:[.25,.08,.14,Math.sqrt(1-.25**2-.08**2-.14**2)],tint:[.45,.72,.91]},{id:"asteroid",kind:0,variant:2,position:[-230,100,500],radius:185,rotation:[.16,.34,.11,Math.sqrt(1-.16**2-.34**2-.11**2)],tint:[.63,.51,.39]}];function g(n,a,x,c,e,{caves:s=!1}={}){let i=a*1.713,o=Math.sin(x*5.3+i)*Math.cos(c*4.1-i)*Math.sin(e*6.2+1.3);if(n===0){let f=Math.hypot(x/1.05,c/.87,e/.96),u=.055*o+.025*Math.sin(x*13+i)*Math.sin(c*11)*Math.cos(e*9),d=.07*Math.exp(-65*((x-.46)**2+(c-.22)**2+(e-.35)**2));return f-.67-u+d}if(n===1){let f=a%2===0,u=Math.hypot(x,c,e),d=u-(f?.6:.75)-.025*o-.012*Math.sin(x*17+i)*Math.cos(e*13);return f?Math.min(d,Math.hypot(Math.hypot(x,e)-.82,c)-.055):d}let r=Math.hypot(x,e),t=.7+.05*Math.sin(x*8+i)*Math.cos(e*7),l=.23+.09*Math.sin(x*5+i)*Math.cos(e*6),h=-.78+.8*Math.pow(r,1.1)+.035*o,b=Math.max(r-t,c-l,h-c);return s?Math.max(b,.235-Math.hypot(x-.48,c+.1,e-.04)):b}function G(n,a,x,c,e,s){let o=[g(n,a,x+.0015,c,e,s)-g(n,a,x-.0015,c,e,s),g(n,a,x,c+.0015,e,s)-g(n,a,x,c-.0015,e,s),g(n,a,x,c,e+.0015,s)-g(n,a,x,c,e-.0015,s)],r=Math.hypot(...o)||1;return o.map(t=>t/r)}var F=[[48,36,28,20,16,10,6,4,3,2],[64,48,36,28,24,16,12,8,6,4],[64,48,32,24,16,10,6,4,3,2]],R=10;var W=[[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]],j=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]],L=[[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,8,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,1,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,8,3,9,8,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,2,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,8,3,1,2,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,2,10,0,2,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[2,8,3,2,10,8,10,9,8,-1,-1,-1,-1,-1,-1,-1],[3,11,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,11,2,8,11,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,9,0,2,3,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,11,2,1,9,11,9,8,11,-1,-1,-1,-1,-1,-1,-1],[3,10,1,11,10,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,10,1,0,8,10,8,11,10,-1,-1,-1,-1,-1,-1,-1],[3,9,0,3,11,9,11,10,9,-1,-1,-1,-1,-1,-1,-1],[9,8,10,10,8,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,7,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,3,0,7,3,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,1,9,8,4,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,1,9,4,7,1,7,3,1,-1,-1,-1,-1,-1,-1,-1],[1,2,10,8,4,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,4,7,3,0,4,1,2,10,-1,-1,-1,-1,-1,-1,-1],[9,2,10,9,0,2,8,4,7,-1,-1,-1,-1,-1,-1,-1],[2,10,9,2,9,7,2,7,3,7,9,4,-1,-1,-1,-1],[8,4,7,3,11,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[11,4,7,11,2,4,2,0,4,-1,-1,-1,-1,-1,-1,-1],[9,0,1,8,4,7,2,3,11,-1,-1,-1,-1,-1,-1,-1],[4,7,11,9,4,11,9,11,2,9,2,1,-1,-1,-1,-1],[3,10,1,3,11,10,7,8,4,-1,-1,-1,-1,-1,-1,-1],[1,11,10,1,4,11,1,0,4,7,11,4,-1,-1,-1,-1],[4,7,8,9,0,11,9,11,10,11,0,3,-1,-1,-1,-1],[4,7,11,4,11,9,9,11,10,-1,-1,-1,-1,-1,-1,-1],[9,5,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,5,4,0,8,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,5,4,1,5,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[8,5,4,8,3,5,3,1,5,-1,-1,-1,-1,-1,-1,-1],[1,2,10,9,5,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,0,8,1,2,10,9,5,4,-1,-1,-1,-1,-1,-1,-1],[5,2,10,5,4,2,4,0,2,-1,-1,-1,-1,-1,-1,-1],[2,10,5,3,2,5,3,5,4,3,4,8,-1,-1,-1,-1],[9,5,4,2,3,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,11,2,0,8,11,4,9,5,-1,-1,-1,-1,-1,-1,-1],[0,5,4,0,1,5,2,3,11,-1,-1,-1,-1,-1,-1,-1],[2,1,5,2,5,8,2,8,11,4,8,5,-1,-1,-1,-1],[10,3,11,10,1,3,9,5,4,-1,-1,-1,-1,-1,-1,-1],[4,9,5,0,8,1,8,10,1,8,11,10,-1,-1,-1,-1],[5,4,0,5,0,11,5,11,10,11,0,3,-1,-1,-1,-1],[5,4,8,5,8,10,10,8,11,-1,-1,-1,-1,-1,-1,-1],[9,7,8,5,7,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,3,0,9,5,3,5,7,3,-1,-1,-1,-1,-1,-1,-1],[0,7,8,0,1,7,1,5,7,-1,-1,-1,-1,-1,-1,-1],[1,5,3,3,5,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,7,8,9,5,7,10,1,2,-1,-1,-1,-1,-1,-1,-1],[10,1,2,9,5,0,5,3,0,5,7,3,-1,-1,-1,-1],[8,0,2,8,2,5,8,5,7,10,5,2,-1,-1,-1,-1],[2,10,5,2,5,3,3,5,7,-1,-1,-1,-1,-1,-1,-1],[7,9,5,7,8,9,3,11,2,-1,-1,-1,-1,-1,-1,-1],[9,5,7,9,7,2,9,2,0,2,7,11,-1,-1,-1,-1],[2,3,11,0,1,8,1,7,8,1,5,7,-1,-1,-1,-1],[11,2,1,11,1,7,7,1,5,-1,-1,-1,-1,-1,-1,-1],[9,5,8,8,5,7,10,1,3,10,3,11,-1,-1,-1,-1],[5,7,0,5,0,9,7,11,0,1,0,10,11,10,0,-1],[11,10,0,11,0,3,10,5,0,8,0,7,5,7,0,-1],[11,10,5,7,11,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[10,6,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,8,3,5,10,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,0,1,5,10,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,8,3,1,9,8,5,10,6,-1,-1,-1,-1,-1,-1,-1],[1,6,5,2,6,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,6,5,1,2,6,3,0,8,-1,-1,-1,-1,-1,-1,-1],[9,6,5,9,0,6,0,2,6,-1,-1,-1,-1,-1,-1,-1],[5,9,8,5,8,2,5,2,6,3,2,8,-1,-1,-1,-1],[2,3,11,10,6,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[11,0,8,11,2,0,10,6,5,-1,-1,-1,-1,-1,-1,-1],[0,1,9,2,3,11,5,10,6,-1,-1,-1,-1,-1,-1,-1],[5,10,6,1,9,2,9,11,2,9,8,11,-1,-1,-1,-1],[6,3,11,6,5,3,5,1,3,-1,-1,-1,-1,-1,-1,-1],[0,8,11,0,11,5,0,5,1,5,11,6,-1,-1,-1,-1],[3,11,6,0,3,6,0,6,5,0,5,9,-1,-1,-1,-1],[6,5,9,6,9,11,11,9,8,-1,-1,-1,-1,-1,-1,-1],[5,10,6,4,7,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,3,0,4,7,3,6,5,10,-1,-1,-1,-1,-1,-1,-1],[1,9,0,5,10,6,8,4,7,-1,-1,-1,-1,-1,-1,-1],[10,6,5,1,9,7,1,7,3,7,9,4,-1,-1,-1,-1],[6,1,2,6,5,1,4,7,8,-1,-1,-1,-1,-1,-1,-1],[1,2,5,5,2,6,3,0,4,3,4,7,-1,-1,-1,-1],[8,4,7,9,0,5,0,6,5,0,2,6,-1,-1,-1,-1],[7,3,9,7,9,4,3,2,9,5,9,6,2,6,9,-1],[3,11,2,7,8,4,10,6,5,-1,-1,-1,-1,-1,-1,-1],[5,10,6,4,7,2,4,2,0,2,7,11,-1,-1,-1,-1],[0,1,9,4,7,8,2,3,11,5,10,6,-1,-1,-1,-1],[9,2,1,9,11,2,9,4,11,7,11,4,5,10,6,-1],[8,4,7,3,11,5,3,5,1,5,11,6,-1,-1,-1,-1],[5,1,11,5,11,6,1,0,11,7,11,4,0,4,11,-1],[0,5,9,0,6,5,0,3,6,11,6,3,8,4,7,-1],[6,5,9,6,9,11,4,7,9,7,11,9,-1,-1,-1,-1],[10,4,9,6,4,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,10,6,4,9,10,0,8,3,-1,-1,-1,-1,-1,-1,-1],[10,0,1,10,6,0,6,4,0,-1,-1,-1,-1,-1,-1,-1],[8,3,1,8,1,6,8,6,4,6,1,10,-1,-1,-1,-1],[1,4,9,1,2,4,2,6,4,-1,-1,-1,-1,-1,-1,-1],[3,0,8,1,2,9,2,4,9,2,6,4,-1,-1,-1,-1],[0,2,4,4,2,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[8,3,2,8,2,4,4,2,6,-1,-1,-1,-1,-1,-1,-1],[10,4,9,10,6,4,11,2,3,-1,-1,-1,-1,-1,-1,-1],[0,8,2,2,8,11,4,9,10,4,10,6,-1,-1,-1,-1],[3,11,2,0,1,6,0,6,4,6,1,10,-1,-1,-1,-1],[6,4,1,6,1,10,4,8,1,2,1,11,8,11,1,-1],[9,6,4,9,3,6,9,1,3,11,6,3,-1,-1,-1,-1],[8,11,1,8,1,0,11,6,1,9,1,4,6,4,1,-1],[3,11,6,3,6,0,0,6,4,-1,-1,-1,-1,-1,-1,-1],[6,4,8,11,6,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[7,10,6,7,8,10,8,9,10,-1,-1,-1,-1,-1,-1,-1],[0,7,3,0,10,7,0,9,10,6,7,10,-1,-1,-1,-1],[10,6,7,1,10,7,1,7,8,1,8,0,-1,-1,-1,-1],[10,6,7,10,7,1,1,7,3,-1,-1,-1,-1,-1,-1,-1],[1,2,6,1,6,8,1,8,9,8,6,7,-1,-1,-1,-1],[2,6,9,2,9,1,6,7,9,0,9,3,7,3,9,-1],[7,8,0,7,0,6,6,0,2,-1,-1,-1,-1,-1,-1,-1],[7,3,2,6,7,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[2,3,11,10,6,8,10,8,9,8,6,7,-1,-1,-1,-1],[2,0,7,2,7,11,0,9,7,6,7,10,9,10,7,-1],[1,8,0,1,7,8,1,10,7,6,7,10,2,3,11,-1],[11,2,1,11,1,7,10,6,1,6,7,1,-1,-1,-1,-1],[8,9,6,8,6,7,9,1,6,11,6,3,1,3,6,-1],[0,9,1,11,6,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[7,8,0,7,0,6,3,11,0,11,6,0,-1,-1,-1,-1],[7,11,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[7,6,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,0,8,11,7,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,1,9,11,7,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[8,1,9,8,3,1,11,7,6,-1,-1,-1,-1,-1,-1,-1],[10,1,2,6,11,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,2,10,3,0,8,6,11,7,-1,-1,-1,-1,-1,-1,-1],[2,9,0,2,10,9,6,11,7,-1,-1,-1,-1,-1,-1,-1],[6,11,7,2,10,3,10,8,3,10,9,8,-1,-1,-1,-1],[7,2,3,6,2,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[7,0,8,7,6,0,6,2,0,-1,-1,-1,-1,-1,-1,-1],[2,7,6,2,3,7,0,1,9,-1,-1,-1,-1,-1,-1,-1],[1,6,2,1,8,6,1,9,8,8,7,6,-1,-1,-1,-1],[10,7,6,10,1,7,1,3,7,-1,-1,-1,-1,-1,-1,-1],[10,7,6,1,7,10,1,8,7,1,0,8,-1,-1,-1,-1],[0,3,7,0,7,10,0,10,9,6,10,7,-1,-1,-1,-1],[7,6,10,7,10,8,8,10,9,-1,-1,-1,-1,-1,-1,-1],[6,8,4,11,8,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,6,11,3,0,6,0,4,6,-1,-1,-1,-1,-1,-1,-1],[8,6,11,8,4,6,9,0,1,-1,-1,-1,-1,-1,-1,-1],[9,4,6,9,6,3,9,3,1,11,3,6,-1,-1,-1,-1],[6,8,4,6,11,8,1,2,10,-1,-1,-1,-1,-1,-1,-1],[1,2,10,3,0,11,0,6,11,0,4,6,-1,-1,-1,-1],[4,11,8,4,6,11,0,2,9,2,10,9,-1,-1,-1,-1],[10,9,3,10,3,2,9,4,3,11,3,6,4,6,3,-1],[8,2,3,8,4,2,4,6,2,-1,-1,-1,-1,-1,-1,-1],[0,4,2,4,6,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,9,0,2,3,4,2,4,6,4,3,8,-1,-1,-1,-1],[1,9,4,1,4,2,2,4,6,-1,-1,-1,-1,-1,-1,-1],[8,1,3,8,4,1,4,6,1,6,10,1,-1,-1,-1,-1],[10,1,0,10,0,6,6,0,4,-1,-1,-1,-1,-1,-1,-1],[4,6,3,4,3,8,6,10,3,0,3,9,10,9,3,-1],[10,9,4,6,10,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,9,5,7,6,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,8,3,4,9,5,11,7,6,-1,-1,-1,-1,-1,-1,-1],[5,0,1,5,4,0,7,6,11,-1,-1,-1,-1,-1,-1,-1],[11,7,6,8,3,4,3,5,4,3,1,5,-1,-1,-1,-1],[9,5,4,10,1,2,7,6,11,-1,-1,-1,-1,-1,-1,-1],[6,11,7,1,2,10,0,8,3,4,9,5,-1,-1,-1,-1],[7,6,11,5,4,10,4,2,10,4,0,2,-1,-1,-1,-1],[3,4,8,3,5,4,3,2,5,10,5,2,11,7,6,-1],[7,2,3,7,6,2,5,4,9,-1,-1,-1,-1,-1,-1,-1],[9,5,4,0,8,6,0,6,2,6,8,7,-1,-1,-1,-1],[3,6,2,3,7,6,1,5,0,5,4,0,-1,-1,-1,-1],[6,2,8,6,8,7,2,1,8,4,8,5,1,5,8,-1],[9,5,4,10,1,6,1,7,6,1,3,7,-1,-1,-1,-1],[1,6,10,1,7,6,1,0,7,8,7,0,9,5,4,-1],[4,0,10,4,10,5,0,3,10,6,10,7,3,7,10,-1],[7,6,10,7,10,8,5,4,10,4,8,10,-1,-1,-1,-1],[6,9,5,6,11,9,11,8,9,-1,-1,-1,-1,-1,-1,-1],[3,6,11,0,6,3,0,5,6,0,9,5,-1,-1,-1,-1],[0,11,8,0,5,11,0,1,5,5,6,11,-1,-1,-1,-1],[6,11,3,6,3,5,5,3,1,-1,-1,-1,-1,-1,-1,-1],[1,2,10,9,5,11,9,11,8,11,5,6,-1,-1,-1,-1],[0,11,3,0,6,11,0,9,6,5,6,9,1,2,10,-1],[11,8,5,11,5,6,8,0,5,10,5,2,0,2,5,-1],[6,11,3,6,3,5,2,10,3,10,5,3,-1,-1,-1,-1],[5,8,9,5,2,8,5,6,2,3,8,2,-1,-1,-1,-1],[9,5,6,9,6,0,0,6,2,-1,-1,-1,-1,-1,-1,-1],[1,5,8,1,8,0,5,6,8,3,8,2,6,2,8,-1],[1,5,6,2,1,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,3,6,1,6,10,3,8,6,5,6,9,8,9,6,-1],[10,1,0,10,0,6,9,5,0,5,6,0,-1,-1,-1,-1],[0,3,8,5,6,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[10,5,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[11,5,10,7,5,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[11,5,10,11,7,5,8,3,0,-1,-1,-1,-1,-1,-1,-1],[5,11,7,5,10,11,1,9,0,-1,-1,-1,-1,-1,-1,-1],[10,11,7,10,7,5,9,8,1,8,3,1,-1,-1,-1,-1],[11,1,2,11,7,1,7,5,1,-1,-1,-1,-1,-1,-1,-1],[0,8,3,1,2,7,1,7,5,7,2,11,-1,-1,-1,-1],[9,7,5,9,2,7,9,0,2,2,11,7,-1,-1,-1,-1],[7,5,2,7,2,11,5,9,2,3,2,8,9,8,2,-1],[2,5,10,2,3,5,3,7,5,-1,-1,-1,-1,-1,-1,-1],[8,2,0,8,5,2,8,7,5,10,2,5,-1,-1,-1,-1],[9,0,1,5,10,3,5,3,7,3,10,2,-1,-1,-1,-1],[9,8,2,9,2,1,8,7,2,10,2,5,7,5,2,-1],[1,3,5,3,7,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,8,7,0,7,1,1,7,5,-1,-1,-1,-1,-1,-1,-1],[9,0,3,9,3,5,5,3,7,-1,-1,-1,-1,-1,-1,-1],[9,8,7,5,9,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[5,8,4,5,10,8,10,11,8,-1,-1,-1,-1,-1,-1,-1],[5,0,4,5,11,0,5,10,11,11,3,0,-1,-1,-1,-1],[0,1,9,8,4,10,8,10,11,10,4,5,-1,-1,-1,-1],[10,11,4,10,4,5,11,3,4,9,4,1,3,1,4,-1],[2,5,1,2,8,5,2,11,8,4,5,8,-1,-1,-1,-1],[0,4,11,0,11,3,4,5,11,2,11,1,5,1,11,-1],[0,2,5,0,5,9,2,11,5,4,5,8,11,8,5,-1],[9,4,5,2,11,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[2,5,10,3,5,2,3,4,5,3,8,4,-1,-1,-1,-1],[5,10,2,5,2,4,4,2,0,-1,-1,-1,-1,-1,-1,-1],[3,10,2,3,5,10,3,8,5,4,5,8,0,1,9,-1],[5,10,2,5,2,4,1,9,2,9,4,2,-1,-1,-1,-1],[8,4,5,8,5,3,3,5,1,-1,-1,-1,-1,-1,-1,-1],[0,4,5,1,0,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[8,4,5,8,5,3,9,0,5,0,3,5,-1,-1,-1,-1],[9,4,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,11,7,4,9,11,9,10,11,-1,-1,-1,-1,-1,-1,-1],[0,8,3,4,9,7,9,11,7,9,10,11,-1,-1,-1,-1],[1,10,11,1,11,4,1,4,0,7,4,11,-1,-1,-1,-1],[3,1,4,3,4,8,1,10,4,7,4,11,10,11,4,-1],[4,11,7,9,11,4,9,2,11,9,1,2,-1,-1,-1,-1],[9,7,4,9,11,7,9,1,11,2,11,1,0,8,3,-1],[11,7,4,11,4,2,2,4,0,-1,-1,-1,-1,-1,-1,-1],[11,7,4,11,4,2,8,3,4,3,2,4,-1,-1,-1,-1],[2,9,10,2,7,9,2,3,7,7,4,9,-1,-1,-1,-1],[9,10,7,9,7,4,10,2,7,8,7,0,2,0,7,-1],[3,7,10,3,10,2,7,4,10,1,10,0,4,0,10,-1],[1,10,2,8,7,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,9,1,4,1,7,7,1,3,-1,-1,-1,-1,-1,-1,-1],[4,9,1,4,1,7,0,8,1,8,7,1,-1,-1,-1,-1],[4,0,3,7,4,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[4,8,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[9,10,8,10,11,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,0,9,3,9,11,11,9,10,-1,-1,-1,-1,-1,-1,-1],[0,1,10,0,10,8,8,10,11,-1,-1,-1,-1,-1,-1,-1],[3,1,10,11,3,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,2,11,1,11,9,9,11,8,-1,-1,-1,-1,-1,-1,-1],[3,0,9,3,9,11,1,2,9,2,11,9,-1,-1,-1,-1],[0,2,11,8,0,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[3,2,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[2,3,8,2,8,10,10,8,9,-1,-1,-1,-1,-1,-1,-1],[9,10,2,0,9,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[2,3,8,2,8,10,0,1,8,1,10,8,-1,-1,-1,-1],[1,10,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[1,3,8,9,1,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,9,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[0,3,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]],V=Uint32Array.from(L.flat(),n=>n>>>0),Y={name:"Bourke",corners:W,edges:j,maxVertices:15,table:V,cornerBit:n=>1<<n,createPolygonizer(){return(n,a,x)=>{let c=L[a],e=0;for(;e<15&&c[e]>=0;)x[e]=c[e],e++;return e}}};var $=Y;var z=new Uint32Array([0,2181,2182,2197,2179,6166,2205,2371,2180,2199,6164,2326,2193,2380,2335,1167,2178,2203,6152,2356,10243,14359,14356,1317,6158,2344,18434,1181,14357,1345,24580,272,2177,6154,2201,2338,6150,18432,2323,1177,10242,14350,14353,1341,14349,24578,1313,269,2187,2374,2359,1171,14355,24579,1349,302,14351,1329,24586,284,20481,12289,12297,135,2176,10241,6148,14343,2191,14347,2347,1337,6146,14342,18438,24577,2341,1309,1173,266,6162,14346,18437,24585,14358,20482,24584,12304,18433,24576,28672,16387,24582,12292,16391,4112,2185,14344,2362,1325,2377,24581,1169,305,14348,20480,24587,12306,1353,12290,281,141,2311,1333,1185,317,1321,12293,320,147,24583,12288,16388,4096,12291,8192,4108,127,896,265,538,2866,2373,1864,1974,1701,4489,312,4762,146,6970,794,4784,2944,4165,261,6517,2439,4928,884,7077,1973,5254,2920,5653,534,5926,1842,5226,2378,6469,56,4361,1864,5797,265,6469,538,5797,811,6070,538,6070,56,6962,1864,4634,56,6962,265,5797,2164,6469,1974,6405,4149,5203,2115,6516,6423,6257,129,5637,6480,4458,262,6725,6466,4682,402,5029,6998,4906,2869,4518,6066,4631,1649,6022,6150,7008,944,6196,4900,5954,2930,4666,5002,4520,24,4393,4793,4251,779,5285,6790,5258,1896,7013,6036,6073,1435,5797,896,6070,265,4634,1864,6469,2866,4261,6149,6243,5765,5795,928,6038,4534,4457,6512,6064,177,5962,6050,6258,6721,5249,386,4789,6964,6467,5556,5522,659,7066,6448,2483,6154,4122,2954,6299,6930,2961,4746,4994,2472,4678,5145,1057,6309,5253,2984,4134,4199,120,6213,5432,309,5994,6791,2442,5909,4530,379,4469,5896,1808,5158,6194,584,4202,5216,266,4425,4468,881,5163,5963,36,4773,5426,1845,5685,4971,339,5781,5641,518,6453,5008,1875,5046,4960,1030,6586,6068,2964,6054,5914,791,6693,4677,66,6501,6582,2233,5226,6804,896,5797,4489,312,5797,6155,43,7077,5499,56,5653,5665,2051,5797,4148,884,6326,5704,265,7077,6069,265,4762,6070,146,6070,4489,312,5926,5938,265,4165,6070,261,4762,4617,1864,6517,4634,2169,5254,4634,2230,4890,6970,2164,4634,4980,1027,5653,4630,2164,6469,4784,2944,6469,6970,794,5226,6474,811,6517,6535,691,4165,5392,2866,6469,5926,1842,4970,6410,4244,6148,5764,4998,928,6293,4517,4970,5521,5025,6243,2134,4261,6838,4138,6699,6251,5480,88,4261,6021,6267,5003,6715,4154,88,5765,4662,4897,4145,5377,6149,2147,4261,5206,4982,5748,4180,5024,2614,5270,6472,4248,6920,4363,5659,361,6037,4517,4538,6421,4247,6919,177,6566,5794,7010,4274,6064,6512,1942,6038,4411,6968,6072,6520,4457,438,6038,5936,4146,4354,5650,6422,2416,4453,5957,5974,5892,7009,4273,2823,5274,4616,6153,5257,5962,4730,1832,6565,5978,4521,6169,4632,5928,634,5286,6322,4790,6694,4516,6164,386,5146,7034,6067,6259,4483,5249,1191,5146,4116,4355,4627,5923,6695,1191,5701,5141,5958,4726,6258,4482,2068,6437,7044,5248,6464,4752,6994,1460,6565,4889,6426,7002,5211,4939,1081,7018,6982,4794,6442,4905,5177,843,4789,5016,4999,6967,5559,6437,659,6981,4389,4624,4896,5168,6964,2898,4709,5492,5479,4935,6467,4755,2341,4970,6410,5024,5764,902,5765,4970,6293,4410,2147,4261,6230,4138,6251,88,4261,6021,4184,6715,58,5765,4662,6243,5377,2053,4261,6710,4180,4982,928,5270,4457,6920,4363,1563,6037,4538,4273,4247,2823,6566,6038,4274,6064,2416,6038,4411,5659,6520,361,6038,4390,5936,6512,2326,4453,5892,6919,7009,177,5274,4616,5928,5962,634,6773,4730,6169,4632,1832,5286,6322,4482,4516,2068,5962,7034,4483,5249,2625,5146,4116,5923,6695,1191,5141,4726,6164,6258,386,6437,7044,5556,4752,2898,6837,4889,5177,5211,843,6982,6442,4939,4905,1081,4789,5016,4755,5559,2341,4789,4389,5168,6964,1460,4709,6437,5940,6467,659,6469,4634,1974,4787,6260,265,5797,6962,2164,6469,4634,56,6469,6070,56,5797,6962,265,5797,4361,1864,4634,6070,896,7013,6581,4634,6036,2967,7058,6260,6960,6576,2322,5285,6790,6962,6262,2212,6469,5002,6145,6785,2595,7013,4992,6036,7063,2485,5797,4393,7058,6960,2480,5285,6262,4361,6308,2694,6070,4666,6307,6145,2689,6725,6070,4682,4633,1065,4361,5251,4675,4791,1063,5797,4724,4791,5251,579,6725,4152,4633,5161,586,6469,6150,5752,4155,1547,5637,4245,4458,4907,97,5637,4245,4458,5960,97,6022,4634,4155,5643,104,6469,4518,5910,6066,370,4907,5961,4360,5912,377,5029,6998,5960,4955,810,6405,4634,4944,4996,1332,6405,5428,6070,4996,848,5029,6998,4361,4906,859,5797,5961,4473,4360,1816,4518,4992,6066,4466,1814,7269,7258,6084,7291,7316,7193,7201,7330,3254,7284,7351,7211,4553,7186,7177,7216,7299,3144,7333,7274,7218,7299,7240,7252,7286,7351,3115,6853,7224,7203,7330,7237,7316,7193,7169,3200,7269,6597,7350,7227,7171,7296,6084,7288,3220,5829,7274,7317,7177,7216,7347,7211,7186,3233,7317,7274,7184,7329,7240,7286,7303,7252,3081,7194,6086,7169,7296,7288,7350,7227,7203,3234,7269,7334,7257,4546,7346,6084,7291,7316,3098,7211,4553,7186,7241,7284,7303,7176,7216,3251,7333,7252,7286,7240,7210,7218,7347,7275,3207,7237,4810,7300,7224,7203,7257,7194,7169,3216,7269,7171,7312,7257,7350,6084,7291,7300,3128,7333,7254,7177,7216,7347,7275,7210,7186,3217,7333,7274,7252,7286,7303,7176,4553,7184,3145,7334,6086,7194,7169,7296,7224,7203,7346,3195,6853,7334,7316,7193,7201,7346,7291,7271,3141,7211,4553,7241,7284,7351,7218,7299,7176,3088,7333,7254,7210,7218,7299,7240,7284,7351,3179,6853,4810,7237,7300,7224,7171,7312,7193,3105,7237,7350,7227,7171,7312,7257,7300,7288,3175,5829,7210,5067,7275,7317,7177,7184,7329,3122,5829,7274,7317,7284,6088,7176,7184,7329,3145,7334,7296,7288,7271,7194,7201,7346,7227,3075,6757,5145,4530,6068,1201,5963,4425,4785,4532,2096,4773,5253,7030,6194,1410,6693,4664,5208,5416,25,6501,5008,7011,5779,1924,5781,4394,4243,6966,918,5269,5994,4362,6256,1952,6054,6016,4512,6768,946,5221,5209,4634,6834,7078,6070,5238,5537,2385,4228,5960,6327,7043,4787,4361,4400,4387,2308,5797,4907,7043,6260,6327,5494,5447,5810,2658,6469,4442,4152,4131,4609,6689,5401,6408,1176,5221,4992,6288,6532,5524,5703,7015,6019,2931,5797,6805,6561,4241,4882,4865,6962,4774,2854,5797,4361,6561,6805,5972,5989,6260,5264,2112,7078,4992,4984,5947,5755,6834,4514,4656,288,7066,2488,5158,36,4981,309,6054,4480,6017,2673,6978,4393,5266,1207,6709,5026,6227,1412,6501,5040,4278,105,5226,6474,4136,2091,6053,4489,4993,1978,5669,4928,5955,1313,6214,6410,6251,42,6037,4538,6025,945,4117,4662,5440,1891,4714,4137,4777,7010,5816,5224,5257,2057,6565,6025,6487,4521,6675,7075,6967,903,5125,5974,4117,4129,4896,4663,5671,1861,5226,6804,6404,5128,7040,6914,6834,2667,7077,4489,4408,5048,6327,5499,4442,405,5221,4438,5665,4657,4400,5123,5175,1607,6602,6854,6412,4140,4796,6347,6220,1132,7317,7354,7291,7255,6600,7224,7187,458,7189,4806,7201,5317,7286,6083,7171,3136,7238,7210,7316,7337,4800,7296,7352,3014,7333,6085,7354,7227,4553,5057,7305,2247,5829,4806,4668,5964,4988,4292,4124,348,5813,7040,5552,336,6022,4489,4390,1665,4762,6516,6034,882,5285,5050,5028,832,6517,6402,6439,1835,4458,6214,6241,2067,5994,6800,6048,880,6938,4416,4532,1867,4389,4741,4792,1112,5781,4662,5014,905,5270,4409,4969,1595,4773,6021,6181,2050,4678,4498,5161,56,6469,6170,4480,2954,5797,4393,7058,2203,5797,5961,4473,881,4666,6070,6307,2472,5797,4724,5931,36,5909,6066,4466,896,6586,6036,7063,2051,5126,4634,4155,1547,6405,4634,4944,1875,4933,6070,4996,309,6469,6022,4200,608,4678,4996,4930,400,6725,5288,6315,25,5813,5561,4394,2488,5269,4458,5655,1811,6022,5770,6793,571,5285,7030,6722,576,5909,4480,6167,2851,6586,5040,4281,1924,4518,4448,4196,946,6709,4666,5431,25,7013,6995,4945,1924,4197,6405,5634,1924,6214,6472,6528,6401,6243,4962,4402,259,6837,4441,4517,4496,5556,5304,4168,148,5765,4714,5513,4517,4790,5816,4769,345,6565,6710,6426,6675,6484,5687,5223,1110,4714,5944,4987,6025,5042,6038,5786,694,4261,7018,5957,5974,5440,5995,6658,2978,4117,4354,4611,4667,4184,6231,7047,2872,5050,6020,4987,5944,5024,4265,5129,1152,7018,7074,6756,6947,6721,4416,4880,801,6565,4896,4129,4663,4121,4730,6773,2330,4453,5206,5223,5240,5659,6931,6323,2171,4709,6153,6292,6402,6215,6437,5974,1861,6470,4882,4115,5665,6147,6497,5272,2312,6469,4442,4228,6404,7040,4528,6833,405,5797,4501,6677,6289,4737,7042,6950,678,5797,5988,5446,4980,6452,4409,4506,2394,4774,6950,6562,6070,5010,6291,6199,951,5797,6954,5818,4139,5972,5899,5127,1893,6949,6027,5048,5499,4152,4434,4384,560,6474,5264,6208,4992,6052,7079,7027,1923,7078,4400,4657,5123,6689,6979,5707,2858,6805,4506,5977,4634,4217,4976,4866,18,5221,5048,6027,4408,5755,5144,5396,1142,6469,5989,5972,4711,6183,4136,4233,2121,4806,7193,4544,5058,6156,6339,6476,1132,6853,4508,5321,5212,6844,4296,7052,448,7333,5484,4780,5820,7052,4553,6300,705,7333,6854,5317,5831,4988,4553,4412,2500,4810,7350,5052,6028,5756,6300,6572,962,7333,5452,5996,6854,5132,7106,4140,1995,7189,4668,4124,6339,6156,7111,5500,715,7354,7224,6084,7111,7300,7312,7337,960,5834,4546,7171,4811,7227,7232,7268,2753,6853,7193,4546,5056,4297,7223,7285,714,7237,6086,6028,7107,5835,4412,5404,1224,7237,7206,6220,6412,5532,4140,6086,2247,5228,6412,6220,5056,5004,4546,5676,2497,7237,4297,5320,5532,7052,4524,6844,448,5829,5804,5577,4554,6300,4796,7052,705,5829,5804,6492,6684,4412,7284,4988,2500,5834,4811,6076,6086,6572,5004,6300,962,5829,5578,7110,6850,4140,5964,5132,1995,6085,7227,6343,4156,4296,4636,4444,715,6602,7296,7316,6343,7239,7107,7354,960,4810,7350,7203,7107,7268,7169,7232,2753,6597,7194,4544,7312,7285,5058,7223,714,7269,6084,7111,7020,5404,6339,4412,1224,7269,6084,6476,6597,4716,6156,4140,2247,6469,4634,6070,896,6757,4496,6947,1924,7013,7001,4634,4992,6036,2967,6469,6070,6170,6145,6712,2595,6469,4634,4278,4155,5760,1656,6469,4518,4152,4466,6066,359,6725,6070,4992,5161,4633,1186,6757,6036,4503,5042,6167,2049,6405,4634,4933,6070,4944,900,4197,5520,4518,6020,6947,22,7013,4954,6020,4121,6995,2595,6757,4496,4930,4996,5234,1970,6757,6020,4281,4155,6953,537,6725,6310,4496,5042,5288,1656,7269,7257,4634,5321,4296,7288,7239,7227,5835,3075,6469,7334,5056,4546,7346,7227,7296,7288,6086,3098,7269,7334,6597,4524,7201,7346,6084,7111,7316,2051,6469,4810,7350,7227,7203,7194,7169,7288,4296,3175,7269,6764,6084,5532,6476,6028,6156,4524,4544,946,6469,7334,6076,6339,7203,7346,7271,7169,6849,3200,7269,7258,7350,4810,6084,7291,7193,5321,7201,56,6853,7334,7237,6086,7316,7193,7346,4546,7291,896,6757,7227,6084,6343,6156,4156,6956,7193,4636,2380,6853,7237,6070,4296,5321,7193,7169,7224,7203,714,6757,4508,4544,5058,5004,6156,6476,6076,6084,2860,6853,6764,7193,6476,5212,5756,6156,6343,4124,2851,7269,5834,4811,5532,4636,4524,4156,4297,5052,1924,7237,6086,7257,4634,7300,7288,7350,7227,7312,960,7269,6597,4634,7224,6084,7111,7300,7171,7312,3254,7237,5834,4297,5320,5532,4124,4524,5756,6028,571,7269,4810,5058,5532,4544,4524,5052,7020,6412,1924,6597,4810,7237,6070,6849,7169,7312,7300,7203,2243,6757,5320,4297,4156,5004,5244,6076,4636,4811,412,6853,5572,6070,7193,4546,5056,7312,7330,7300,3128,6853,7020,7193,6700,4636,6412,4156,7107,5724,1924,6853,5834,4811,5212,5756,6076,4668,5004,5320,25,7269,5548,6084,6076,7020,6700,5004,5058,6220,400,6853,7020,5212,7288,7107,5756,6220,6700,4668,25,7269,7258,7312,7171,7224,7300,7239,7291,7350,7330,7201,3097,6853,6764,5004,4668,6956,5212,6076,5756,6476,4508,4124,2060,7269,7334,7346,7257,7201,7194,7316,7239,7288,7296,7171,3131,7237,7020,5532,4524,4124,6412,6220,6028,5756,5052,4668,2604,6757,6020,7047,6323,6148,4244,4496,4880,4627,2851,6469,4442,6070,4992,4866,4114,6408,5272,6481,2593,6757,6565,6801,6694,4790,5042,4402,4145,6401,1924,6469,7078,4992,6199,5047,4656,4384,4634,4779,1659,5221,7078,5401,4634,4779,5537,5524,5238,6070,2051,6757,5042,6323,5492,7047,7010,5794,5974,6215,400,5221,5209,4634,4992,4233,6217,6019,7027,6070,1892,6757,4496,6801,6565,6464,5248,6020,5492,5749,946,6757,4992,4633,6466,5298,1972,6709,5508,6070,4496,4666,901,6501,4634,6915,7008,5776,1924,6469,6054,5042,4120,4472,423]);var A=z;var X=[[0,0,0],[0,1,0],[0,1,1],[0,0,1],[1,0,0],[1,1,0],[1,1,1],[1,0,1]],H=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]],B=class{constructor(){this.table=A,this.f_test_results=new Int32Array(6)}signbf(a){return a<0}face_tests(a){let x=this.v,c=this.f_test_results;return c.fill(0),a&128?(c[0]=(a&204)===132?x[0]*x[5]<x[1]*x[4]?-1:1:0,c[3]=(a&153)===129?x[0]*x[7]<x[3]*x[4]?-1:1:0,c[4]=(a&240)===160?x[0]*x[2]<x[1]*x[3]?-1:1:0):(c[0]=(a&204)===72?x[0]*x[5]<x[1]*x[4]?1:-1:0,c[3]=(a&153)===24?x[0]*x[7]<x[3]*x[4]?1:-1:0,c[4]=(a&240)===80?x[0]*x[2]<x[1]*x[3]?1:-1:0),a&2?(c[1]=(a&102)===66?x[1]*x[6]<x[2]*x[5]?-1:1:0,c[2]=(a&51)===18?x[3]*x[6]<x[2]*x[7]?-1:1:0,c[5]=(a&15)===10?x[4]*x[6]<x[5]*x[7]?-1:1:0):(c[1]=(a&102)===36?x[1]*x[6]<x[2]*x[5]?1:-1:0,c[2]=(a&51)===33?x[3]*x[6]<x[2]*x[7]?1:-1:0,c[5]=(a&15)===5?x[4]*x[6]<x[5]*x[7]?1:-1:0),c[0]+c[1]+c[2]+c[3]+c[4]+c[5]}face_test1(a){let x=this.v;switch(a){case 0:return x[0]*x[5]<x[1]*x[4]?72:132;case 1:return x[1]*x[6]<x[2]*x[5]?36:66;case 2:return x[3]*x[6]<x[2]*x[7]?33:18;case 3:return x[0]*x[7]<x[3]*x[4]?24:129;case 4:return x[0]*x[2]<x[1]*x[3]?80:160;default:return x[4]*x[6]<x[5]*x[7]?5:10}}interior_test(a,x){let c=this.v,e=1e-9,s=c[4]-c[0],i=c[5]-c[1],o=c[6]-c[2],r=c[7]-c[3],t=s*o-i*r;if(this.signbf(t)){if(a&1)return 0}else if(!(a&1)||Math.abs(t)<e)return 0;let l=.5*(c[3]*i+c[1]*r-c[2]*s-c[0]*o)/t;if(l<=e||l>=1-e)return 0;let h=c[0]+s*l,b=c[1]+i*l,f=c[2]+o*l,u=c[3]+r*l,d=f*h,p=u*b;if(a&1){if(d<p&&!this.signbf(p))return(this.signbf(b)===this.signbf(c[a]))+x}else if(d>p&&!this.signbf(d))return(this.signbf(h)===this.signbf(c[a]))+x;return 0}pattern(a){let x=this.table,c=(a&128)!==0,e=c?a^255:a,s=x[e];if(s===void 0)throw new Error(`MC33 lookup miss: ${e}`);let i=(s&2048)!==0,o=c?!i:i,r=o?a:a^255,t=s&2047,l=s>>>12,h;switch(l){case 0:h=t;break;case 1:h=r&this.face_test1(t>>2)?183+(t<<1):159+t;break;case 2:h=this.interior_test(t,0)?239+6*t:231+(t<<1);break;case 3:r&this.face_test1(t%6)?h=575+5*t:h=this.interior_test(Math.floor(t/6),0)?407+7*t:335+3*t;break;case 4:{let b=this.face_tests(r);b===-3?h=695+3*t:b===-1?h=(this.f_test_results[4]+this.f_test_results[5]<0?this.f_test_results[0]+this.f_test_results[2]<0?759:799:719)+5*t:b===1?h=(this.f_test_results[4]+this.f_test_results[5]<0?983:this.f_test_results[0]+this.f_test_results[2]<0?839:911)+9*t:h=this.interior_test(t>>1,0)?1095+9*t:1055+5*t;break}case 5:{let b=this.face_tests(r);b===-2?h=(t&2?this.interior_test(0,0):this.interior_test(0,0)||this.interior_test(t?1:3,0))?1213+(t<<3):1189+(t<<2):b===0?h=(this.f_test_results[2+t]<0?1261:1285)+(t<<3):h=(t&2?this.interior_test(1,0):this.interior_test(2,0)||this.interior_test(t?3:1,0))?1237+(t<<3):1201+(t<<2);break}case 6:{let b=this.face_tests(r);b===-2?h=this.interior_test(14287116>>(t<<1)&3,0)?1453+(t<<3):1357+(t<<2):b===0?h=(this.f_test_results[t>>1]<0?1645:1741)+(t<<3):h=this.interior_test(10991589>>(t<<1)&3,0)?1549+(t<<3):1405+(t<<2);break}default:{let b=Math.abs(this.face_tests(r));if(b===0){let f=(this.f_test_results[1]<0)<<1|this.f_test_results[5]<0;if(this.f_test_results[0]*this.f_test_results[1]===this.f_test_results[5])h=2157+12*f;else{let u=this.interior_test(f,1);h=2285+(u?10*f-40*u:6*f)}}else if(b===2)h=1917+10*((this.f_test_results[0]<0?this.f_test_results[2]>0:12+(this.f_test_results[2]<0))+(this.f_test_results[1]<0?this.f_test_results[3]<0:6+(this.f_test_results[3]>0))),this.f_test_results[4]>0&&(h+=30);else if(b===4){let f=21+11*this.f_test_results[0]+4*this.f_test_results[1]+3*this.f_test_results[2]+2*this.f_test_results[3]+this.f_test_results[4];f>>4&&(f-=f&32?20:10),h=1845+3*f}else h=1839+2*this.f_test_results[0]}}return{offset:h+1,reverse:o}}triangles(a,x,c){if(this.v=a,x===0||x===255)return 0;let e=this.pattern(x),s=0;for(let i=e.offset;i<A.length;i++){let o=A[i],r=o&15,t=o>>4&15,l=o>>8&15;if(r<=12&&t<=12&&l<=12&&r!==t&&t!==l&&r!==l){if(s+3>c.length)throw new Error("MC33 cell exceeds output capacity");c[s++]=r,c[s++]=e.reverse?l:t,c[s++]=e.reverse?t:l}if(!(o&4096))return s}throw new Error("MC33 pattern exceeds lookup table")}},J={name:"MC33",corners:X,edges:H,maxVertices:36,table:A,cornerBit:n=>128>>n,createPolygonizer(){let n=new B;return n.triangles.bind(n)}};var T=J;function v(n={type:"cartesian"}){if(n.type==="cartesian")return(s,i,o)=>[s,i,o];if(n.type!=="spherical"&&n.type!=="cube-sphere")throw new Error(`Unknown coordinates: ${n.type}`);let a=n.radius||[.02,.7],x=n.center||[.5,.5,.5];if(a.length!==2||!a.every(Number.isFinite)||a[0]<0||a[1]<=a[0])throw new Error("Radius must be an increasing, nonnegative pair");if(x.length!==3||!x.every(Number.isFinite))throw new Error("Center must contain three finite coordinates");if(n.type==="cube-sphere"){if(!Number.isInteger(n.face)||n.face<0||n.face>5)throw new Error("Cube-sphere face must be 0..5");return(s,i,o)=>{let r=2*s-1,t=2*i-1,h=[[1,t,-r],[-1,t,r],[r,1,-t],[r,-1,t],[r,t,1],[-r,t,-1]][n.face],f=(a[0]+o*(a[1]-a[0]))/Math.hypot(...h);return h.map((u,d)=>x[d]+u*f)}}let c=n.longitude||[-Math.PI,Math.PI],e=n.latitude||[-Math.PI/2,Math.PI/2];for(let s of[c,e])if(s.length!==2||!s.every(Number.isFinite)||s[1]<=s[0])throw new Error("Angular ranges must be increasing finite pairs in radians");if(e[0]<-Math.PI/2||e[1]>Math.PI/2||c[1]-c[0]>2*Math.PI+1e-9)throw new Error("Latitude must be within \\xB1pi/2 and longitude span at most 2*pi");return(s,i,o)=>{let r=c[0]+s*(c[1]-c[0]),t=e[0]+i*(e[1]-e[0]),l=a[0]+o*(a[1]-a[0]),h=l*Math.cos(t);return Math.abs(Math.cos(t))<1e-15?[x[0],x[1]+l*Math.sin(t),x[2]]:[x[0]+h*Math.cos(r),x[1]+l*Math.sin(t),x[2]+h*Math.sin(r)]}}function q(n,a){if(!a||a.type==="cartesian")return n;let x=v(a);for(let c=0;c<n.length;c+=3){let e=x(n[c],n[c+1],n[c+2]);n[c]=e[0],n[c+1]=e[1],n[c+2]=e[2]}return n}var Q={bourke:$,mc33:T};function Z(n,a,x,c){let e=Q[c];if(!e)throw new Error(`Unknown marching cubes algorithm: ${c}`);if(!["x","y","z"].every(s=>Number.isInteger(a[s])&&a[s]>=2))throw new Error("Grid dimensions must be integers of at least 2");if(!(n instanceof Float32Array)||n.length!==a.x*a.y*a.z)throw new Error("Expected a Float32Array with x*y*z samples, indexed as (z*y + y)*x + x");if(!Number.isFinite(x))throw new Error("Isolevel must be finite");for(let s of n)if(!Number.isFinite(s)||!Number.isFinite(Math.fround(s-x)))throw new Error("Field samples and their differences from the isolevel must be finite f32 values");return e}function N(n,a,x=0,c="bourke",e={}){x=Math.fround(x),e.coordinates&&v(e.coordinates);let s=Z(n,a,x,c),{x:i,y:o,z:r}=a,t=s.createPolygonizer(),l=new Float32Array(8),h=new Uint8Array(s.maxVertices),b=new Float32Array(39),f=new Float32Array(65536),u=0;for(let d=0;d<r-1;d++)for(let p=0;p<o-1;p++)for(let y=0;y<i-1;y++){let M=0;for(let m=0;m<8;m++){let _=s.corners[m];l[m]=n[((d+_[2])*o+p+_[1])*i+y+_[0]]-x,l[m]<0&&(M|=s.cornerBit(m))}if(M===0||M===255)continue;let w=t(l,M,h);if(u+w*3>f.length){let m=new Float32Array(Math.max(f.length*2,u+w*3));m.set(f),f=m}for(let m=0;m<12;m++){let[_,k]=s.edges[m];if(l[_]<0==l[k]<0)continue;let E=l[_]-l[k],U=Math.abs(E)<1e-9?.5:Math.max(0,Math.min(1,l[_]/E)),P=s.corners[_],S=s.corners[k];b[m*3]=(y+P[0]+U*(S[0]-P[0]))/(i-1),b[m*3+1]=(p+P[1]+U*(S[1]-P[1]))/(o-1),b[m*3+2]=(d+P[2]+U*(S[2]-P[2]))/(r-1)}b[36]=(y+.5)/(i-1),b[37]=(p+.5)/(o-1),b[38]=(d+.5)/(r-1);for(let m=0;m<w;m++){let _=h[m]*3;f[u++]=b[_],f[u++]=b[_+1],f[u++]=b[_+2]}}return q(f.slice(0,u),e.coordinates)}function c1(n,a){let x=[],c=a/2,e=n%2===0;function s(o,r){let t=[Math.sin(o)*Math.cos(r),Math.cos(o),Math.sin(o)*Math.sin(r)],l=e?.5:.66,h=e?.69:.84;for(let b=0;b<14;b++){let f=(l+h)/2;g(1,n,...t.map(u=>u*f))<0?l=f:h=f}return t.map(b=>b*(l+h)/2)}function i(o,r,t){x.push(...o,...r,...t)}for(let o=0;o<c;o++)for(let r=0;r<a;r++){let t=o*Math.PI/c,l=(o+1)*Math.PI/c,h=r*2*Math.PI/a,b=(r+1)%a*2*Math.PI/a,f=s(t,h),u=s(t,b),d=s(l,b),p=s(l,h);o>0&&i(f,u,p),o<c-1&&i(u,d,p)}if(e){let r=(t,l)=>{let h=.82+.055*Math.cos(l);return[h*Math.cos(t),.055*Math.sin(l),h*Math.sin(t)]};for(let t=0;t<a;t++)for(let l=0;l<4;l++){let h=t*2*Math.PI/a,b=(t+1)%a*2*Math.PI/a,f=l*2*Math.PI/4,u=(l+1)%4*2*Math.PI/4,d=r(h,f),p=r(b,f),y=r(b,u),M=r(h,u);i(d,M,p),i(p,M,y)}}return Float32Array.from(x,o=>(o+1)/2)}function t1(n,a){let x=new Map,c=e=>e.every(s=>Math.abs(s*a-Math.floor(s*a)-.5)<1e-5);for(let e=0;e<n.length;e+=9){let s=[0,1,2].map(i=>Array.from(n.subarray(e+i*3,e+i*3+3)));for(let i=0;i<3;i++)if(c(s[i])){let o=s[i].join(",");x.has(o)||x.set(o,{boundary:new Map,offsets:[]});let r=x.get(o);r.offsets.push(e+i*3);for(let t=0;t<3;t++)t!==i&&r.boundary.set(s[t].join(","),s[t])}}for(let e of x.values()){let s=[0,0,0];for(let i of e.boundary.values())for(let o=0;o<3;o++)s[o]+=i[o]/e.boundary.size;for(let i of e.offsets)n.set(s,i)}return x.size}function O(n,a,x,c="mc33",e={}){let s=F[n]?.[x];if(!s)throw new Error("Invalid body mesh level");let i=n===1&&x>=5,o;if(i)o=c1(a,s);else{let b=s+1,f={x:b,y:b,z:b},u=new Float32Array(b*b*b);for(let d=0;d<b;d++)for(let p=0;p<b;p++)for(let y=0;y<b;y++)u[(d*b+p)*b+y]=g(n,a,y/s*2-1,p/s*2-1,d/s*2-1,e);o=N(u,f,0,c)}let r=new Float32Array(o.length/3*8),t=0,l=0,h=!i&&c==="mc33"?t1(o,s):0;for(let b=0;b<o.length;b+=9){let f=[],u=[];for(let M=0;M<3;M++){let w=[0,1,2].map(m=>o[b+M*3+m]*2-1);f.push(w),u.push(G(n,a,...w,e))}let d=f[1].map((M,w)=>M-f[0][w]),p=f[2].map((M,w)=>M-f[0][w]),y=[d[1]*p[2]-d[2]*p[1],d[2]*p[0]-d[0]*p[2],d[0]*p[1]-d[1]*p[0]];if(!(Math.hypot(...y)<1e-12)){l+=y.reduce((M,w,m)=>M+w*(u[0][m]+u[1][m]+u[2][m]),0);for(let M=0;M<3;M++){let w=t++*8;r.set([...f[M],1,...u[M],0],w)}}}if(l<0)for(let b=0;b<t*8;b+=24)for(let f=0;f<8;f++){let u=r[b+8+f];r[b+8+f]=r[b+16+f],r[b+16+f]=u}return{vertices:r.slice(0,t*8),count:t,divisions:s,interiorVertices:h,proxy:i}}function C(n,a=8192,x=7){let c=new Map;for(let r=0;r<n.length;r+=8){let t=[n[r],n[r+1],n[r+2]].map(l=>Math.round(l*1e6)).join(":");c.has(t)||c.set(t,r)}let e=Array.from(c.values()),s=I(x);for(let r=e.length-1;r>0;r--){let t=Math.floor(s()*(r+1));[e[r],e[t]]=[e[t],e[r]]}let i=Math.min(a,e.length),o=new Float32Array(i*8);return e.slice(0,i).forEach((r,t)=>o.set(n.subarray(r,r+8),t*8)),{vertices:o,count:i}}self.onmessage=n=>{let{key:a,kind:x,variant:c,level:e,algorithm:s,caves:i}=n.data;try{let o=performance.now(),r=O(x,c,e==="points"?0:e,s,{caves:i}),t=e==="points"?C(r.vertices,8192,x*71+c):r,l=e===R-1?C(r.vertices,512,x*71+c):null;self.postMessage({key:a,...t,fallback:l,ms:performance.now()-o},l?[t.vertices.buffer,l.vertices.buffer]:[t.vertices.buffer])}catch(o){self.postMessage({key:a,error:o.message})}};;if(typeof import_meta !== \'undefined\')import_meta.url=location.origin+"/dist/";})();\n';
+var f0 = URL.createObjectURL(new globalThis.Blob([u0], { type: "text/javascript" }));
+var mt = f0;
+var vt = `struct Vertex { position:vec4<f32>, normal:vec4<f32> }
 struct Instance { centerRadius:vec4<f32>, quaternion:vec4<f32>, tint:vec4<f32>, details:vec4<f32> }
 struct Frame { vp:mat4x4<f32>, sun:vec4<f32>, settings:vec4<f32>, viewport:vec4<f32>, right:vec4<f32>, up:vec4<f32>, forward:vec4<f32>, cameraOffset:vec4<f32> }
 @group(0) @binding(0) var<uniform> frame:Frame;
@@ -24718,23 +24733,23 @@ fn sky_hash(p:vec2<u32>)->f32{var h=(p.x*0x8da6b343u)^(p.y*0xd8163841u);h=(h^(h>
  return vec4<f32>(pow(color,vec3<f32>(1.0/2.2)),1);
 }
 `;
-var u0 = bt;
-var S1 = class {
+var d0 = vt;
+var A1 = class {
   constructor(e, t = {}) {
     if (this.canvas = e, this.options = { maxInstances: 12e3, maxChunks: 2048, geometryMB: 64, pointBudget: 6e5, ...t }, ![this.options.maxInstances, this.options.maxChunks, this.options.pointBudget, this.options.workers ?? 2].every((s) => Number.isSafeInteger(s) && s > 0) || (this.options.workers ?? 2) > 8 || !Number.isFinite(this.options.geometryMB) || this.options.geometryMB <= 0) throw new RangeError("Use positive integer instance/chunk/point limits, 1\u20138 workers and positive geometryMB.");
-    this.settings = { mode: "mesh", quality: 3, uniform: false, algorithm: "mc33", pointSize: 2, lodDistance: 4e3, nearRadius: 250, maxMeshLevel: I - 1, caves: false }, this.chunks = /* @__PURE__ */ new Map(), this.cache = /* @__PURE__ */ new Map(), this.queue = /* @__PURE__ */ new Map(), this.inflight = /* @__PURE__ */ new Set(), this.failed = /* @__PURE__ */ new Set(), this.protected = /* @__PURE__ */ new Set(), this.baselines = /* @__PURE__ */ new Set(), this.previous = /* @__PURE__ */ new Map(), this.visible = [], this.lastSelect = -1 / 0, this.dirty = true, this.disposed = false, this.bytes = 0, this.errors = [], this.stats = { generated: 0, streamed: 0, evicted: 0, gpuMs: null, workerMs: 0 }, this.geometryRevision = 0, this.viewState = [], this.draws = null;
+    this.settings = { mode: "mesh", quality: 3, uniform: false, algorithm: "mc33", pointSize: 2, lodDistance: 4e3, nearRadius: 250, maxMeshLevel: C - 1, caves: false }, this.chunks = /* @__PURE__ */ new Map(), this.cache = /* @__PURE__ */ new Map(), this.queue = /* @__PURE__ */ new Map(), this.inflight = /* @__PURE__ */ new Set(), this.failed = /* @__PURE__ */ new Set(), this.protected = /* @__PURE__ */ new Set(), this.baselines = /* @__PURE__ */ new Set(), this.previous = /* @__PURE__ */ new Map(), this.visible = [], this.lastSelect = -1 / 0, this.dirty = true, this.disposed = false, this.bytes = 0, this.errors = [], this.stats = { generated: 0, streamed: 0, evicted: 0, gpuMs: null, workerMs: 0 }, this.geometryRevision = 0, this.viewState = [], this.draws = null;
   }
   async initialize() {
-    let e = await t1(this);
+    let e = await a1(this);
     this.frameBuffer = e.createBuffer({ size: 176, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST }), this.instances = e.createBuffer({ size: this.options.maxInstances * 64, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
     let t = e.createBindGroupLayout({ entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: "uniform" } }, { binding: 1, visibility: GPUShaderStage.VERTEX, buffer: { type: "read-only-storage" } }] });
     this.geometryLayout = e.createBindGroupLayout({ entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: "read-only-storage" } }] }), this.frameGroup = e.createBindGroup({ layout: t, entries: [{ binding: 0, resource: { buffer: this.frameBuffer } }, { binding: 1, resource: { buffer: this.instances } }] });
-    let s = e.createShaderModule({ code: u0, label: "Space meshes, point clouds and star sky" }), n = (await s.getCompilationInfo()).messages.filter((c) => c.type === "error");
+    let s = e.createShaderModule({ code: d0, label: "Space meshes, point clouds and star sky" }), n = (await s.getCompilationInfo()).messages.filter((c) => c.type === "error");
     if (n.length) throw new Error(n.map((c) => `${c.lineNum}: ${c.message}`).join(`
 `));
-    let a = e.createPipelineLayout({ bindGroupLayouts: [t, this.geometryLayout] }), o = (c, x, l) => e.createRenderPipelineAsync({ layout: a, vertex: { module: s, entryPoint: c }, fragment: { module: s, entryPoint: x, targets: [{ format: this.format }] }, primitive: l, depthStencil: { format: "depth24plus", depthWriteEnabled: true, depthCompare: "less" } });
-    if (this.mesh = await o("mesh_vertex", "mesh_fragment", { topology: "triangle-list", cullMode: "back" }), this.points = await o("point_vertex", "point_fragment", { topology: "triangle-list" }), this.sky = await e.createRenderPipelineAsync({ layout: e.createPipelineLayout({ bindGroupLayouts: [t] }), vertex: { module: s, entryPoint: "sky_vertex" }, fragment: { module: s, entryPoint: "sky_fragment", targets: [{ format: this.format }] }, primitive: { topology: "triangle-list" }, depthStencil: { format: "depth24plus", depthWriteEnabled: false, depthCompare: "always" } }), this.workers = Array.from({ length: this.options.workers ?? 2 }, () => {
-      let c = { worker: new Worker(this.options.workerURL ?? pt), busy: false, key: null };
+    let o = e.createPipelineLayout({ bindGroupLayouts: [t, this.geometryLayout] }), a = (c, x, l) => e.createRenderPipelineAsync({ layout: o, vertex: { module: s, entryPoint: c }, fragment: { module: s, entryPoint: x, targets: [{ format: this.format }] }, primitive: l, depthStencil: { format: "depth24plus", depthWriteEnabled: true, depthCompare: "less" } });
+    if (this.mesh = await a("mesh_vertex", "mesh_fragment", { topology: "triangle-list", cullMode: "back" }), this.points = await a("point_vertex", "point_fragment", { topology: "triangle-list" }), this.sky = await e.createRenderPipelineAsync({ layout: e.createPipelineLayout({ bindGroupLayouts: [t] }), vertex: { module: s, entryPoint: "sky_vertex" }, fragment: { module: s, entryPoint: "sky_fragment", targets: [{ format: this.format }] }, primitive: { topology: "triangle-list" }, depthStencil: { format: "depth24plus", depthWriteEnabled: false, depthCompare: "always" } }), this.workers = Array.from({ length: this.options.workers ?? 2 }, () => {
+      let c = { worker: new Worker(this.options.workerURL ?? mt), busy: false, key: null };
       return c.worker.onmessage = (x) => this.receive(c, x.data), c.worker.onerror = (x) => {
         this.errors.push(x.message), c.key && (this.failed.add(c.key), this.inflight.delete(c.key)), c.busy = false;
       }, c;
@@ -24747,12 +24762,12 @@ var S1 = class {
   prewarm() {
     this.baselines.clear();
     for (let e = 0; e < 3; e++) for (let t = 0; t < 4; t++) {
-      let s = { kind: e, variant: t }, r = I - 1;
+      let s = { kind: e, variant: t }, r = C - 1;
       this.baselines.add(this.key(s, r)), this.baselines.add(this.key(s, "fallback-points")), this.request(s, r, 1e9), this.request(s, 4, -100);
     }
   }
   resize() {
-    let { ratio: e, width: t, height: s } = i1(this.canvas, this.options);
+    let { ratio: e, width: t, height: s } = c1(this.canvas, this.options);
     this.ratio = e, !(this.canvas.width === t && this.canvas.height === s && this.depth) && (this.canvas.width = t, this.canvas.height = s, this.depth?.destroy(), this.depth = this.device.createTexture({ size: [t, s], format: "depth24plus", usage: GPUTextureUsage.RENDER_ATTACHMENT }), this.dirty = true);
   }
   key(e, t) {
@@ -24774,50 +24789,50 @@ var S1 = class {
   upload(e, t, s) {
     let r = this.options.geometryMB * 1048576;
     for (; this.bytes + t.byteLength > r; ) {
-      let o = null;
-      for (let [c, x] of this.cache) !this.protected.has(c) && !(this.options.geometryMB >= 1 && this.baselines.has(c)) && (!o || x.touched < o[1].touched) && (o = [c, x]);
-      if (!o) return;
-      o[1].buffer.destroy(), this.bytes -= o[1].bytes, this.cache.delete(o[0]);
+      let a = null;
+      for (let [c, x] of this.cache) !this.protected.has(c) && !(this.options.geometryMB >= 1 && this.baselines.has(c)) && (!a || x.touched < a[1].touched) && (a = [c, x]);
+      if (!a) return;
+      a[1].buffer.destroy(), this.bytes -= a[1].bytes, this.cache.delete(a[0]);
     }
     let n = this.device.createBuffer({ size: t.byteLength, usage: GPUBufferUsage.STORAGE, mappedAtCreation: true });
     new Float32Array(n.getMappedRange()).set(t), n.unmap();
-    let a = this.device.createBindGroup({ layout: this.geometryLayout, entries: [{ binding: 0, resource: { buffer: n } }] });
-    this.cache.set(e, { key: e, buffer: n, group: a, count: s, bytes: t.byteLength, touched: performance.now() }), this.bytes += t.byteLength, this.geometryRevision++;
+    let o = this.device.createBindGroup({ layout: this.geometryLayout, entries: [{ binding: 0, resource: { buffer: n } }] });
+    this.cache.set(e, { key: e, buffer: n, group: o, count: s, bytes: t.byteLength, touched: performance.now() }), this.bytes += t.byteLength, this.geometryRevision++;
   }
   receive(e, t) {
     this.disposed || (e.busy = false, e.key = null, this.inflight.delete(t.key), t.error ? (this.failed.add(t.key), this.errors.push(t.error)) : (this.upload(t.key, t.vertices, t.count), t.fallback && this.upload(t.key.slice(0, t.key.lastIndexOf(":")) + ":fallback-points", t.fallback.vertices, t.fallback.count), this.stats.generated++, this.stats.workerMs = t.ms), this.dispatch());
   }
   select(e, t, s) {
-    let r = performance.now(), n = ae(e.position, se(t, e.far), e.far, this.options.maxChunks), a = new Set(n.cells.map((c) => c.key)), o = [];
+    let r = performance.now(), n = le(e.position, S1(t, e.far), e.far, this.options.maxChunks), o = new Set(n.cells.map((c) => c.key)), a = [];
     for (let c of n.cells) {
       let x = this.chunks.get(c.key);
-      x || (x = { bodies: re(...c.cell), touched: s }, this.chunks.set(c.key, x), this.stats.streamed++), x.touched = s;
+      x || (x = { bodies: ce(...c.cell), touched: s }, this.chunks.set(c.key, x), this.stats.streamed++), x.touched = s;
       for (let l of x.bodies) {
         let u = l.position.map((p, h) => p - e.position[h]), f = Math.hypot(...u);
-        f - l.radius > e.far || !ne(u, l.radius + f * 0.12, t) || o.push({ body: l, distance: f, lod: xe(l, e.position, e.pixelScale, this.settings, this.previous.get(l.id)) });
+        f - l.radius > e.far || !xe(u, l.radius + f * 0.12, t) || a.push({ body: l, distance: f, lod: he(l, e.position, e.pixelScale, this.settings, this.previous.get(l.id)) });
       }
     }
-    if (o.sort((c, x) => c.distance - x.distance), this.visible = o.slice(0, this.options.maxInstances), this.previous = new Map(this.visible.map((c) => [c.body.id, c.lod])), this.chunks.size > this.options.maxChunks * 2) {
-      let c = Array.from(this.chunks).filter(([x]) => !a.has(x)).sort((x, l) => x[1].touched - l[1].touched);
+    if (a.sort((c, x) => c.distance - x.distance), this.visible = a.slice(0, this.options.maxInstances), this.previous = new Map(this.visible.map((c) => [c.body.id, c.lod])), this.chunks.size > this.options.maxChunks * 2) {
+      let c = Array.from(this.chunks).filter(([x]) => !o.has(x)).sort((x, l) => x[1].touched - l[1].touched);
       for (let [x] of c) {
         if (this.chunks.size <= this.options.maxChunks * 2) break;
         this.chunks.delete(x), this.stats.evicted++;
       }
     }
-    this.stats.requestedBodies = o.length, this.stats.sectors = n.cells.length, this.stats.examined = n.examined, this.stats.sectorLimited = n.limited, this.stats.instanceLimited = o.length > this.options.maxInstances, this.stats.selectionMs = performance.now() - r, this.lastSelect = s, this.selectionPlanes = t.map((c) => c.slice()), this.queue.clear(), this.prewarm(), this.dirty = false;
+    this.stats.requestedBodies = a.length, this.stats.sectors = n.cells.length, this.stats.examined = n.examined, this.stats.sectorLimited = n.limited, this.stats.instanceLimited = a.length > this.options.maxInstances, this.stats.selectionMs = performance.now() - r, this.lastSelect = s, this.selectionPlanes = t.map((c) => c.slice()), this.queue.clear(), this.prewarm(), this.dirty = false;
   }
   viewChanged(e, t) {
-    let s = 0, r = false, n = (a) => {
-      this.viewState[s] !== a && (r = true), this.viewState[s++] = a;
+    let s = 0, r = false, n = (o) => {
+      this.viewState[s] !== o && (r = true), this.viewState[s++] = o;
     };
     e.position.forEach(n), n(e.far), n(e.pixelScale);
-    for (let a of t) a.forEach(n);
+    for (let o of t) o.forEach(n);
     return r;
   }
   prepareDraws(e, t) {
     let s = performance.now(), r = /* @__PURE__ */ new Map();
     this.protected.clear();
-    let n = 0, a = 0, o = 0, c = 0, x = 0, l = 0, u = false, f = new Array(I + R.length).fill(0), p = I - 1;
+    let n = 0, o = 0, a = 0, c = 0, x = 0, l = 0, u = false, f = new Array(C + R.length).fill(0), p = C - 1;
     for (let v of this.visible) {
       let { body: g, lod: y } = v, w = y.representation, M;
       this.request(g, p, 1e9 + y.pixels);
@@ -24825,32 +24840,32 @@ var S1 = class {
       if (this.request(g, w === "points" ? "points" : y.level, 100 + y.pixels * 20), M = this.cache.get(P), !M) if (l++, w === "points") M = this.cache.get(this.key(g, "fallback-points"));
       else {
         for (let B = y.level + 1; B <= p; B++) {
-          let k = this.cache.get(this.key(g, B));
-          if (k) {
-            M = k;
+          let z = this.cache.get(this.key(g, B));
+          if (z) {
+            M = z;
             break;
           }
         }
         if (!M) for (let B = y.level - 1; B >= 0; B--) {
-          let k = this.cache.get(this.key(g, B));
-          if (k) {
-            M = k;
+          let z = this.cache.get(this.key(g, B));
+          if (z) {
+            M = z;
             break;
           }
         }
       }
       if (!M) continue;
       M.touched = t, this.protected.add(M.key);
-      let _ = M.count, S = y.rank;
+      let _ = M.count, k = y.rank;
       if (w === "points") {
         _ = Math.min(_, R[y.level]), n += _;
-        let B = this.options.pointBudget - a;
-        if (_ > B && (u = true, _ = R.find((k) => k <= B && k <= _) || 0), !_) continue;
-        a += _, x++, S = I + R.findIndex((k) => k <= _);
-      } else o += _ / 3, c++, S = Number(M.key.slice(M.key.lastIndexOf(":") + 1));
-      f[S]++;
-      let z = `${M.key}:${w}:${_}`;
-      r.has(z) || r.set(z, { geometry: M, representation: w, count: _, items: [] }), r.get(z).items.push({ body: g, rank: S });
+        let B = this.options.pointBudget - o;
+        if (_ > B && (u = true, _ = R.find((z) => z <= B && z <= _) || 0), !_) continue;
+        o += _, x++, k = C + R.findIndex((z) => z <= _);
+      } else a += _ / 3, c++, k = Number(M.key.slice(M.key.lastIndexOf(":") + 1));
+      f[k]++;
+      let S = `${M.key}:${w}:${_}`;
+      r.has(S) || r.set(S, { geometry: M, representation: w, count: _, items: [] }), r.get(S).items.push({ body: g, rank: k });
     }
     this.dispatch();
     let h = this.instanceData, d = [], b = 0;
@@ -24866,21 +24881,21 @@ var S1 = class {
     let m = this.device.createRenderBundleEncoder({ label: "Space visibility draw bundle", colorFormats: [this.format], depthStencilFormat: "depth24plus" });
     m.setPipeline(this.sky), m.setBindGroup(0, this.frameGroup), m.draw(3);
     for (let v of d) m.setPipeline(v.representation === "mesh" ? this.mesh : this.points), m.setBindGroup(0, this.frameGroup), m.setBindGroup(1, v.geometry.group), m.draw(v.count * (v.representation === "points" ? 6 : 1), v.instances, 0, v.first);
-    this.bundles = [m.finish()], this.drawPosition = e.position.slice(), this.drawSelect = this.lastSelect, this.drawRevision = this.geometryRevision, Object.assign(this.stats, { drawCalls: d.length + 1, triangles: o, points: a, requestedPoints: n, meshes: c, clouds: x, drawn: b, waiting: l, pointLimited: u, histogram: f }), this.stats.batchBuilds = (this.stats.batchBuilds || 0) + 1, this.stats.batchMs = performance.now() - s;
+    this.bundles = [m.finish()], this.drawPosition = e.position.slice(), this.drawSelect = this.lastSelect, this.drawRevision = this.geometryRevision, Object.assign(this.stats, { drawCalls: d.length + 1, triangles: a, points: o, requestedPoints: n, meshes: c, clouds: x, drawn: b, waiting: l, pointLimited: u, histogram: f }), this.stats.batchBuilds = (this.stats.batchBuilds || 0) + 1, this.stats.batchMs = performance.now() - s;
   }
   render(e, t, s, { lodColors: r = false } = {}) {
     let n = performance.now();
-    this.stats.selectionMs = 0, this.stats.batchMs = 0, this.resize(), (this.dirty || ie(t, this.selectionPlanes) || s - this.lastSelect >= 100 && this.viewChanged(e, t)) && (this.select(e, t, s), this.viewChanged(e, t)), (!this.draws || this.drawSelect !== this.lastSelect || this.drawRevision !== this.geometryRevision) && this.prepareDraws(e, s);
-    let a = this.frameData;
-    a.set(e.viewProjection), a.set([0.4, 0.75, 0.6, 0], 16), a.set([e.far, Number(r), this.settings.pointSize * this.ratio, 0], 20), a.set([this.canvas.width, this.canvas.height, e.tanX, e.tanY], 24), a.set(e.right, 28), a.set(e.up, 32), a.set(e.skyForward ?? e.forward, 36);
-    for (let u = 0; u < 3; u++) a[40 + u] = e.position[u] - this.drawPosition[u];
-    this.device.queue.writeBuffer(this.frameBuffer, 0, a);
-    let o = this.device.createCommandEncoder(), c = this.frameIndex++ % 20 === 0 ? this.timers.find((u) => !u.busy) : null;
+    this.stats.selectionMs = 0, this.stats.batchMs = 0, this.resize(), (this.dirty || oe(t, this.selectionPlanes) || s - this.lastSelect >= 100 && this.viewChanged(e, t)) && (this.select(e, t, s), this.viewChanged(e, t)), (!this.draws || this.drawSelect !== this.lastSelect || this.drawRevision !== this.geometryRevision) && this.prepareDraws(e, s);
+    let o = this.frameData;
+    o.set(e.viewProjection), o.set([0.4, 0.75, 0.6, 0], 16), o.set([e.far, Number(r), this.settings.pointSize * this.ratio, 0], 20), o.set([this.canvas.width, this.canvas.height, e.tanX, e.tanY], 24), o.set(e.right, 28), o.set(e.up, 32), o.set(e.skyForward ?? e.forward, 36);
+    for (let u = 0; u < 3; u++) o[40 + u] = e.position[u] - this.drawPosition[u];
+    this.device.queue.writeBuffer(this.frameBuffer, 0, o);
+    let a = this.device.createCommandEncoder(), c = this.frameIndex++ % 20 === 0 ? this.timers.find((u) => !u.busy) : null;
     c && (c.busy = true);
     let x = { colorAttachments: [{ view: this.context.getCurrentTexture().createView(), loadOp: "clear", storeOp: "store", clearValue: { r: 0, g: 0, b: 0, a: 1 } }], depthStencilAttachment: { view: this.depth.createView(), depthClearValue: 1, depthLoadOp: "clear", depthStoreOp: "discard" } };
     c && (x.timestampWrites = { querySet: c.queries, beginningOfPassWriteIndex: 0, endOfPassWriteIndex: 1 });
-    let l = o.beginRenderPass(x);
-    return l.executeBundles(this.bundles), l.end(), c && (o.resolveQuerySet(c.queries, 0, 2, c.resolve, 0), o.copyBufferToBuffer(c.resolve, 0, c.read, 0, 16)), this.device.queue.submit([o.finish()]), c && c.read.mapAsync(GPUMapMode.READ).then(() => {
+    let l = a.beginRenderPass(x);
+    return l.executeBundles(this.bundles), l.end(), c && (a.resolveQuerySet(c.queries, 0, 2, c.resolve, 0), a.copyBufferToBuffer(c.resolve, 0, c.read, 0, 16)), this.device.queue.submit([a.finish()]), c && c.read.mapAsync(GPUMapMode.READ).then(() => {
       let u = new BigUint64Array(c.read.getMappedRange());
       this.stats.gpuMs = Number(u[1] - u[0]) / 1e6, c.read.unmap(), c.busy = false;
     }).catch((u) => {
@@ -24893,13 +24908,13 @@ var S1 = class {
       for (let e of this.workers || []) e.worker.terminate();
       for (let e of this.cache.values()) e.buffer.destroy();
       for (let e of this.timers || []) e.queries.destroy(), e.resolve.destroy(), e.read.destroy();
-      this.frameBuffer?.destroy(), this.instances?.destroy(), this.depth?.destroy(), s1(this);
+      this.frameBuffer?.destroy(), this.instances?.destroy(), this.depth?.destroy(), o1(this);
     }
   }
 };
-var fe = {};
-F(fe, { bounds: () => le, detailBands: () => z1, estimatedError: () => ue, height: () => r1, heightGradient: () => h0, wgsl: () => Ce });
-var mt = `fn progressive_height_gradient(xz: vec2<f32>, seed: u32) -> vec3<f32> {
+var be = {};
+F(be, { bounds: () => de, detailBands: () => T1, estimatedError: () => pe, height: () => x1, heightGradient: () => b0, wgsl: () => Ce });
+var gt = `fn progressive_height_gradient(xz: vec2<f32>, seed: u32) -> vec3<f32> {
   var result = terrain_height_gradient(xz, seed);
   var wave = 4.0;
   var amplitude = 0.42;
@@ -24913,126 +24928,126 @@ var mt = `fn progressive_height_gradient(xz: vec2<f32>, seed: u32) -> vec3<f32> 
   return result;
 }
 `;
-var z1 = [[4, 0.42], [2, 0.22], [1, 0.11], [0.5, 0.055], [0.25, 0.0275], [0.125, 0.01375], [0.0625, 6875e-6]];
-var le = [-382, 482];
-var Ce = j + mt;
-function h0(i, e, t = 7) {
-  let s = H(i, e, t);
-  return z1.forEach(([r, n], a) => {
-    let o = p1(i / r, e / r, t + 211 + a * 19);
-    s[0] += o[0] * n, s[1] += o[1] * n / r, s[2] += o[2] * n / r;
+var T1 = [[4, 0.42], [2, 0.22], [1, 0.11], [0.5, 0.055], [0.25, 0.0275], [0.125, 0.01375], [0.0625, 6875e-6]];
+var de = [-382, 482];
+var Ce = Y + gt;
+function b0(i, e, t = 7) {
+  let s = Z(i, e, t);
+  return T1.forEach(([r, n], o) => {
+    let a = y1(i / r, e / r, t + 211 + o * 19);
+    s[0] += a[0] * n, s[1] += a[1] * n / r, s[2] += a[2] * n / r;
   }), s;
 }
-function r1(i, e, t = 7) {
-  let s = Z(i, e, t);
-  for (let r = 0; r < z1.length; r++) {
-    let [n, a] = z1[r];
-    s += b1(i / n, e / n, t + 211 + r * 19) * a;
+function x1(i, e, t = 7) {
+  let s = J(i, e, t);
+  for (let r = 0; r < T1.length; r++) {
+    let [n, o] = T1[r];
+    s += w1(i / n, e / n, t + 211 + r * 19) * o;
   }
   return s;
 }
-function ue(i) {
-  let e = Y(i);
-  for (let [t, s] of z1) e += s * Math.min(1, 2 * (i / t) ** 2);
+function pe(i) {
+  let e = X(i);
+  for (let [t, s] of T1) e += s * Math.min(1, 2 * (i / t) ** 2);
   return e;
 }
-var de = {};
-F(de, { boundsFor: () => B1, children: () => Ge, distance: () => Re, distanceToBounds: () => he, findLeaf: () => vt, key: () => Ie, meshLevels: () => Ne, neighbors: () => E1, parent: () => Fe, residentCut: () => Le, seamMask: () => d0, select: () => Oe, tile: () => X, visible: () => De });
+var ve = {};
+F(ve, { boundsFor: () => G1, children: () => Fe, distance: () => Oe, distanceToBounds: () => me, findLeaf: () => yt, key: () => Ie, meshLevels: () => Ve, neighbors: () => C1, parent: () => De, residentCut: () => Ne, seamMask: () => m0, select: () => Le, tile: () => H, visible: () => Re });
 var Ie = (i, e, t) => `${i}:${e}:${t}`;
-function X(i, e, t, s = 1024) {
+function H(i, e, t, s = 1024) {
   let r = s / 2 ** i;
   return { key: Ie(i, e, t), level: i, x: e, z: t, size: r, ox: e * r, oz: t * r };
 }
-function Ge(i, e = 1024) {
-  return [X(i.level + 1, i.x * 2, i.z * 2, e), X(i.level + 1, i.x * 2 + 1, i.z * 2, e), X(i.level + 1, i.x * 2, i.z * 2 + 1, e), X(i.level + 1, i.x * 2 + 1, i.z * 2 + 1, e)];
-}
 function Fe(i, e = 1024) {
-  return X(i.level - 1, Math.floor(i.x / 2), Math.floor(i.z / 2), e);
+  return [H(i.level + 1, i.x * 2, i.z * 2, e), H(i.level + 1, i.x * 2 + 1, i.z * 2, e), H(i.level + 1, i.x * 2, i.z * 2 + 1, e), H(i.level + 1, i.x * 2 + 1, i.z * 2 + 1, e)];
 }
-function B1(i) {
+function De(i, e = 1024) {
+  return H(i.level - 1, Math.floor(i.x / 2), Math.floor(i.z / 2), e);
+}
+function G1(i) {
   if (i.lo === void 0) {
-    let e = r1(i.ox + i.size / 2, i.oz + i.size / 2), t = 2.5 * i.size + 1.75;
-    i.lo = Math.max(le[0], e - t), i.hi = Math.min(le[1], e + t);
+    let e = x1(i.ox + i.size / 2, i.oz + i.size / 2), t = 2.5 * i.size + 1.75;
+    i.lo = Math.max(de[0], e - t), i.hi = Math.min(de[1], e + t);
   }
   return i;
 }
-function he(i, e) {
-  let { lo: t, hi: s } = B1(i);
+function me(i, e) {
+  let { lo: t, hi: s } = G1(i);
   return Math.hypot(Math.max(i.ox - e[0], 0, e[0] - i.ox - i.size), Math.max(t - e[1], 0, e[1] - s), Math.max(i.oz - e[2], 0, e[2] - i.oz - i.size));
 }
-function De(i, e = []) {
-  return e.length ? (B1(i), e.every(([t, s, r, n]) => t * (t >= 0 ? i.ox + i.size : i.ox) + s * (s >= 0 ? i.hi : i.lo) + r * (r >= 0 ? i.oz + i.size : i.oz) + n >= 0)) : true;
+function Re(i, e = []) {
+  return e.length ? (G1(i), e.every(([t, s, r, n]) => t * (t >= 0 ? i.ox + i.size : i.ox) + s * (s >= 0 ? i.hi : i.lo) + r * (r >= 0 ? i.oz + i.size : i.oz) + n >= 0)) : true;
 }
-function Re(i, e) {
+function Oe(i, e) {
   let t = Math.max(i.ox, Math.min(i.ox + i.size, e[0])), s = Math.max(i.oz, Math.min(i.oz + i.size, e[2]));
-  return Math.hypot(t - e[0], s - e[2], r1(t, s) - e[1]);
+  return Math.hypot(t - e[0], s - e[2], x1(t, s) - e[1]);
 }
-function vt(i, e, t, s, r, n = 0) {
-  let a = (c) => {
+function yt(i, e, t, s, r, n = 0) {
+  let o = (c) => {
     let x = s / 2 ** c;
     return i.get(Ie(c, Math.floor(e / x), Math.floor(t / x)));
-  }, o = a(n);
-  if (o) return o;
+  }, a = o(n);
+  if (a) return a;
   for (let c = 1; c <= r; c++) {
     if (n - c >= 0) {
-      let x = a(n - c);
+      let x = o(n - c);
       if (x) return x;
     }
     if (n + c <= r) {
-      let x = a(n + c);
+      let x = o(n + c);
       if (x) return x;
     }
   }
 }
-function E1(i, e, t = 1024, s = 10) {
-  let { ox: r, oz: n, size: a } = i, o = t / 2 ** s / 4;
-  return [[r - o, n + a / 2, 1], [r + a + o, n + a / 2, 2], [r + a / 2, n - o, 4], [r + a / 2, n + a + o, 8]].map(([c, x, l]) => [vt(e, c, x, t, s, i.level), l]);
+function C1(i, e, t = 1024, s = 10) {
+  let { ox: r, oz: n, size: o } = i, a = t / 2 ** s / 4;
+  return [[r - a, n + o / 2, 1], [r + o + a, n + o / 2, 2], [r + o / 2, n - a, 4], [r + o / 2, n + o + a, 8]].map(([c, x, l]) => [yt(e, c, x, t, s, i.level), l]);
 }
-function Oe(i, e = [], t = {}, s = /* @__PURE__ */ new Set()) {
-  let { rootSize: r = 1024, minSize: n = 1, divs: a = 32, maxNodes: o = 334, pixelError: c = 2, boundsCache: x } = t, l = Math.round(Math.log2(r / n)), u = Array.from({ length: l + 1 }, (k, E) => ue(r / 2 ** E / a));
-  function f(k) {
-    let E = x?.get(k.key);
-    return E?.size === k.size && (k.lo = E.lo, k.hi = E.hi), k;
+function Le(i, e = [], t = {}, s = /* @__PURE__ */ new Set()) {
+  let { rootSize: r = 1024, minSize: n = 1, divs: o = 32, maxNodes: a = 334, pixelError: c = 2, boundsCache: x } = t, l = Math.round(Math.log2(r / n)), u = Array.from({ length: l + 1 }, (z, E) => pe(r / 2 ** E / o));
+  function f(z) {
+    let E = x?.get(z.key);
+    return E?.size === z.size && (z.lo = E.lo, z.hi = E.hi), z;
   }
   let p = /* @__PURE__ */ new Map(), h = /* @__PURE__ */ new Map(), d = /* @__PURE__ */ new Set(), b = [], m = Math.max(r, i.far), v = Math.floor((i.position[0] - m) / r), g = Math.floor((i.position[0] + m) / r), y = Math.floor((i.position[2] - m) / r), w = Math.floor((i.position[2] + m) / r);
-  for (let k = y; k <= w; k++) for (let E = v; E <= g; E++) {
-    let U = f(X(0, E, k, r));
+  for (let z = y; z <= w; z++) for (let E = v; E <= g; E++) {
+    let U = f(H(0, E, z, r));
     b.push(U), p.set(U.key, U), h.set(U.key, U);
   }
-  if (p.size > o) throw new RangeError("Tile budget is too small for root coverage");
-  let M = i.height / (2 * Math.tan(i.fov / 2)), P = [...i.position], _ = [], S = (k) => {
-    if (k.level >= l) return 0;
-    let E = k.distance ??= Re(k, i.position);
-    return k.distancePosition = P, he(k, i.position) > i.far ? 0 : u[k.level] * M / Math.max(E, 0.05) / c * (s.has(k.key) ? 1.2 : 1);
-  }, z = (k) => {
-    let E = S(k);
-    E > 1 && _.push({ n: k, priority: E });
+  if (p.size > a) throw new RangeError("Tile budget is too small for root coverage");
+  let M = i.height / (2 * Math.tan(i.fov / 2)), P = [...i.position], _ = [], k = (z) => {
+    if (z.level >= l) return 0;
+    let E = z.distance ??= Oe(z, i.position);
+    return z.distancePosition = P, me(z, i.position) > i.far ? 0 : u[z.level] * M / Math.max(E, 0.05) / c * (s.has(z.key) ? 1.2 : 1);
+  }, S = (z) => {
+    let E = k(z);
+    E > 1 && _.push({ n: z, priority: E });
   };
-  b.forEach(z);
+  b.forEach(S);
   let B = false;
   for (; _.length; ) {
-    let C = function(A) {
+    let G = function(A) {
       if (!U.has(A.key)) {
         U.set(A.key, A);
-        for (let [T] of E1(A, h, r, l)) T && T.level < A.level && C(T);
+        for (let [T] of C1(A, h, r, l)) T && T.level < A.level && G(T);
       }
-    }, k = 0;
-    for (let A = 1; A < _.length; A++) _[A].priority > _[k].priority && (k = A);
-    let { n: E } = _.splice(k, 1)[0];
+    }, z = 0;
+    for (let A = 1; A < _.length; A++) _[A].priority > _[z].priority && (z = A);
+    let { n: E } = _.splice(z, 1)[0];
     if (!h.has(E.key)) continue;
     let U = /* @__PURE__ */ new Map();
-    if (C(E), p.size + U.size * 4 > o) {
+    if (G(E), p.size + U.size * 4 > a) {
       B = true;
       continue;
     }
-    for (let A of [...U.values()].sort((T, L) => T.level - L.level)) {
+    for (let A of [...U.values()].sort((T, N) => T.level - N.level)) {
       h.delete(A.key), d.add(A.key);
-      for (let T of Ge(A, r)) f(T), p.set(T.key, T), h.set(T.key, T), z(T);
+      for (let T of Fe(A, r)) f(T), p.set(T.key, T), h.set(T.key, T), S(T);
     }
   }
   return { nodes: p, leaves: h, splits: d, roots: b, rootSize: r, maxLevel: l, limited: B };
 }
-function Le(i, e) {
+function Ne(i, e) {
   let t = /* @__PURE__ */ new Map();
   function s(n) {
     if (!e(n.key)) return;
@@ -25040,34 +25055,34 @@ function Le(i, e) {
       t.set(n.key, n);
       return;
     }
-    let a = Ge(n, i.rootSize).map((o) => i.nodes.get(o.key) || o);
-    a.every((o) => e(o.key)) ? a.forEach(s) : t.set(n.key, n);
+    let o = Fe(n, i.rootSize).map((a) => i.nodes.get(a.key) || a);
+    o.every((a) => e(a.key)) ? o.forEach(s) : t.set(n.key, n);
   }
   i.roots.forEach(s);
   let r = true;
   for (; r; ) {
     r = false;
-    for (let n of t.values()) if (E1(n, t, i.rootSize, i.maxLevel).some(([a]) => a && n.level - a.level > 1)) {
-      let a = i.nodes.get(Fe(n, i.rootSize).key);
-      if (!a || !e(a.key)) throw new Error("Resident ancestor missing");
-      for (let [o, c] of t) c.ox >= a.ox && c.oz >= a.oz && c.ox + c.size <= a.ox + a.size && c.oz + c.size <= a.oz + a.size && t.delete(o);
-      t.set(a.key, a), r = true;
+    for (let n of t.values()) if (C1(n, t, i.rootSize, i.maxLevel).some(([o]) => o && n.level - o.level > 1)) {
+      let o = i.nodes.get(De(n, i.rootSize).key);
+      if (!o || !e(o.key)) throw new Error("Resident ancestor missing");
+      for (let [a, c] of t) c.ox >= o.ox && c.oz >= o.oz && c.ox + c.size <= o.ox + o.size && c.oz + c.size <= o.oz + o.size && t.delete(a);
+      t.set(o.key, o), r = true;
       break;
     }
   }
   return t;
 }
-function d0(i, e, t, s) {
+function m0(i, e, t, s) {
   let r = 0;
-  for (let [n, a] of E1(i, e, t, s)) n && n.level < i.level && (r |= a);
+  for (let [n, o] of C1(i, e, t, s)) n && n.level < i.level && (r |= o);
   return r;
 }
-function Ne(i, e, t, s, r = {}) {
-  let { divs: n = 32, pixelError: a = 2 } = r, o = Math.min(4, n), c = e.height / (2 * Math.tan(e.fov / 2)), x = /* @__PURE__ */ new Map(), l = /* @__PURE__ */ new Map(), u = /* @__PURE__ */ new Map(), f = /* @__PURE__ */ new Map(), p = (b) => (f.has(b) || f.set(b, ue(b)), f.get(b));
+function Ve(i, e, t, s, r = {}) {
+  let { divs: n = 32, pixelError: o = 2 } = r, a = Math.min(4, n), c = e.height / (2 * Math.tan(e.fov / 2)), x = /* @__PURE__ */ new Map(), l = /* @__PURE__ */ new Map(), u = /* @__PURE__ */ new Map(), f = /* @__PURE__ */ new Map(), p = (b) => (f.has(b) || f.set(b, pe(b)), f.get(b));
   for (let b of i.values()) {
-    u.set(b.key, E1(b, i, t, s));
-    let m = Fe(b, t).key, v = b.distancePosition, g = e.position, y = v && v[0] === g[0] && v[1] === g[1] && v[2] === g[2] ? b.distance : Re(b, e.position), w = o;
-    for (; w < n && p(b.size / w) * c / Math.max(y, 0.05) > a; ) w *= 2;
+    u.set(b.key, C1(b, i, t, s));
+    let m = De(b, t).key, v = b.distancePosition, g = e.position, y = v && v[0] === g[0] && v[1] === g[1] && v[2] === g[2] ? b.distance : Oe(b, e.position), w = a;
+    for (; w < n && p(b.size / w) * c / Math.max(y, 0.05) > o; ) w *= 2;
     let M = x.get(m);
     M || (M = { divs: w }, x.set(m, M)), M.divs = Math.max(M.divs, w), l.set(b.key, M);
   }
@@ -25091,11 +25106,11 @@ function Ne(i, e, t, s, r = {}) {
   }
   return d;
 }
-var je = { renderDistance: [1, 1 / 0], lodColors: "boolean" };
-var Ye = { terrain: { ...je, pixelError: [0.01, 1 / 0], nearRadius: [0, 1 / 0], uniform: "boolean", infinite: "boolean", algorithm: ["bourke", "mc33"], wireframe: "boolean", trees: "trees" }, space: { ...je, mode: ["mesh", "points", "hybrid"], quality: [0.01, 1 / 0], uniform: "boolean", algorithm: ["bourke", "mc33"], pointSize: [0.01, 1 / 0], lodDistance: [1, 1 / 0], maxMeshLevel: [0, I - 1], nearRadius: [0, 1 / 0], caves: "boolean" }, progressive: { ...je, pixelError: [0.01, 1 / 0], wireframe: "boolean", tileBorders: "boolean" } };
+var Ye = { renderDistance: [1, 1 / 0], lodColors: "boolean" };
+var Xe = { terrain: { ...Ye, pixelError: [0.01, 1 / 0], nearRadius: [0, 1 / 0], uniform: "boolean", infinite: "boolean", algorithm: ["bourke", "mc33"], wireframe: "boolean", trees: "trees" }, space: { ...Ye, mode: ["mesh", "points", "hybrid"], quality: [0.01, 1 / 0], uniform: "boolean", algorithm: ["bourke", "mc33"], pointSize: [0.01, 1 / 0], lodDistance: [1, 1 / 0], maxMeshLevel: [0, C - 1], nearRadius: [0, 1 / 0], caves: "boolean" }, progressive: { ...Ye, pixelError: [0.01, 1 / 0], wireframe: "boolean", tileBorders: "boolean" } };
 
 // tests/space-webgpu.js
-var SpaceLOD = { Renderer: S1 };
+var SpaceLOD = { Renderer: A1 };
 (async function() {
   const result = document.getElementById("results"), lines = [], log = (text) => {
     lines.push(text);
@@ -25170,7 +25185,7 @@ var SpaceLOD = { Renderer: S1 };
         const desired = selected.get(body.id).lod.level;
         if (renderer.cache.has(renderer.key(body, desired))) continue;
         const hasCoarser = Array.from(
-          { length: k1.meshLevels - desired - 1 },
+          { length: U1.meshLevels - desired - 1 },
           (_, i) => desired + i + 1
         ).some((level) => renderer.cache.has(renderer.key(body, level)));
         if (hasCoarser) {
@@ -25222,7 +25237,7 @@ var SpaceLOD = { Renderer: S1 };
       [0, 180, 5e3]
     ]) {
       stats = await settle(position);
-      stats.histogram.slice(0, k1.meshLevels).forEach((count, level) => {
+      stats.histogram.slice(0, U1.meshLevels).forEach((count, level) => {
         if (count) drawnLevels.add(level);
       });
     }

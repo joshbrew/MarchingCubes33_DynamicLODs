@@ -168,8 +168,9 @@ Click the terrain, space or noise tiles view before using the keyboard.
 | Noise tiles: Tile detail | Allowed surface error in pixels; lower values keep smaller bumps.    |
 
 Render distance is a limit, not a promise to fill the entire view. These demos
-have memory and object limits. Terrain keeps an 8 km window around its generated
-map; infinite mode moves that window as you travel. Space fills a 3D region.
+have memory and object limits. Flat terrain keeps an 8.2 km detail window.
+Infinite mode moves that window as you travel and draws coarser terrain beyond
+it out to the requested render distance. Space fills a 3D region.
 The flat terrain keeps a small coarse grid for the entire window, so a full
 detail cache no longer shortens the visible horizon.
 See the [distance and frame-time checks](docs/benchmarks/terrain-long-range-webgpu.txt).

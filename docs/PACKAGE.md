@@ -161,8 +161,9 @@ see [terrain](TERRAIN.md), [space](SPACE.md) and [fine tiles](PROGRESSIVE.md).
 culling. Omit the setting to use the camera's `far`. `configure` merges partial
 tree settings. `view.settings` returns a copy; change values with `configure`.
 Space `maxMeshLevel` is an integer from 0 to 9; 9 allows every mesh grade.
-Terrain's coarse coverage does not use detail-cache slots. The cutoff still
-stops at the configured terrain map window.
+Terrain's coarse coverage does not use detail-cache slots. With `infinite: true`,
+stitched coarse rings continue beyond the configured detail window to the
+cutoff. Bounded mode still stops at the map edge.
 
 ## Use your camera
 

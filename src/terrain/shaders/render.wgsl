@@ -29,9 +29,11 @@ struct Frame {
   viewProjection: mat4x4<f32>, camera: vec4<f32>, sun: vec4<f32>, reserved: vec4<f32>, settings: vec4<f32>
 }
 struct Instance { base:u32, storedDivs:u32, renderDivs:u32, lod:u32 }
+struct HorizonPatch { origin:vec2<f32>, size:f32, grade:u32 }
 @group(0) @binding(0) var<storage,read> renderVertices: array<Vertex>;
 @group(0) @binding(1) var<storage,read> instances: array<Instance>;
 @group(0) @binding(2) var<uniform> frame: Frame;
+@group(0) @binding(1) var<storage,read> horizon: array<HorizonPatch>;
 struct Varying {
   @builtin(position) clip:vec4<f32>, @location(0) world:vec3<f32>, @location(1) normal:vec3<f32>,
   @location(2) @interpolate(flat) lod:u32,
@@ -46,10 +48,23 @@ fn vertex_main(@builtin(vertex_index) vertex:u32,@builtin(instance_index) instan
   clip.z=(clip.z+clip.w)*0.5;
   return Varying(clip,v.position.xyz,v.normal.xyz,info.lod);
 }
+@vertex
+fn vertex_horizon(@builtin(vertex_index) vertex:u32,@builtin(instance_index) instance:u32)->Varying {
+  let tile=horizon[instance];
+  let xz=tile.origin+vec2<f32>(f32(vertex%3u),f32(vertex/3u))*(tile.size*0.5);
+  let h=terrain_height_gradient(xz,bitcast<u32>(frame.settings.x));
+  let world=vec3<f32>(xz.x,h.x,xz.y);
+  var clip=frame.viewProjection*vec4<f32>(world,1);
+  clip.z=(clip.z+clip.w)*0.5;
+  return Varying(clip,world,normalize(vec3<f32>(-h.y,1,-h.z)),16u+tile.grade);
+}
 fn lod_color(level:u32)->vec3<f32> {
   var colors=array<vec3<f32>,6>(vec3<f32>(.95,.25,.22),vec3<f32>(1,.62,.18),vec3<f32>(.8,.82,.2),
     vec3<f32>(.22,.7,.46),vec3<f32>(.2,.6,.9),vec3<f32>(.55,.38,.9));
-  return colors[min(level,5u)];
+  if(level<16u){return colors[min(level,5u)];}
+  var distant=array<vec3<f32>,4>(vec3<f32>(.72,.48,.83),vec3<f32>(.52,.64,.86),
+    vec3<f32>(.41,.75,.73),vec3<f32>(.65,.69,.82));
+  return distant[(level-16u)%4u];
 }
 @fragment
 fn fragment_main(input:Varying)->@location(0) vec4<f32> {

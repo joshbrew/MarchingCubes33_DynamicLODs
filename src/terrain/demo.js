@@ -277,7 +277,8 @@ export async function startDemo() {
     $("frameTime").textContent =
       `${frameAverage.toFixed(1)} / ${stats.gpuMs?.toFixed(2) ?? "—"} ms`;
     $("triangleCount").textContent = stats.triangles.toLocaleString();
-    $("drawCount").textContent = `${stats.drawCalls} / ${stats.drawn} tiles`;
+    $("drawCount").textContent =
+      `${stats.drawCalls} / ${stats.drawn} tiles${stats.horizonDrawn ? ` · ${stats.horizonDrawn} distant` : ""}`;
     $("sampleCount").textContent =
       `${Math.round(stats.activeSamples / 1000)}k / ${Math.round(stats.uniformSamples / 1000)}k`;
     $("cacheCount").textContent =

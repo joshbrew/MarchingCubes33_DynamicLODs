@@ -80,6 +80,93 @@ function topology(indices, n) {
   }
   return boundary;
 }
+test("infinite horizon grows to the requested cutoff after recentering", () => {
+  const renderer = new TerrainRenderer({});
+  renderer.capacity = 487;
+  renderer.configure({ infinite: true });
+  const position = [11400, 200, -16300];
+  for (const far of [1800, 8000, 16000, 32000, 64000]) {
+    const camera = createCamera({ position, forward: [0, -0.05, -1], far });
+    renderer.updateWindow(camera);
+    renderer.select(camera, camera.planes, far);
+    const patches = renderer.horizonTiles;
+    if (far === 1800) assert.equal(patches.length, 0);
+    else {
+      const z = position[2] - far * 0.95;
+      assert.ok(
+        patches.some(
+          (p) =>
+            p.x <= position[0] &&
+            p.x + p.size >= position[0] &&
+            p.z <= z &&
+            p.z + p.size >= z,
+        ),
+        `coverage reaches the ${far} m view`,
+      );
+      assert.ok(
+        patches.length < 2000,
+        "distant rings remain a small working set",
+      );
+    }
+  }
+});
+test("recentered horizon bands share exact seams with each other and the detail window", () => {
+  for (const worldSize of [128, 1024]) {
+    const renderer = new TerrainRenderer({}, { worldSize, tileSize: 128 });
+    renderer.capacity = 64;
+    renderer.configure({ infinite: true });
+    const camera = createCamera({ position: [-384, 100, 256], far: 32000 });
+    renderer.updateWindow(camera);
+    renderer.select(camera, [], 0);
+    const exterior = renderer.horizonTiles.filter((p) => p.grade <= 3);
+    const near = renderer.tiles.map(({ x, z, ox, oz, size }) => ({
+      x: ox,
+      z: oz,
+      size,
+      divs: 4,
+      mask:
+        (x === 0 ? 1 : 0) |
+        (x === renderer.side - 1 ? 2 : 0) |
+        (z === 0 ? 4 : 0) |
+        (z === renderer.side - 1 ? 8 : 0),
+    }));
+    const bounds = [
+      Math.min(...exterior.map((p) => p.x)),
+      Math.max(...exterior.map((p) => p.x + p.size)),
+      Math.min(...exterior.map((p) => p.z)),
+      Math.max(...exterior.map((p) => p.z + p.size)),
+    ];
+    const edges = new Map();
+    let area = 0;
+    for (const { x, z, size, mask, divs = 2 } of [...near, ...exterior]) {
+      area += size * size;
+      for (const edge of topology(Surface.buildIndices(divs, mask), divs)) {
+        const points = edge.map(([u, v]) => [
+          x + (u * size) / divs,
+          z + (v * size) / divs,
+        ]);
+        const key = points
+          .map((p) => p.join(","))
+          .sort()
+          .join("|");
+        const outside =
+          points.every((p) => p[0] === bounds[0]) ||
+          points.every((p) => p[0] === bounds[1]) ||
+          points.every((p) => p[1] === bounds[2]) ||
+          points.every((p) => p[1] === bounds[3]);
+        const previous = edges.get(key);
+        edges.set(key, { count: (previous?.count || 0) + 1, outside });
+      }
+    }
+    assert.equal(
+      area,
+      (bounds[1] - bounds[0]) * (bounds[3] - bounds[2]),
+      "no overlapping or missing area",
+    );
+    for (const [key, { count, outside }] of edges)
+      assert.equal(count, outside ? 1 : 2, `joined world edge ${key}`);
+  }
+});
 test("all 16 seam masks form manifold, full-area Bourke and MC33 heightfield meshes", () => {
   for (const algorithm of ["bourke", "mc33"])
     for (const n of [2, 4, 8, 16, 64])

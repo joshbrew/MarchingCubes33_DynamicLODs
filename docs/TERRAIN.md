@@ -8,15 +8,17 @@ Enable **Infinite terrain**, then **Fly through map** for a straight, continuous
 flight through newly generated terrain. Manual flight also has no map boundary
 in this mode. Space/E climb; C/Q descend; Shift speeds up manual movement.
 
-**Render distance** selects a 300–32,000 m visibility limit (default 1,800 m).
+**Render distance** selects a 300–64,000 m visibility limit (default 1,800 m).
 Both CPU candidate selection and the fragment shader enforce this radial limit;
 the camera far plane updates with it. Terrain renders without fog. Increasing
 the range keeps all visible map tiles covered, even when the detail cache fills.
 Nine GPU samples per map tile provide a coarse fallback, while the closest tiles
 receive the bounded detail slots. Both layers fit inside the same 64 MB budget.
-The bounded map and infinite generation window are each 8 km wide;
-raising the cutoff does not enlarge that window or the 64 MB atlas. Use
-**Uniform full detail** with a large range to stress full-resolution rendering.
+With **Infinite terrain** off, visibility stops at the 8.2 km-wide map.
+With it on, the same window supplies nearby detail while coarser terrain
+continues out to the render-distance cutoff. Raising the cutoff does not
+enlarge the detail window or its 64 MB atlas. **Uniform full detail** stresses
+the detail cache; the distant terrain still uses its coarser grades.
 
 The renderer is native WebGPU. Three.js supplies camera/frustum math only.
 The existing Cartesian/spherical MC33/Bourke isosurface demo stays available
@@ -43,7 +45,7 @@ procedural height range. Node visit counts and build time are available in
 
 ## Infinite generation
 
-Infinite mode slides the 8 km candidate window in tile-aligned 1,024 m steps.
+Infinite mode slides the 8.2 km detail window in tile-aligned 1,024 m steps.
 It translates frustum planes into the static hierarchy's local space, so window
 motion does not rebuild the tree. Cache entries and previous LODs are remapped
 to the overlapping world tiles. Their atlas slots and samples stay intact;
@@ -58,6 +60,12 @@ Overlapping detail samples stay intact. The
 same 2:1 balancing, stitching, draw batching and memory budget apply to both
 bounded and infinite modes. Switching infinite mode off resets the demo to
 the original bounded map; Reset returns to the starting position in either mode.
+
+Outside the window, stitched rings use progressively larger patches and
+sample the same world noise directly on the GPU. Their grids align to world
+coordinates, and the edge of the detail window tapers to meet the first ring.
+The renderer keeps only a small instance buffer for the rings. The package
+example reports their drawn patch and grade counts separately from the detail cache.
 
 Automatic infinite flight follows the heading captured when it starts, while
 dragging can look around. It follows terrain height smoothly; Space/C adjust

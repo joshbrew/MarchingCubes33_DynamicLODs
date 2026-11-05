@@ -4,7 +4,7 @@ Reproduce with npm run build:checks, then serve tests/terrain-range-webgpu.html.
 Default 8,192 m map, 128 m tiles, 64 MiB sample budget. Camera at
 [128.25, 171, 96.25], forward [0, -0.25, -1], 60 degree vertical FOV.
 
-Requested cutoff      Drawn tiles
+Bounded mode: requested cutoff / drawn tiles
 1,800 m                   250
 3,000 m                   584
 4,000 m                   972
@@ -23,3 +23,11 @@ Trees off: CPU submit p95 2.40 ms, max 4.40 ms, 12 bundle rebuilds / 120 frames.
 Trees on: CPU submit p95 3.50 ms, max 5.00 ms, 2,088 trees.
 These are CPU submission measurements, not end-to-end FPS. No WebGPU
 validation errors. Turn streaming and 2:1 stitch regressions also passed.
+
+Infinite horizon follow-up (native WebGPU, 960 x 540 framebuffer):
+- A pixel over ground roughly 13 km away horizontally was sky with infinite
+  mode off or a 14 km cutoff. It became terrain with infinite mode on at 32 km.
+- After recentering, a pixel over ground roughly 53 km away horizontally was
+  sky at a 32 km cutoff and terrain at 64 km (about 62 km line of sight).
+- The 64 km view submitted 911 horizon patches in this camera pose, with a
+  16 KiB instance buffer and an unchanged detail atlas. No validation errors.

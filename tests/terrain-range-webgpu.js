@@ -117,6 +117,100 @@ try {
   log(
     `PROFILE forest CPU submit p95 ${forestTimes[Math.floor(forestTimes.length * 0.95)].toFixed(2)} ms; max ${forestTimes.at(-1).toFixed(2)} ms; ${t.stats.vegetation.trees} trees; ${t.canvas.width} x ${t.canvas.height} framebuffer (scripted submissions, not FPS)`,
   );
+  // Read a pixel whose ground ray is well beyond the former map edge. The
+  // same pixel must be sky with a shorter cutoff or with infinite mode off.
+  t.context.configure({
+    device: t.device,
+    format: t.format,
+    alphaMode: "opaque",
+    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
+  });
+  const read = t.device.createBuffer({
+    size: 256,
+    usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+  });
+  async function survey(far, infinite, position, fraction) {
+    world.configure({
+      renderDistance: far,
+      infinite,
+      trees: { enabled: false },
+    });
+    const stats = world.render(
+      createCamera({
+        position,
+        forward: [0, -1, 0],
+        up: [0, 0, -1],
+        fov: Math.PI / 2,
+        near: 1,
+        far,
+        height: t.canvas.height,
+        aspect: t.canvas.width / t.canvas.height,
+      }),
+      { now: (now += 110) },
+    );
+    const encoder = t.device.createCommandEncoder();
+    encoder.copyTextureToBuffer(
+      {
+        texture: t.context.getCurrentTexture(),
+        origin: [
+          Math.floor(t.canvas.width * fraction),
+          Math.floor(t.canvas.height / 2),
+          0,
+        ],
+      },
+      { buffer: read, bytesPerRow: 256 },
+      [1, 1, 1],
+    );
+    t.device.queue.submit([encoder.finish()]);
+    await read.mapAsync(GPUMapMode.READ);
+    const color = Array.from(new Uint8Array(read.getMappedRange()).slice(0, 3));
+    read.unmap();
+    return {
+      color,
+      patches: stats.horizonDrawn,
+      bytes: stats.horizonBytes,
+      atlas: stats.atlasBytes,
+    };
+  }
+  try {
+    const bounded = await survey(32000, false, [128.25, 12000, 96.25], 0.8);
+    const clipped = await survey(14000, true, [128.25, 12000, 96.25], 0.8);
+    const distant = await survey(32000, true, [128.25, 12000, 96.25], 0.8);
+    assert(
+      !bounded.patches && distant.patches > 0,
+      "only infinite terrain adds a horizon",
+    );
+    assert(
+      bounded.color.every((value, i) => value === clipped.color[i]),
+      "the short cutoff clips the distant ground",
+    );
+    const difference = (a, b) =>
+      a.color.reduce((sum, value, i) => sum + Math.abs(value - b.color[i]), 0);
+    assert(
+      difference(bounded, distant) > 50,
+      "the GPU draws actual terrain about 13 km beyond the camera's horizontal position",
+    );
+    const shifted = [-98000, 32000, 61000];
+    const mid = await survey(32000, true, shifted, 0.97);
+    const far = await survey(64000, true, shifted, 0.97);
+    assert(
+      mid.color.every((value, i) => value === bounded.color[i]),
+      "32 km still clips the farther pixel",
+    );
+    assert(
+      difference(mid, far) > 50,
+      "64 km draws ground over 50 km away horizontally after recentering",
+    );
+    assert(
+      far.atlas === bounded.atlas && far.bytes <= 65536,
+      "long range keeps the detail atlas unchanged and uses only a small instance buffer",
+    );
+    log(
+      `PASS GPU pixels: 32 km reveals terrain ~13 km away horizontally; 64 km reveals terrain ~53 km away after recentering. ${far.patches} horizon patches, ${far.bytes / 1024} KiB of instance storage.`,
+    );
+  } finally {
+    read.destroy();
+  }
   const validation = await t.device.popErrorScope();
   assert(
     !validation && !t.errors.length,
