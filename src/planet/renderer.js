@@ -1,11 +1,12 @@
 import { initializeGPU, disposeGPUContext, renderSize } from "../api/gpu.js";
 import { relativeCamera } from "../api/camera.js";
 import { buildIndices, lines } from "../terrain/surface.js";
-import { selectPlanet } from "./lod.js";
+import { cube, selectPlanet } from "./lod.js";
 import {
   radius,
   seed,
   studioElevationBounds,
+  studioHeightScale,
   studioOceanLevel,
   surface,
   unit,
@@ -13,9 +14,10 @@ import {
 import { getPreset } from "./presets.js";
 import { bakeStudioMap } from "../noise/studio-map.js";
 import { NoiseComputeBuilder } from "../noise/noiseCompute.js";
-import { studioSeed } from "../noise/studio.js";
+import { coarsenStudioPlanetNoise, sampleStudioPlanetNoise, studioSeed } from "../noise/studio.js";
 import fieldWGSL from "./shaders/field.wgsl";
 import renderWGSL from "./shaders/render.wgsl";
+import shadowWGSL from "./shaders/shadow.wgsl";
 import studioWGSL from "./shaders/studio.wgsl";
 
 function worldSeed(value) {
@@ -23,6 +25,8 @@ function worldSeed(value) {
     throw new RangeError("Use an integer planet seed.");
   return value >>> 0;
 }
+
+const shadowSide = 512;
 
 export class PlanetRenderer {
   constructor(canvas, options = {}) {
@@ -55,6 +59,9 @@ export class PlanetRenderer {
         "Use a radius of 16,384–2,000,000 m, 8/16/32 divisions, 24–1200 tiles and valid spacing.",
       );
     this.pixelError = 3;
+    this.lodScale = 1.5;
+    this.tileBudget = maxTiles;
+    this.reliefCache = new Map();
     this.profile = getPreset(options.preset);
     this.activeStudioSeed = worldSeed(
       options.studioSeed ?? this.options.studioSeed + this.profile.seedOffset,
@@ -79,11 +86,33 @@ export class PlanetRenderer {
       geology: this.profile.geology,
     });
     this.geology = this.profile.geology;
+    const coarse = coarsenStudioPlanetNoise(map);
     this.studioBuffer = d.createBuffer({
-      size: map.values.byteLength,
+      size: map.values.byteLength + coarse.byteLength,
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
-    this.uploadStudioMap(map, this.studioSeed);
+    this.sunMap = d.createTexture({
+      label: "Planet baked sun visibility",
+      size: [shadowSide, shadowSide],
+      format: "rgba8unorm",
+      usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
+    });
+    const sunView = this.sunMap.createView();
+    this.sunBake = await d.createComputePipelineAsync({
+      layout: "auto",
+      compute: {
+        module: d.createShaderModule({ code: studioWGSL + shadowWGSL }),
+        entryPoint: "bake_sun_visibility",
+      },
+    });
+    this.sunBakeGroup = d.createBindGroup({
+      layout: this.sunBake.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: sunView },
+        { binding: 3, resource: { buffer: this.studioBuffer, size: map.values.byteLength } },
+      ],
+    });
+    this.uploadStudioMap(map, this.studioSeed, coarse);
     this.uniform = d.createBuffer({
       size: this.frame.byteLength,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -120,6 +149,16 @@ export class PlanetRenderer {
           visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
           buffer: { type: "read-only-storage" },
         },
+        {
+          binding: 4,
+          visibility: GPUShaderStage.FRAGMENT,
+          texture: { sampleType: "float" },
+        },
+        {
+          binding: 5,
+          visibility: GPUShaderStage.FRAGMENT,
+          sampler: { type: "filtering" },
+        },
       ],
     });
     this.group = d.createBindGroup({
@@ -129,6 +168,15 @@ export class PlanetRenderer {
         { binding: 1, resource: { buffer: this.instances } },
         { binding: 2, resource: { buffer: this.styleBuffer } },
         { binding: 3, resource: { buffer: this.studioBuffer } },
+        { binding: 4, resource: sunView },
+        {
+          binding: 5,
+          resource: d.createSampler({
+            addressModeU: "repeat",
+            minFilter: "linear",
+            magFilter: "linear",
+          }),
+        },
       ],
     });
     const module = d.createShaderModule({
@@ -213,9 +261,18 @@ export class PlanetRenderer {
       this.geology,
     );
   }
-  uploadStudioMap(map, studioSeed) {
+  uploadStudioMap(map, studioSeed, coarse = coarsenStudioPlanetNoise(map)) {
     this.device.queue.writeBuffer(this.studioBuffer, 0, map.values);
+    this.device.queue.writeBuffer(this.studioBuffer, map.values.byteLength, coarse);
+    const encoder = this.device.createCommandEncoder();
+    const pass = encoder.beginComputePass();
+    pass.setPipeline(this.sunBake);
+    pass.setBindGroup(0, this.sunBakeGroup);
+    pass.dispatchWorkgroups(shadowSide / 8, shadowSide / 8);
+    pass.end();
+    this.device.queue.submit([encoder.finish()]);
     this.studioMap = map;
+    this.reliefCache.clear();
     this.activeStudioSeed = studioSeed;
     this.oceanLevel = studioOceanLevel(map, studioSeed, this.options.radius);
     this.elevationBounds = studioElevationBounds(
@@ -241,6 +298,7 @@ export class PlanetRenderer {
         this.oceanLevel ?? 0,
         Number(this.oceanLevel !== null),
         Number(this.geology === "mesa"),
+        Number(this.geology === "alpine" || this.geology === "mixed"),
       ],
       4,
     );
@@ -253,9 +311,23 @@ export class PlanetRenderer {
     }
     this.device.queue.writeBuffer(this.styleBuffer, 0, style);
   }
-  configure({ pixelError = this.pixelError, preset, studioSeed } = {}) {
+  configure({
+    pixelError = this.pixelError,
+    lodScale = this.lodScale,
+    tileBudget = this.tileBudget,
+    preset,
+    studioSeed,
+  } = {}) {
     if (!(Number.isFinite(pixelError) && pixelError > 0))
       throw new RangeError("Pixel error must be positive.");
+    if (!(Number.isFinite(lodScale) && lodScale >= 0.25 && lodScale <= 4))
+      throw new RangeError("LOD scale must be between 0.25 and 4.");
+    if (
+      !Number.isInteger(tileBudget) ||
+      tileBudget < 24 ||
+      tileBudget > this.options.maxTiles
+    )
+      throw new RangeError("Tile budget must be between 24 and the allocated maximum.");
     const profile = getPreset(preset ?? this.preset);
     const nextSeed = worldSeed(
       studioSeed ??
@@ -263,8 +335,15 @@ export class PlanetRenderer {
           ? this.studioSeed
           : this.options.studioSeed + profile.seedOffset),
     );
-    if (pixelError !== this.pixelError) {
+    if (
+      pixelError !== this.pixelError ||
+      lodScale !== this.lodScale ||
+      tileBudget !== this.tileBudget
+    ) {
       this.pixelError = pixelError;
+      this.lodScale = lodScale;
+      this.tileBudget = tileBudget;
+      this.split.clear();
       this.dirty = true;
     }
     if (preset === undefined && studioSeed === undefined)
@@ -335,14 +414,40 @@ export class PlanetRenderer {
     this.templates.set(mask, result);
     return result;
   }
+  sampleTileRelief(node) {
+    const cached = this.reliefCache.get(node.key);
+    if (cached) return cached;
+    const scale = studioHeightScale(this.options.radius);
+    const elevation = (dir) => {
+      const height = sampleStudioPlanetNoise(this.studioMap, dir) * scale;
+      return this.oceanLevel === null ? height : Math.max(height, this.oceanLevel);
+    };
+    const center = elevation(node.dir);
+    let min = center,
+      max = center;
+    for (const [x, y] of [[0.12, 0.12], [0.88, 0.12], [0.12, 0.88], [0.88, 0.88]]) {
+      const height = elevation(
+        unit(cube(node.face, node.u + x * node.size, node.v + y * node.size)),
+      );
+      min = Math.min(min, height);
+      max = Math.max(max, height);
+    }
+    const result = [center, max - min];
+    this.reliefCache.set(node.key, result);
+    return result;
+  }
   select(camera, now, pose) {
     const start = performance.now();
+    if (this.reliefCache.size > 16000) this.reliefCache.clear();
     const plan = selectPlanet(
       camera,
       {
         ...this.options,
+        maxTiles: this.tileBudget,
         pixelError: this.pixelError,
+        lodScale: this.lodScale,
         elevationBounds: this.elevationBounds,
+        sampleRelief: (node) => this.sampleTileRelief(node),
       },
       this.split,
     );
@@ -436,6 +541,7 @@ export class PlanetRenderer {
     f.set([...camera.right, camera.tanX], 20);
     f.set([...camera.up, camera.tanY], 24);
     f.set(camera.forward, 28);
+    f[31] = 1 / camera.pixelScale;
     f.set(
       [this.options.divs, 0, Number(lodColors), Math.max(0, clearance)],
       32,
@@ -530,6 +636,7 @@ export class PlanetRenderer {
       this.uniform,
       this.styleBuffer,
       this.studioBuffer,
+      this.sunMap,
       this.instances,
       this.queries,
       this.resolve,

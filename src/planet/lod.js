@@ -136,8 +136,10 @@ export function selectPlanet(
     divs = 16,
     maxTiles = 576,
     pixelError = 3,
+    lodScale = 1.5,
     minSpacing = 2,
     elevationBounds,
+    sampleRelief,
   } = {},
   previous = new Set(),
 ) {
@@ -197,7 +199,26 @@ export function selectPlanet(
       radius * Math.sqrt(2 * (1 - alignment)) - m.lateral,
     );
     if (!node.visible && lateral >= m.nearby) return;
-    const error = m.error / Math.hypot(height, lateral);
+    const distance = Math.hypot(height, lateral);
+    let weight = 1 + (lodScale - 1) * clamp((lateral - 150) / 1800, 0, 1);
+    if (sampleRelief && height < 60000 && node.visible && node.level >= 3) {
+      const [ground, variation] = sampleRelief(node);
+      const rugged = clamp(variation / Math.max(1, m.lateral) - 0.16, 0, 1);
+      weight *= 1 + rugged * 1.6;
+      // The conservative globe bounds include mountains far outside this
+      // patch. Deprioritize tiles outside the view at their local elevation.
+      const viewBound = m.lateral * 1.1 + variation + Math.min(650, m.lateral);
+      for (let i = 0; i < Math.min(4, planes.length); i++) {
+        if (
+          (radius + ground) * dot(planes[i], node.dir) + planes[i][3] <
+          -viewBound - margin
+        ) {
+          weight *= 0.42;
+          break;
+        }
+      }
+    }
+    const error = (m.error * weight) / distance;
     if (error > pixelError * (previous.has(node.key) ? 0.8 : 1))
       heap.push({ node, score: error * (node.visible ? 1.15 : 1) });
   }

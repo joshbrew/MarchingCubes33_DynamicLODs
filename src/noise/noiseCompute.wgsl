@@ -4586,24 +4586,60 @@ fn studioSphereHeight(x:i32,y:i32,last:i32)->f32 {
   return loadPrevRGBA((x+last)%last,clamp(y,0,last),0).x;
 }
 
-fn studioErosionChart(dir:vec3<f32>,gradient:vec3<f32>,height:f32,hemisphere:f32,pixelSpan:f32)->f32 {
+struct StudioErosionChart { position:vec2<f32>, slope:vec2<f32>, pixelSpan:f32 }
+
+fn studioErosionChart(
+  dir:vec3<f32>,gradient:vec3<f32>,hemisphere:f32,pixelSpan:f32
+)->StudioErosionChart {
   // Stereographic charts preserve the downhill angle. Their overlap avoids a
   // longitude seam and keeps the noise cells finite at both poles.
-  let uv=dir.xz/(1.0+hemisphere*dir.y);
+  let projection=1.0+hemisphere*dir.y;
+  let uv=dir.xz/projection;
   let inverse=2.0/(1.0+dot(uv,uv));
   let angular=vec3<f32>(dir.x,hemisphere+dir.y,dir.z);
   let du=inverse*(vec3<f32>(1,0,0)-uv.x*angular);
   let dv=inverse*(vec3<f32>(0,0,1)-uv.y*angular);
-  let slope=vec2<f32>(dot(gradient,du),dot(gradient,dv))*.17;
+  let slope=vec2<f32>(dot(gradient,du),dot(gradient,dv))*.14;
   let offset=seedOffset3(params.seed).xy;
-  let strength=select(5.0,6.2,params.voroMode==1u);
+  return StudioErosionChart(uv+offset,slope,pixelSpan/projection);
+}
+
+fn studioMountainCut(chart:StudioErosionChart,height:f32)->f32 {
+  let ranges=params.voroMode<=1u;
+  let fade=2.0*smoothstep(.05,1.62,height)-1.0;
+  var ridge=0.0;
+  let mountain=erosionFilter(
+    chart.position+vec2<f32>(.29,-.44),vec3<f32>(height,chart.slope),fade,
+    select(4.4,6.1,ranges),.48,.76,1.03,1.40,
+    vec4<f32>(.10,0,.10,2.0),vec4<f32>(1.10,1.25,2.80,1.50),
+    vec2<f32>(.70,.76),.145,select(1u,3u,ranges),2.18,.53,.82,.52,chart.pixelSpan,&ridge
+  );
+  if(ranges){
+    // Keep the continuous coarse-to-fine cut from the steered carrier.
+    return clamp(min(0.0,mountain.x)*1.17+max(0.0,mountain.x)*.25,-.67,.14);
+  }
+  let incision=smoothstep(.065,.52,-mountain.x);
+  let shoulder=smoothstep(.06,.48,mountain.x);
+  return .10*shoulder-.55*incision;
+}
+
+fn studioGullyCut(chart:StudioErosionChart,height:f32)->f32 {
+  let strength=select(3.05,3.55,params.voroMode==1u);
   var ridge=0.0;
   let erosion=erosionFilter(
-    uv+offset,vec3<f32>(height,slope),-.24,strength,.58,.82,1.06,1.45,
+    chart.position,vec3<f32>(height,chart.slope),-.17,strength,.48,.83,1.03,1.50,
     vec4<f32>(.10,0,.10,2.0),vec4<f32>(1.20,1.25,2.80,1.50),
-    vec2<f32>(.72,.72),.029,2u,2.2,.54,.82,.52,pixelSpan,&ridge
+    vec2<f32>(.72,.72),.076,3u,2.2,.48,.82,.52,chart.pixelSpan,&ridge
   );
-  return clamp(erosion.x,-.235,.13);
+  if(params.voroMode<=1u){return clamp(erosion.x,-.29,.12);}
+  // Smaller tributaries start from the coarse pass's eroded slope.
+  let tributaries=erosionFilter(
+    chart.position+vec2<f32>(.57,.31),
+    vec3<f32>(height+erosion.x,chart.slope+.30*erosion.yz),-.10,1.55,.37,.69,.92,1.38,
+    vec4<f32>(.10,0,.10,1.8),vec4<f32>(1.20,1.25,2.80,1.50),
+    vec2<f32>(.66,.68),.041,2u,2.1,.47,.83,.52,chart.pixelSpan,&ridge
+  );
+  return clamp(erosion.x+tributaries.x,-.265,.16);
 }
 
 fn studioVolcanicRelief(dir:vec3<f32>)->f32 {
@@ -4628,17 +4664,38 @@ fn studioVolcanicRelief(dir:vec3<f32>)->f32 {
   return clamp(relief,-.55,.39);
 }
 
-fn studioGeologicRelief(dir:vec3<f32>,height:f32)->f32 {
+fn studioRidge(value:f32,width:f32)->f32 {
+  return max(0.0,1.0-abs(value)/width);
+}
+
+fn studioMountainRange(dir:vec3<f32>,height:f32,broad:f32,offset:vec3<f32>)->f32 {
+  // Fold the mountain belt and rotate the spurs away from the main divide.
+  let fault=vec3<f32>(
+    dot(dir,vec3<f32>(4,-20,22)/30.0),
+    dot(dir,vec3<f32>(28,10,4)/30.0),
+    dot(dir,vec3<f32>(-10,20,20)/30.0)
+  );
+  let province=simplex3D(dir*5.0-offset);
+  let fold=simplex3D(dir*9.0+offset);
+  let belt=fault*vec3<f32>(17,6,9)+vec3<f32>(.72*fold,.25*province,.34*fold);
+  let line=simplex3D(belt+offset);
+  let crest=studioRidge(line,select(.86,1.24,line>0.0));
+  let spurDomain=vec3<f32>(belt.x+1.10*belt.y,belt.y-.44*belt.x,belt.z);
+  let spur=studioRidge(simplex3D(spurDomain*2.22-offset+vec3<f32>(.54*line)),.77);
+  let ribs=studioRidge(simplex3D(belt*4.65+offset.yzx+vec3<f32>(.31*spur)),.67);
+  // Higher octaves grow from their parent crest. Valleys stay open and the
+  // broad envelope supplies uplift without putting the rounded hills back.
+  let parent=clamp(crest*1.48,0.0,1.0);
+  let branch=parent*clamp(spur*1.38,0.0,1.0);
+  let relief=crest*(.48+.20*crest)+.34*spur*spur*parent+.17*ribs*ribs*branch-.54;
+  let uplift=smoothstep(-.58,.69,broad)*mix(.39,1.0,smoothstep(-.60,.34,province));
+  let strength=select(.66,1.0,params.voroMode==1u);
+  return strength*uplift*(relief+.68*(broad-height));
+}
+
+fn studioGeologicRelief(dir:vec3<f32>,height:f32,broad:f32)->f32 {
   let offset=seedOffset3(params.seed);
-  if(params.voroMode==1u){
-    // Fold the long crest lines through the existing uplands, then break
-    // their shoulders into shorter spurs.
-    let fold=simplex3D(dir*11.0+offset);
-    let crest=1.0-smoothstep(.05,.58,abs(simplex3D(dir*31.0+offset+fold*.8)));
-    let spurs=1.0-smoothstep(.06,.57,abs(simplex3D(dir*69.0-offset)));
-    let upland=smoothstep(.03,.93,height);
-    return upland*((crest*crest-.30)*.51+crest*(spurs-.45)*.18);
-  }
+  if(params.voroMode<=1u){return studioMountainRange(dir,height,broad,offset);}
   if(params.voroMode==2u){
     // Broad beds erode into isolated, flat-capped blocks. The varying
     // bed thickness keeps ledges from marching across the entire globe.
@@ -4656,7 +4713,34 @@ fn studioGeologicRelief(dir:vec3<f32>,height:f32)->f32 {
 }
 
 @compute @workgroup_size(8,8,1)
-fn computeStudioSphereErosion(@builtin(global_invocation_id) gid:vec3<u32>){
+fn computeStudioSphereRelief(@builtin(global_invocation_id) gid:vec3<u32>){
+  let x=i32(gid.x)+frame.originX;
+  let y=i32(gid.y)+frame.originY;
+  let last=i32(frame.fullWidth)-1;
+  if(x>last||y>last){return;}
+  let col=x%last;
+  let raw=studioSphereHeight(col,y,last);
+  if(y==0||y==last){
+    storeRGBA(x,y,0,vec4<f32>(raw,0,0,0));
+    return;
+  }
+  let step=PI/f32(last);
+  let latitude=f32(y)*step;
+  let longitude=2.0*f32(col)*step;
+  let radial=sin(latitude);
+  let dir=vec3<f32>(radial*cos(longitude),cos(latitude),radial*sin(longitude));
+  var broad=raw;
+  if(params.voroMode<=1u){
+    let spanY=max(1,i32(round(f32(last)*.017)));
+    let spanX=max(1,i32(round(f32(spanY)/max(.50,2.0*radial))));
+    let around=studioSphereHeight(col-spanX,y-spanY,last)+studioSphereHeight(col+spanX,y-spanY,last)+
+      studioSphereHeight(col-spanX,y+spanY,last)+studioSphereHeight(col+spanX,y+spanY,last);
+    broad=.28*raw+.18*around;
+  }
+  storeRGBA(x,y,0,vec4<f32>(raw+smoothstep(0.0,.043,radial)*studioGeologicRelief(dir,raw,broad),0,0,0));
+}
+
+fn applyStudioSphereErosion(gid:vec3<u32>,mountain:bool){
   let x=i32(gid.x)+frame.originX;
   let y=i32(gid.y)+frame.originY;
   let last=i32(frame.fullWidth)-1;
@@ -4674,31 +4758,71 @@ fn computeStudioSphereErosion(@builtin(global_invocation_id) gid:vec3<u32>){
   let dir=vec3<f32>(radial*cos(longitude),cos(latitude),radial*sin(longitude));
   let east=vec3<f32>(-sin(longitude),0,cos(longitude));
   let north=cross(east,dir);
-  let dx=(studioSphereHeight(col+1,y,last)-studioSphereHeight(col-1,y,last))/(4.0*step*max(radial,.03));
-  let dy=(studioSphereHeight(col,y-1,last)-studioSphereHeight(col,y+1,last))/(2.0*step);
+  var rise:vec2<f32>;
+  if(mountain){
+    // The angular window stays wide on smaller bakes and near the poles.
+    let guideY=max(2,i32(round(f32(last)*select(.012,.008,params.voroMode<=1u))));
+    let guideX=max(1,i32(round(f32(guideY)/max(.5,2.0*radial))));
+    rise=vec2<f32>(
+      (studioSphereHeight(col+guideX,y,last)-studioSphereHeight(col-guideX,y,last))/f32(guideX),
+      (studioSphereHeight(col,y-guideY,last)-studioSphereHeight(col,y+guideY,last))/f32(guideY)
+    );
+  }else{
+    // The local gullies read the mountain cuts from the previous dispatch.
+    let localX=studioSphereHeight(col+1,y,last)-studioSphereHeight(col-1,y,last);
+    let localY=studioSphereHeight(col,y-1,last)-studioSphereHeight(col,y+1,last);
+    let wideX=(studioSphereHeight(col+4,y,last)-studioSphereHeight(col-4,y,last))*.25;
+    let wideY=(studioSphereHeight(col,y-4,last)-studioSphereHeight(col,y+4,last))*.25;
+    rise=mix(vec2<f32>(localX,localY),vec2<f32>(wideX,wideY),.76);
+  }
+  let dx=rise.x/(4.0*step*max(radial,.03));
+  let dy=rise.y/(2.0*step);
   let gradient=east*dx+north*dy;
   let grade=.023*length(gradient);
-  let wear=smoothstep(.06,.43,grade);
-  let relief=studioGeologicRelief(dir,h);
+  let mountainWear=smoothstep(.042,.25,grade)*select(1.0,.50,params.voroMode==3u);
+  let wear=select(smoothstep(.06,.43,grade),mountainWear,mountain);
   let polar=smoothstep(0.0,.043,radial);
   if(wear<=0.0){
-    storeRGBA(x,y,0,vec4<f32>(h+polar*relief,0,0,0));
+    storeRGBA(x,y,0,vec4<f32>(h,0,0,0));
     return;
   }
   let blend=smoothstep(-.19,.19,dir.y);
+  let angularSample=step*max(1.0,2.0*radial);
   var delta=0.0;
-  if(blend>0.0){delta+=blend*studioErosionChart(dir,gradient,h,1.0,step);}
-  if(blend<1.0){delta+=(1.0-blend)*studioErosionChart(dir,gradient,h,-1.0,step);}
+  if(blend>0.0){
+    let chart=studioErosionChart(dir,gradient,1.0,angularSample);
+    if(mountain){delta+=blend*studioMountainCut(chart,h);}
+    else{delta+=blend*studioGullyCut(chart,h);}
+  }
+  if(blend<1.0){
+    let chart=studioErosionChart(dir,gradient,-1.0,angularSample);
+    if(mountain){delta+=(1.0-blend)*studioMountainCut(chart,h);}
+    else{delta+=(1.0-blend)*studioGullyCut(chart,h);}
+  }
   delta*=wear;
+  if(mountain){
+    storeRGBA(x,y,0,vec4<f32>(h+polar*delta,0,0,0));
+    return;
+  }
   // Exposed beds have sharp lips and shelves. Gully noise shifts the seams
   // through the rock so neighboring hills do not share a level staircase.
   let mesa=params.voroMode==2u;
   let bed=select(.155,.205,mesa);
-  let elevation=h+delta+relief;
+  let elevation=h+delta;
   let stratum=(elevation+.43*delta)/bed;
   let shelf=floor(stratum)+smoothstep(select(.21,.30,mesa),select(.77,.71,mesa),fract(stratum));
-  let ledge=(shelf-stratum)*bed*select(.77,.93,mesa)*smoothstep(.18,.88,grade);
-  storeRGBA(x,y,0,vec4<f32>(h+polar*(delta+ledge+relief),0,0,0));
+  let ledge=(shelf-stratum)*bed*select(select(.42,.23,params.voroMode==1u),.93,mesa)*smoothstep(.18,.88,grade);
+  storeRGBA(x,y,0,vec4<f32>(h+polar*(delta+ledge),0,0,0));
+}
+
+@compute @workgroup_size(8,8,1)
+fn computeStudioSphereMountainErosion(@builtin(global_invocation_id) gid:vec3<u32>){
+  applyStudioSphereErosion(gid,true);
+}
+
+@compute @workgroup_size(8,8,1)
+fn computeStudioSphereErosion(@builtin(global_invocation_id) gid:vec3<u32>){
+  applyStudioSphereErosion(gid,false);
 }
 
 @compute @workgroup_size(8, 8, 1)

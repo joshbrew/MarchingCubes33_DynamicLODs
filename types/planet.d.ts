@@ -68,6 +68,8 @@ export class PlanetRenderer {
   initialize(): Promise<this>;
   configure(settings?: {
     pixelError?: number;
+    lodScale?: number;
+    tileBudget?: number;
     preset?: PlanetPresetId;
     studioSeed?: number;
   }): Promise<void>;
@@ -142,7 +144,9 @@ export const PlanetLOD: {
       "radius" | "divs" | "maxTiles" | "minSpacing"
     > & {
       pixelError?: number;
+      lodScale?: number;
       elevationBounds?: readonly [number, number];
+      sampleRelief?: (tile: PlanetTile) => readonly [elevation: number, variation: number];
     },
     previous?: Set<number>,
   ): {

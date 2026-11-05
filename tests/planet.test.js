@@ -23,6 +23,7 @@ import {
   sampleStudioPlanetNoise,
 } from "../src/noise/studio.js";
 import { erodeSphericalTerrain } from "../src/noise/studio-erosion.js";
+import { erodeRegionalWatersheds } from "../src/noise/studio-watersheds.js";
 
 const side = 5;
 const values = Float32Array.from({ length: side * side }, (_, i) => {
@@ -119,6 +120,37 @@ test("planet LOD stays bounded from orbit to 2 m spacing and stitches across fac
   assert.ok([...segments.values()].every((count) => count === 2));
 });
 
+test("the flyover sliders change distant detail and respect the patch cap", () => {
+  const camera = {
+    ...createCamera({
+      position: [radius + 600, 0, 0],
+      forward: [-0.14, 0, 1],
+      up: [1, 0, 0],
+      height: 900,
+      aspect: 16 / 9,
+      far: 550000,
+    }),
+    clearance: 600,
+  };
+  const plan = (lodScale, pixelError, maxTiles) =>
+    selectPlanet(camera, {
+      lodScale,
+      pixelError,
+      maxTiles,
+      elevationBounds: [-9000, 9000],
+      sampleRelief: (tile) => [0, tile.dir[2] > 0.02 ? 480 : 10],
+    });
+  const fineDistant = (selection) =>
+    selection.visible.filter(
+      ({ dir, spacing }) => dir[2] > 0.02 && dir[2] < 0.13 && spacing <= 64,
+    ).length;
+  const low = plan(0.25, 3, 1200);
+  const high = plan(4, 3, 1200);
+  assert.ok(fineDistant(high) > fineDistant(low) + 100);
+  assert.ok(plan(4, 24, 1200).leaves.size < high.leaves.size);
+  assert.ok(plan(4, 3, 192).leaves.size <= 192);
+});
+
 test("every planet preset fits the GPU palette and can use the same explicit seed", () => {
   assert.equal(PlanetPresets.length, 17);
   const dir = unit([0.7, 0.2, 0.6]);
@@ -208,6 +240,28 @@ test("camera-relative movement keeps its heading across the poles and longitude 
   same(surfaceRoute(start, across.direction)(1).direction, across.direction);
   const [right] = viewAxes(across, yaw);
   assert.ok(dot(moveOnSphere(across, yaw, 20, 0, radius).direction, right) > 0);
+});
+
+test("regional erosion links a headwater basin across its spill saddle", () => {
+  const side = 257;
+  const span = side - 1;
+  const raw = Float32Array.from({ length: side * side }, (_, i) => {
+    const v = Math.floor(i / side) / span;
+    const u = (i % side) / span;
+    const acrossValley = 0.8 * (1 - Math.cos(u * 2 * Math.PI)) * Math.sin(v * Math.PI);
+    const saddle = 0.27 * Math.exp(-((v - 0.56) ** 2) / 0.00045);
+    return (1 - v) * 1.65 + acrossValley + saddle;
+  });
+  const terrain = erodeRegionalWatersheds(raw.slice(), side);
+  const incision = (x, y) => raw[y * side + x] - terrain[y * side + x];
+  assert.ok(raw[144 * side] > raw[129 * side], "the route has an uphill saddle");
+  for (let y = 132; y <= 154; y++) {
+    assert.ok(incision(0, y) > 0.13, `the main valley stays connected at row ${y}`);
+    assert.equal(terrain[y * side], terrain[y * side + span]);
+  }
+  assert.ok(incision(128, 144) < 0.04, "the distant divide stays intact");
+  assert.equal(terrain[0], raw[0]);
+  assert.equal(terrain[span * side], raw[span * side]);
 });
 
 test("the erosion bake routes runoff down a continuous valley across longitude", () => {

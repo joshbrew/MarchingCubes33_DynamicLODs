@@ -1,6 +1,40 @@
 export const studioSeed = 123456789;
 export const studioSegments = 1000;
 
+// Bake a low-pass atlas for views where a full-resolution texel is smaller
+// than the projected footprint. The duplicate longitude and poles stay closed.
+export function coarsenStudioPlanetNoise({ side, values }) {
+  const span = side - 1;
+  const segments = Math.max(1, Math.floor(span / 4));
+  const coarseSide = segments + 1;
+  const coarse = new Float32Array(coarseSide ** 2);
+  const weights = [1, 4, 6, 4, 1];
+  const rows = new Float32Array(side * segments);
+  for (let x = 0; x < segments; x++) {
+    const center = Math.round(x * span / segments);
+    const columns = weights.map((_, tap) => (center + (tap - 2) * 2 + span) % span);
+    for (let y = 0; y < side; y++) {
+      const row = y * side;
+      let sum = 0;
+      for (let tap = 0; tap < 5; tap++) sum += weights[tap] * values[row + columns[tap]];
+      rows[y * segments + x] = sum / 16;
+    }
+  }
+  coarse.fill(values[0], 0, coarseSide);
+  coarse.fill(values[span * side], segments * coarseSide);
+  for (let y = 1; y < segments; y++) {
+    const center = Math.round(y * span / segments);
+    const offsets = weights.map((_, tap) => Math.min(span, Math.max(0, center + (tap - 2) * 2)) * segments);
+    for (let x = 0; x < segments; x++) {
+      let sum = 0;
+      for (let tap = 0; tap < 5; tap++) sum += weights[tap] * rows[offsets[tap] + x];
+      coarse[y * coarseSide + x] = sum / 16;
+    }
+    coarse[y * coarseSide + segments] = coarse[y * coarseSide];
+  }
+  return coarse;
+}
+
 // Planet Studio's default stack, including its seeded sphere domain offsets.
 export function createStudioPlanetNoise(
   seed = studioSeed,

@@ -143,6 +143,10 @@ repeat the performance check on your hardware.
 3. Click **Start approach** to descend from orbit, or **Near surface** to skip ahead.
 4. Turn on **LOD colors** or **Wireframe** to see the mesh get finer near the camera.
 
+Raise **Distant LOD** to keep cliffs and ridgelines sharper farther out.
+**Patch budget** limits the total number of terrain patches. **Pixel error**
+sets how much the renderer can simplify, up to that budget.
+
 Every world, including the first **Lakeshore** view, uses the five-layer
 generator from WebGPU Realtime Clouds' Planet Studio. The demo starts with a
 fresh seed and shows it in the performance panel. The other 16 palettes come
@@ -153,33 +157,50 @@ Left drag turns the planet. The closer you are to the surface, the smaller
 the turn. Right drag changes the view angle. Movement follows the camera’s
 heading as you cross a pole or the longitude seam.
 
-The Studio noise stack lays out the continents and basins. A seeded erosion pass
-cuts gullies into the slopes and routes runoff downhill to carve connected
-valleys. **Lakeshore** and **Ice** have alpine ridges, **Utahish** and
+The Studio noise stack lays out the continents and basins, with stronger ridged
+multifractal relief on eroded worlds. A coarse pass of the NoiseCompute erosion
+filter cuts the mountain faces at roughly twice the scale of the next pass.
+Smaller gullies follow the resulting slopes. Regional runoff joins tributaries,
+cuts wider valleys, and finds spill paths out of enclosed basins. Local runoff
+widens low banks and spreads sediment at the mouths of steep gullies. These
+passes run when the planet is generated, with CPU runoff handled by a browser
+worker. [Runevision’s erosion filter](https://blog.runevision.com/2026/03/fast-and-gorgeous-erosion-filter.html)
+
+**Lakeshore** and **Ice** have connected alpine
+ridges and spurs, **Utahish** and
 **Badlands** have stepped cliff bands and mesas, and **Volcanic** and
 **Moon Dust** have rough crater rims and basins. These shapes are part of the
 terrain mesh. The **Landforms** readout shows which style the planet uses.
 
-Regional relief starts at kilometer scales. Smaller noise layers follow the
-slope as you approach the ground, and nearby mesh patches refine to **2 m
-spacing**. Surface shading adds detail down to about **0.55 m**. About half of
-seeds get an ocean. The **World surface** readout shows whether the current
-seed is wet or dry.
+Overlapping relief bands from **1.55 km down to 26 m** add spurs, ribs, and
+rock faces between the main erosion channels and the fine ground texture.
+Nearby mesh patches refine to **2 m spacing**, with shading detail down to
+about **0.55 m**. Each world also bakes soft terrain shadows into a **512 ×
+512** map. In flight, the shader samples that map to shade valleys and
+mountain faces.
+
+About half of seeds get an ocean with depth-dependent color and sky
+reflection. The **World surface** readout shows whether the current seed is
+wet or dry.
 
 ![Planet from orbit](docs/benchmarks/planet-orbit.png)
+
+![Eroded mountains from 7 km above the surface](docs/benchmarks/planet-overlook.png)
 
 ![Regional valleys and ridges from 600 m above the surface](docs/benchmarks/planet-flyover.png)
 
 ![The same planet 3 m above the ground](docs/benchmarks/planet-shore.png)
 
 In these 960 × 540 GPU captures with seed `123456789`, orbit drew
-**38,896 triangles**, the low flyover drew **242,992**, and the ground view
-drew **250,200** across 13 visible LOD grades. Counts vary with the seed,
-camera, and view size.
+**41,440 triangles**, the 7 km overlook drew **329,808**, the low flyover drew
+**353,872**, and the ground view drew **359,280** across 13 visible LOD grades.
+With a 1,200-patch budget and 3 px error, the same low flyover drew
+**236,824** triangles at 0.25× Distant LOD and **553,392** at 4×. Counts vary
+with the seed, camera, and view size.
 
-![Utahish canyon, 226,280 triangles at 600 m](docs/benchmarks/planet-mesa.png)
+![Utahish canyon, 353,840 triangles at 600 m](docs/benchmarks/planet-mesa.png)
 
-![Volcanic caldera, 189,104 triangles at 22 km](docs/benchmarks/planet-caldera.png)
+![Volcanic caldera, 302,136 triangles at 22 km](docs/benchmarks/planet-caldera.png)
 
 ![An Ice world with a seeded ocean](docs/benchmarks/planet-ocean.png)
 

@@ -170,6 +170,8 @@ export class NoiseComputeBuilder {
       "computeSphereNormal",
       "computeNormalVolume",
       "clearTexture",
+      "computeStudioSphereRelief",
+      "computeStudioSphereMountainErosion",
     ];
 
     this.shaderModule = device.createShaderModule({ code: noiseWGSL });

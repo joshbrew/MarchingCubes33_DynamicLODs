@@ -4,17 +4,17 @@
     {
       "path": "dist/index.js",
       "kind": "build",
-      "hash": "a0168d0fd7076fa3bad5cb942524b3984a98cf430d38ec090f367047f5fb11fc"
+      "hash": "d3bcd5905b0f90f0a96cc6ce173420ae7247c9c5135d443fd4a9dece005afd05"
     },
     {
       "path": "dist/index.esm.js",
       "kind": "build",
-      "hash": "080a9bd30ac262d43f9707f5f2237e356197ff6ebea4452963f9345ba3f0a9a3"
+      "hash": "4545cf22f65b2cd865b98b6d26c6b34fe151de8a456e1c9a7cd0ec85862e28cc"
     },
     {
       "path": "dist/index.cjs",
       "kind": "build",
-      "hash": "d94061b802a28a718d8bbc336dbf7ae5f9939e505a8078b9bf8166567a627a04"
+      "hash": "859f8d88202c6fcbe106f050ebc4fb9dbe77134cb2bd5fa17c20fab4a7019d73"
     }
   ]
 }

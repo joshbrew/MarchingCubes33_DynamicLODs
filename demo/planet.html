@@ -201,17 +201,24 @@
       </div>
       <div class="row">
         <label for="detail"
-          >Detail <output id="detailValue">3 px</output></label
+          >Pixel error <output id="detailValue">3 px</output></label
         >
         <input
           id="detail"
           type="range"
           min="1.25"
-          max="8"
+          max="24"
           step=".25"
           value="3"
-          aria-label="Detail"
         />
+      </div>
+      <div class="row">
+        <label for="lodScale">Distant LOD <output id="lodScaleValue">1.50×</output></label>
+        <input id="lodScale" type="range" min=".25" max="4" step=".05" value="1.5" />
+      </div>
+      <div class="row">
+        <label for="patchBudget">Patch budget <output id="patchBudgetValue">768</output></label>
+        <input id="patchBudget" type="range" min="192" max="1200" step="24" value="768" />
       </div>
       <div class="row">
         <label><input id="colors" type="checkbox" />LOD colors</label

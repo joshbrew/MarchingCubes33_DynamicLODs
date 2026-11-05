@@ -153,7 +153,9 @@ elevation with `planet.sampleSurface(unitDirection).height`.
 
 Import `PlanetPresets` for the list of preset IDs and labels. Switch worlds
 with `await planet.configure({ preset: "volcanic" })`. Call
-`planet.configure({ pixelError: 2 })` to request finer patches and
+`planet.configure({ pixelError: 2, lodScale: 2 })` to request finer patches
+and increase distant detail. Set `maxTiles` when you create the renderer to
+allocate patch capacity, then adjust `tileBudget` while it runs. Call
 `planet.dispose()` when you remove the canvas.
 
 Set `studioSeed` on `createPlanet` to reproduce a world. A preset change

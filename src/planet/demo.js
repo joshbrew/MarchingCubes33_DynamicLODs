@@ -45,6 +45,7 @@ function findLanding(planet) {
       );
       const valley = planet.sampleSurface(offset(forward, 1600)).height;
       const farRidge = planet.sampleSurface(offset(forward, 5900)).height;
+      const foreground = planet.sampleSurface(offset(forward, 42)).height;
       const viewRelief = Math.min(1.4, Math.max(0, farRidge - valley) / 950);
       const floorDrop = Math.min(1.1, Math.max(0, ground.height - valley) / 560);
       const skyline = Math.max(0, (farRidge - ground.height) / 5900 - 0.16);
@@ -53,6 +54,7 @@ function findLanding(planet) {
         Math.abs(light - 0.68) +
         0.35 * viewRelief +
         0.3 * floorDrop -
+        Math.min(0.65, Math.max(0, (foreground - ground.height) / 70)) -
         2.2 * skyline -
         0.85 * Math.min(1, slope);
       if (score > bestScore) {
@@ -79,7 +81,11 @@ export async function startDemo() {
     status = $("status");
   const controls = [...document.querySelectorAll("button,input,select")];
   for (const c of controls) c.disabled = true;
-  const planet = await createPlanet(canvas, { studioSeed: newSeed() });
+  const planet = await createPlanet(canvas, {
+    studioSeed: newSeed(),
+    maxTiles: Number($("patchBudget").max) || 1200,
+  });
+  await planet.configure({ tileBudget: Number($("patchBudget").value) });
   const presetSelect = $("preset");
   for (const preset of PlanetPresets)
     presetSelect.add(new Option(preset.name, preset.id));
@@ -181,6 +187,16 @@ export async function startDemo() {
   $("detail").oninput = () => {
     planet.configure({ pixelError: Number($("detail").value) });
     $("detailValue").textContent = `${$("detail").value} px`;
+  };
+  $("lodScale").oninput = () => {
+    const scale = Number($("lodScale").value);
+    planet.configure({ lodScale: scale });
+    $("lodScaleValue").textContent = `${scale.toFixed(2)}×`;
+  };
+  $("patchBudget").oninput = () => {
+    const budget = Number($("patchBudget").value);
+    planet.configure({ tileBudget: budget });
+    $("patchBudgetValue").textContent = budget.toLocaleString();
   };
   altitudeUI();
   for (const c of controls) c.disabled = false;
