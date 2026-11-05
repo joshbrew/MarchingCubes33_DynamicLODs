@@ -5,7 +5,49 @@ import {
   TerrainPLOC as PLOC,
   TerrainSurface as Surface,
   TerrainField as Field,
+  TerrainRenderer,
+  createCamera,
 } from "../dist/index.esm.js";
+
+test("terrain range grows past 3 km without evicting visible coverage into the detail budget", () => {
+  const renderer = new TerrainRenderer({});
+  renderer.capacity = 487;
+  let previous = new Set();
+  for (const far of [1800, 3000, 4000, 8000, 16000, 64000]) {
+    const camera = createCamera({
+      position: [128.25, 171, 96.25],
+      forward: [0, -0.25, -1],
+      far,
+      height: 1080,
+      aspect: 16 / 9,
+    });
+    renderer.select(camera, camera.planes, far);
+    const drawn = new Set(renderer.visibleIds);
+    for (const id of previous)
+      assert.ok(
+        drawn.has(id),
+        `raising the cutoff to ${far} m preserves previously covered tile ${id}`,
+      );
+    const exact = PLOC.query(renderer.tree, camera.planes).ids.filter(
+      (id) => LOD.distanceTo(renderer.tiles[id], camera.position) <= far,
+    );
+    assert.ok(
+      exact.every((id) => drawn.has(id)),
+      "every tile in the real frustum retains a coarse fallback",
+    );
+    assert.ok(
+      renderer.detailSelected.size <= renderer.capacity,
+      "detail work remains bounded separately",
+    );
+    previous = drawn;
+  }
+  assert.ok(
+    renderer.visibleIds.some(
+      (id) => LOD.distanceTo(renderer.tiles[id], [128.25, 171, 96.25]) > 3500,
+    ),
+    "coverage actually extends beyond the old cap",
+  );
+});
 
 function topology(indices, n) {
   const edges = new Map();

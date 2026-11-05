@@ -182,6 +182,15 @@ test("space camera-relative projection preserves world positions and frustum cla
     ),
   );
 });
+test("space API exposes an integer far-LOD grade limit", () => {
+  const backend = fakeRenderer();
+  const view = new WorldView("space", backend);
+  view.configure({ maxMeshLevel: 9 });
+  assert.equal(backend.settings.maxMeshLevel, 9);
+  assert.throws(() => view.configure({ maxMeshLevel: 1.5 }), /integer/);
+  assert.throws(() => view.configure({ maxMeshLevel: 10 }), /Invalid/);
+  view.dispose();
+});
 function fakeRenderer() {
   return {
     canvas: { width: 640, height: 400 },

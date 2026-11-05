@@ -45,14 +45,14 @@ neighboring folders; adjust the path if necessary. Nothing is published by these
 
 ## Choose an import
 
-| Import                                   | Includes                                                                  |
-| ---------------------------------------- | ------------------------------------------------------------------------- |
-| `marching-cubes-bourke-mc33`             | Everything below                                                          |
-| `marching-cubes-bourke-mc33/core`        | Bourke/MC33 extraction, coordinates, fields, meshes and sphere shells     |
-| `marching-cubes-bourke-mc33/terrain`     | Terrain, stitched LOD, PLOC and instanced trees                           |
-| `marching-cubes-bourke-mc33/space`       | Infinite space, eight mesh LODs, point clouds, geometry and world helpers |
-| `marching-cubes-bourke-mc33/progressive` | Fine noise tiles, bounded cache, field and tile planner                   |
-| `marching-cubes-bourke-mc33/camera`      | Camera math, Three.js adapter and optional fly controls                   |
+| Import                                   | Includes                                                                |
+| ---------------------------------------- | ----------------------------------------------------------------------- |
+| `marching-cubes-bourke-mc33`             | Everything below                                                        |
+| `marching-cubes-bourke-mc33/core`        | Bourke/MC33 extraction, coordinates, fields, meshes and sphere shells   |
+| `marching-cubes-bourke-mc33/terrain`     | Terrain, stitched LOD, PLOC and instanced trees                         |
+| `marching-cubes-bourke-mc33/space`       | Infinite space, ten mesh LODs, point clouds, geometry and world helpers |
+| `marching-cubes-bourke-mc33/progressive` | Fine noise tiles, bounded cache, field and tile planner                 |
+| `marching-cubes-bourke-mc33/camera`      | Camera math, Three.js adapter and optional fly controls                 |
 
 ```js
 import { createTerrain } from "marching-cubes-bourke-mc33/terrain";
@@ -129,12 +129,12 @@ Call `view.configure(...)` whenever a control changes. Constructor options
 allocate resources; these settings change behavior without recreating the world.
 Unknown or invalid settings throw an error instead of silently doing nothing.
 
-| World             | Runtime settings                                                                                            |
-| ----------------- | ----------------------------------------------------------------------------------------------------------- |
-| All               | `renderDistance` (metres), `lodColors`                                                                      |
-| Terrain           | `algorithm`, `pixelError`, `nearRadius`, `uniform`, `infinite`, `wireframe`, `trees: { enabled, distance }` |
-| Space             | `algorithm`, `mode`, `quality`, `uniform`, `pointSize`, `lodDistance`, `nearRadius`, `caves`                |
-| Progressive tiles | `pixelError`, `wireframe`, `tileBorders`                                                                    |
+| World             | Runtime settings                                                                                             |
+| ----------------- | ------------------------------------------------------------------------------------------------------------ |
+| All               | `renderDistance` (metres), `lodColors`                                                                       |
+| Terrain           | `algorithm`, `pixelError`, `nearRadius`, `uniform`, `infinite`, `wireframe`, `trees: { enabled, distance }`  |
+| Space             | `algorithm`, `mode`, `quality`, `uniform`, `pointSize`, `lodDistance`, `maxMeshLevel`, `nearRadius`, `caves` |
+| Progressive tiles | `pixelError`, `wireframe`, `tileBorders`                                                                     |
 
 ```js
 terrain.configure({
@@ -145,6 +145,7 @@ terrain.configure({
 space.configure({
   mode: "mesh",
   lodDistance: 2500,
+  maxMeshLevel: 9,
   nearRadius: 150,
   caves: false,
 });
@@ -159,6 +160,9 @@ see [terrain](TERRAIN.md), [space](SPACE.md) and [fine tiles](PROGRESSIVE.md).
 `renderDistance` overrides the camera far plane, including its projection and
 culling. Omit the setting to use the camera's `far`. `configure` merges partial
 tree settings. `view.settings` returns a copy; change values with `configure`.
+Space `maxMeshLevel` is an integer from 0 to 9; 9 allows every mesh grade.
+Terrain's coarse coverage does not use detail-cache slots. The cutoff still
+stops at the configured terrain map window.
 
 ## Use your camera
 

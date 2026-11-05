@@ -125,6 +125,12 @@ export async function startDemo() {
     renderer.configure({ lodDistance: Number($("lodDistance").value) });
     $("lodDistanceValue").textContent = `${$("lodDistance").value} m`;
   });
+  $("maxMeshLevel").max = String(SpaceWorld.meshLevels - 1);
+  $("maxMeshLevel").value = String(SpaceWorld.meshLevels - 1);
+  $("maxMeshLevel").addEventListener("input", () => {
+    renderer.configure({ maxMeshLevel: Number($("maxMeshLevel").value) });
+    $("maxMeshLevelValue").textContent = `Grade ${$("maxMeshLevel").value}`;
+  });
   $("nearRadius").addEventListener("input", () => {
     renderer.configure({ nearRadius: Number($("nearRadius").value) });
     $("nearRadiusValue").textContent = `${$("nearRadius").value} m`;

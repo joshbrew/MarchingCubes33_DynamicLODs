@@ -1,0 +1,23 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Terrain render-distance regression</title>
+<style>
+  body {
+    background: #142229;
+    color: #edf3e9;
+    font: 14px monospace;
+    margin: 24px;
+  }
+  pre {
+    white-space: pre-wrap;
+  }
+  canvas {
+    width: 960px;
+    height: 540px;
+    max-width: 100%;
+  }
+</style>
+<h1>Terrain render-distance regression</h1>
+<pre id="results">Running…</pre>
+<canvas id="terrain" width="960" height="540"></canvas>
+<script type="module" src="../dist/tests/terrain-range-webgpu.js"></script>

@@ -65,9 +65,11 @@ const SpaceLOD = { Renderer: SpaceRenderer };
         stats = render(position);
         await renderer.device.queue.onSubmittedWorkDone();
         if (stats.pending === 0 && stats.waiting === 0 && i > 0) {
-          stats.histogram.slice(0, 8).forEach((count, level) => {
-            if (count) seen.add(level);
-          });
+          stats.histogram
+            .slice(0, SpaceWorld.meshLevels)
+            .forEach((count, level) => {
+              if (count) seen.add(level);
+            });
           return { ...stats, histogram: stats.histogram.slice() };
         }
         await new Promise((resolve) => setTimeout(resolve, 20));
@@ -80,7 +82,7 @@ const SpaceLOD = { Renderer: SpaceRenderer };
     log(
       `FIVE LEVEL BASELINE: ${baseline.drawn} bodies, ${baseline.triangles.toLocaleString()} triangles`,
     );
-    renderer.configure({ maxMeshLevel: 7 });
+    renderer.configure({ maxMeshLevel: SpaceWorld.meshLevels - 1 });
     const adaptive = await settle();
     assert(
       JSON.stringify(ids) ===
@@ -96,13 +98,17 @@ const SpaceLOD = { Renderer: SpaceRenderer };
       "far detail reduces triangles by at least 70%",
     );
     assert(
-      adaptive.histogram.slice(5, 8).every((count) => count > 0),
-      "all three new far levels are actually drawn",
+      adaptive.histogram
+        .slice(5, SpaceWorld.meshLevels)
+        .every((count) => count > 0),
+      "all five far levels are actually drawn",
     );
     log(
-      `EIGHT LEVELS: ${adaptive.drawn} bodies, ${adaptive.triangles.toLocaleString()} triangles (${(100 * (1 - adaptive.triangles / baseline.triangles)).toFixed(1)}% fewer), ${adaptive.drawCalls} draws`,
+      `TEN LEVELS: ${adaptive.drawn} bodies, ${adaptive.triangles.toLocaleString()} triangles (${(100 * (1 - adaptive.triangles / baseline.triangles)).toFixed(1)}% fewer), ${adaptive.drawCalls} draws`,
     );
-    log(`LOD 0–7 populations: ${adaptive.histogram.slice(0, 8).join(" / ")}`);
+    log(
+      `LOD 0–9 populations: ${adaptive.histogram.slice(0, SpaceWorld.meshLevels).join(" / ")}`,
+    );
     const batches = renderer.stats.batchBuilds,
       selection = renderer.lastSelect;
     let cpu = 0;
@@ -220,10 +226,10 @@ const SpaceLOD = { Renderer: SpaceRenderer };
       "movement invalidates batches",
     );
     assert(
-      seen.size === 8,
-      "all eight drawn levels reached across camera travel",
+      seen.size === SpaceWorld.meshLevels,
+      "all ten drawn levels reached across camera travel",
     );
-    log("PASS all eight drawn mesh levels, movement invalidation");
+    log("PASS all ten drawn mesh levels, movement invalidation");
     const repeat = await settle([81000, -55000, 99000]);
     assert(
       repeat.drawn <= 12000 &&

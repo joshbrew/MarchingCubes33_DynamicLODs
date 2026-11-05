@@ -4,6 +4,7 @@ import {
   frustumPlanes,
   relativeCamera,
 } from "./camera.js";
+import { meshLevels } from "../space/world.js";
 
 const common = { renderDistance: [1, Infinity], lodColors: "boolean" };
 const settingsByKind = {
@@ -25,6 +26,7 @@ const settingsByKind = {
     algorithm: ["bourke", "mc33"],
     pointSize: [0.01, Infinity],
     lodDistance: [1, Infinity],
+    maxMeshLevel: [0, meshLevels - 1],
     nearRadius: [0, Infinity],
     caves: "boolean",
   },
@@ -42,6 +44,8 @@ function validate(kind, values) {
     if (!Object.hasOwn(settingsByKind[kind], key))
       throw new TypeError(`Unknown ${kind} setting: ${key}`);
     const rule = settingsByKind[kind][key];
+    if (key === "maxMeshLevel" && !Number.isInteger(value))
+      throw new RangeError("maxMeshLevel must be an integer mesh LOD grade.");
     if (rule === "trees") {
       if (!value || typeof value !== "object" || Array.isArray(value))
         throw new TypeError("trees must be { enabled, distance }.");

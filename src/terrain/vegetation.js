@@ -123,39 +123,44 @@ function geometry(level) {
 }
 const attachments = new Map();
 function attachment(divs, mask, algorithm, u, v) {
-  const key = `${algorithm}:${divs}:${mask}`;
-  let bins = attachments.get(key);
-  if (!bins) {
-    bins = Array.from({ length: divs * divs }, () => []);
-    const indices = Surface.buildIndices(divs, mask, algorithm);
-    for (let i = 0; i < indices.length; i += 3) {
-      const ids = Array.from(indices.slice(i, i + 3)),
-        p = ids.map((n) => [n % (divs + 1), Math.floor(n / (divs + 1))]);
-      for (
-        let z = Math.min(...p.map((a) => a[1]));
-        z < Math.max(...p.map((a) => a[1]));
-        z++
-      )
-        for (
-          let x = Math.min(...p.map((a) => a[0]));
-          x < Math.max(...p.map((a) => a[0]));
-          x++
-        )
-          bins[z * divs + x].push({ ids, p });
-    }
-    attachments.set(key, bins);
+  const worldX = u * divs,
+    worldZ = v * divs;
+  const bx = Math.min(divs - 2, Math.floor(worldX / 2) * 2),
+    bz = Math.min(divs - 2, Math.floor(worldZ / 2) * 2);
+  const localMask =
+    (bx === 0 ? mask & 1 : 0) |
+    (bx === divs - 2 ? mask & 2 : 0) |
+    (bz === 0 ? mask & 4 : 0) |
+    (bz === divs - 2 ? mask & 8 : 0);
+  // Every patch is made of the same sixteen 2x2 stitch patterns. Query that
+  // tiny block instead of building thousands of per-cell bins on a new LOD.
+  const key = `${algorithm}:${localMask}`;
+  let triangles = attachments.get(key);
+  if (!triangles) {
+    const indices = Surface.buildIndices(2, localMask, algorithm);
+    triangles = [];
+    for (let i = 0; i < indices.length; i += 3)
+      triangles.push(
+        Array.from(indices.subarray(i, i + 3), (n) => [
+          n % 3,
+          Math.floor(n / 3),
+        ]),
+      );
+    attachments.set(key, triangles);
   }
-  const x = u * divs,
-    z = v * divs;
-  for (const { ids, p } of bins[
-    Math.min(divs - 1, Math.floor(z)) * divs + Math.min(divs - 1, Math.floor(x))
-  ]) {
+  const x = worldX - bx,
+    z = worldZ - bz;
+  for (const p of triangles) {
     const [a, b, c] = p,
       det = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1]);
     const wa = ((b[1] - c[1]) * (x - c[0]) + (c[0] - b[0]) * (z - c[1])) / det,
       wb = ((c[1] - a[1]) * (x - c[0]) + (a[0] - c[0]) * (z - c[1])) / det,
       wc = 1 - wa - wb;
-    if (Math.min(wa, wb, wc) >= -1e-6) return { ids, weights: [wa, wb, wc] };
+    if (Math.min(wa, wb, wc) >= -1e-6)
+      return {
+        ids: p.map(([px, pz]) => (bz + pz) * (divs + 1) + bx + px),
+        weights: [wa, wb, wc],
+      };
   }
   throw new Error("Tree root is outside its terrain triangle");
 }

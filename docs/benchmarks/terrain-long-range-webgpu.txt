@@ -1,0 +1,25 @@
+2026-11-04 local WebGPU terrain range and frame-work check
+Reproduce with npm run build:checks, then serve tests/terrain-range-webgpu.html.
+
+Default 8,192 m map, 128 m tiles, 64 MiB sample budget. Camera at
+[128.25, 171, 96.25], forward [0, -0.25, -1], 60 degree vertical FOV.
+
+Requested cutoff      Drawn tiles
+1,800 m                   250
+3,000 m                   584
+4,000 m                   972
+8,000 m                 1,305
+16,000 m                1,305
+64,000 m                1,305
+
+Every row includes the previous coverage, including while the detail cache is
+still warming. Coverage levels off at the map window. All 4,096 coarse patches
+occupy 1.125 MiB of the same sample atlas; there are 487 separate detail slots.
+Far coarse GPU readback matches the terrain field within 0.000070 m. No extra
+coverage dispatch occurs on a distance change or while moving within the window.
+
+Scripted 120-frame movement, 1,440 x 810 framebuffer, 64 km requested cutoff:
+Trees off: CPU submit p95 2.40 ms, max 4.40 ms, 12 bundle rebuilds / 120 frames.
+Trees on: CPU submit p95 3.50 ms, max 5.00 ms, 2,088 trees.
+These are CPU submission measurements, not end-to-end FPS. No WebGPU
+validation errors. Turn streaming and 2:1 stitch regressions also passed.

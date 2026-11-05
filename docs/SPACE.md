@@ -6,18 +6,19 @@ far away. **Mesh only is the default.** Dot silhouettes in point modes are inten
 closed triangle surface at every distance. Controls match terrain: drag to look,
 WASD fly, Space/E up, C/Q down, Shift faster. The flythrough follows its starting
 direction while you look around. Focus buttons jump to a floating island,
-ringed planet or asteroid. Render distance ranges from 2 to 32 km.
+ringed planet or asteroid. Render distance ranges from 2 to 64 km.
 The Sphere / Terrain / Infinite space links are at the top of every demo's controls.
 Islands are solid by default; enable **Island caves** to carve shoulder cavities.
 
 **LOD distance** ranges from 500 to 16,000 m (default 4000). Its distance bands
-are 12%, 25%, 50%, 100%, 200%, 400% and 600% of that distance, followed by
-the coarsest level. At the default, the new far bands begin at 8, 16 and 24 km.
+are 12%, 25%, 50%, 100%, 150%, 200%, 300%, 400% and 600% of that distance.
+At the default, LOD 8 and 9 begin at 16 and 24 km. **Farthest mesh LOD**
+sets the coarsest allowed grade, from 0 (finest) to 9 (smallest mesh).
 Increasing it retains finer geometry farther away. **Near detail** forces the
 finest mesh within 0–2000 m (default 250) of a body's conservative bounding sphere.
 An estimated projected-error check can retain a finer level for large silhouettes
 even beyond a distance band. **Full detail** forces level 0. The HUD lists actual
-drawn populations for all eight mesh levels, including temporary cached fallbacks.
+drawn populations for all ten mesh levels, including temporary cached fallbacks.
 
 ## Geometry and streaming
 
@@ -26,14 +27,14 @@ applicable. Positions include independent X, Y and Z; spheres, asteroids, torus
 rings and carved islands use actual signed 3D density fields. This path is not
 the terrain heightfield specialization. Two background workers extract the
 full Cartesian volumes through the imported MC33 or Bourke implementations.
-Meshes have eight levels: asteroids use 48/36/28/20/16/10/6/4 Cartesian
-divisions and islands use 64/48/32/24/16/10/6/4. Planets keep the original
-64/48/36/28/24 volumetric levels nearby. Levels 5–7 use closed radial meshes
-with 16/12/8 longitude segments fitted to the planet density field, plus an
+Meshes have ten levels: asteroids use 48/36/28/20/16/10/6/4/3/2 Cartesian
+divisions and islands use 64/48/32/24/16/10/6/4/3/2. Planets keep the original
+64/48/36/28/24 volumetric levels nearby. Levels 5–9 use closed radial meshes
+with 16/12/8/6/4 longitude segments fitted to the planet density field, plus an
 explicit closed torus for ringed variants. Sparse Cartesian sampling would
 otherwise lose the thin ring. These far planet proxies are shared by both
-extractors. For variant 0, the farthest meshes cost 56 triangles per asteroid
-or island and 112 per ringed planet. Surface gradients supply smooth normals. The extractor's winding is
+extractors. The farthest meshes use 8 triangles per asteroid or island and
+40 per ringed planet. Surface gradients supply smooth normals. The extractor's winding is
 preserved, choosing its outward convention once for the entire mesh; per-face
 gradient flipping at sharp creases previously caused visible missing triangles.
 Space geometry also places MC33 code-12 interior fans at the centroid of their
@@ -111,8 +112,13 @@ Frame time includes browser scheduling: 20 ms per frame means roughly 50 FPS,
 while 20 FPS means about 50 ms per frame.
 No texture or external image asset is used for the bodies.
 
-The local `tests/space-stress-webgpu.html` run uses the production budgets and
-a 1280 × 720 CSS canvas. At 32 km, the five-level baseline drew 9,971,348
+The current `tests/space-stress-webgpu.html` run (2026-11-04) uses production
+budgets and a 1280 × 720 CSS canvas. At 32 km, ten levels draw **2,007,688**
+triangles versus **10,373,016** with five levels (80.6% fewer), for the same
+8,818 bodies. All ten grades were drawn during the test, with 2,029 bodies
+at LOD 8 and 1,059 at LOD 9 in the long view.
+
+An earlier eight-level run, with the same CSS canvas size, drew 9,971,348
 triangles; eight levels drew 2,020,660 triangles (79.7% fewer), with the exact
 same 8425 solid mesh bodies in 72 draws. Its drawn level populations were
 2/6/19/83/337/1520/2668/3790. No bodies were replaced with points or removed
@@ -142,6 +148,6 @@ asserts that resident coarse fallbacks are used. CPU tests check frustum culling
 against an exhaustive reference across FOVs, rotation and distant origins,
 deterministic 3D sectors, nested samples, representation
 hysteresis, closed surfaces, and consistent directed island edges in all four
-variants at all eight detail levels for both algorithms, with caves both on and off.
+variants at all ten detail levels for both algorithms, with caves both on and off.
 Additional checks verify closed outward sphere/ring proxy components fitted to
-the original field in all four planet variants and all three far levels.
+the original field in all four planet variants and all five far levels.

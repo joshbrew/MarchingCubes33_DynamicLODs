@@ -91,7 +91,7 @@ Your counts and timings can differ with window size and hardware.
 1. Open **Infinite space** and expand **Space controls** if needed.
 2. Keep **Display → Mesh only** for solid surfaces at every distance.
 3. Click **Start flythrough**. Drag to look around while you fly.
-4. Turn on **LOD colors** to see the eight mesh detail levels.
+4. Turn on **LOD colors** to see the ten mesh detail levels. **Farthest mesh LOD** controls the coarsest grade.
 5. For a heavier test, raise **Render distance** from `9 km` to `32 km`.
 
 Use **Floating island**, **Ringed planet** or **Asteroid** to jump near an example.
@@ -101,8 +101,8 @@ dots instead of solid triangles, so gaps between dots are expected.
 ![Space at 32 km with FPS, CPU and GPU readings](docs/benchmarks/space-tinybuild-32km.jpg)
 
 This captured view draws 7,456 bodies with about 1.94 million triangles.
-The separate 32 km stress test compares five versus eight detail levels:
-**9.97 million → 2.02 million triangles** for the same 8,425 bodies.
+The current 32 km stress test compares five versus ten detail levels:
+**10.37 million → 2.01 million triangles** for the same 8,818 bodies.
 See [space measurements](docs/SPACE.md#budgets-and-measurements) for the test conditions.
 
 ### Noise tiles: zoom from hills to tiny bumps
@@ -170,6 +170,9 @@ Click the terrain, space or noise tiles view before using the keyboard.
 Render distance is a limit, not a promise to fill the entire view. These demos
 have memory and object limits. Terrain keeps an 8 km window around its generated
 map; infinite mode moves that window as you travel. Space fills a 3D region.
+The flat terrain keeps a small coarse grid for the entire window, so a full
+detail cache no longer shortens the visible horizon.
+See the [distance and frame-time checks](docs/benchmarks/terrain-long-range-webgpu.txt).
 Noise tiles generate an endless heightfield, with smaller patches near the camera.
 
 **Reading performance:** FPS means frames per second; higher is smoother.

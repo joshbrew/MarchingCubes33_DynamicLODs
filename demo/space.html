@@ -299,7 +299,7 @@
             id="distance"
             type="range"
             min="2000"
-            max="32000"
+            max="64000"
             step="1000"
             value="9000"
             aria-label="Space render distance"
@@ -370,6 +370,20 @@
             aria-label="Flight speed"
           />
         </div>
+        <div class="row">
+          <label for="maxMeshLevel"
+            >Farthest mesh LOD
+            <output id="maxMeshLevelValue">Grade 9</output></label
+          ><input
+            id="maxMeshLevel"
+            type="range"
+            min="0"
+            max="9"
+            step="1"
+            value="9"
+            aria-label="Farthest mesh LOD"
+          />
+        </div>
         <div class="checks">
           <label><input id="colors" type="checkbox" />LOD colors</label
           ><label><input id="uniform" type="checkbox" />Full detail</label>
@@ -428,7 +442,7 @@
       ></div>
     </div>
     <aside id="legend" class="panel">
-      <strong>Eight mesh detail levels</strong><br /><span
+      <strong>Ten mesh detail levels</strong><br /><span
         class="swatch"
         style="background: #ff4d30"
       ></span
@@ -451,8 +465,16 @@
         class="swatch"
         style="background: #bd70e8"
       ></span
-      >LOD 7 · horizon<br />Point modes add eight density tiers.<br />Enable LOD
-      colors to see transitions.
+      >LOD 7 · horizon<br /><span
+        class="swatch"
+        style="background: #da91b6"
+      ></span
+      >LOD 8 · ultra far<br /><span
+        class="swatch"
+        style="background: #b7bac9"
+      ></span
+      >LOD 9 · smallest mesh<br />Point modes add eight density tiers.<br />Enable
+      LOD colors to see transitions.
       <div id="coords"></div>
     </aside>
     <p id="help">

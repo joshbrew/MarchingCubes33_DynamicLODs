@@ -34,6 +34,7 @@ if (process.argv.includes("--checks")) {
       entryPoints: [
         "tests/webgpu.js",
         "tests/terrain-webgpu.js",
+        "tests/terrain-range-webgpu.js",
         "tests/space-webgpu.js",
         "tests/space-stress-webgpu.js",
         "tests/progressive-webgpu.js",

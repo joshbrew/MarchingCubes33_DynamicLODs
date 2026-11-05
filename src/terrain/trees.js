@@ -149,68 +149,55 @@ class Trees {
   }
   prepare(camera, planes, now) {
     if (!this.enabled) {
-      this.stats = { trees: 0, triangles: 0, draws: 0 };
-      this.draws = [];
+      if (!this.draws || this.draws.length) {
+        this.stats = { trees: 0, triangles: 0, draws: 0 };
+        this.draws = [];
+      }
       this.lastPlan = null;
       return;
     }
     // Amortize procedural placement for nearby offscreen tiles over frames.
     this.prefetch(camera, now);
-    const t = this.terrain,
-      view = [
-        ...camera.position,
-        camera.height,
-        camera.fov,
-        camera.far,
-        this.distance,
-        ...planes.flat(),
-      ].join(",");
-    if (
-      this.lastPlan === t.drawPlan &&
-      (view === this.lastView || now - this.lastTime < 100)
-    )
-      return;
+    const t = this.terrain;
+    if (this.lastPlan === t.drawPlan && now - this.lastTime < 100) return;
+    const view = [
+      ...camera.position,
+      camera.height,
+      camera.fov,
+      camera.far,
+      this.distance,
+      ...planes.flat(),
+    ].join(",");
+    if (this.lastPlan === t.drawPlan && view === this.lastView) return;
     this.lastPlan = t.drawPlan;
     this.lastView = view;
     this.lastTime = now;
     const candidates = [],
       far = Math.min(this.distance, camera.far),
-      masks = LOD.seams(t.lastActual, t.side),
-      keep = new Set();
+      masks = t.lastMasks;
     for (const id of t.visibleIds) {
       const level = t.lastActual.get(id);
       if (level === undefined) continue;
       const tile = t.tiles[id];
       if (LOD.distanceTo(tile, camera.position) > far) continue;
-      const key = `${t.seed}:${tile.ox}:${tile.oz}`;
-      keep.add(key);
       const cached = this.tileTrees(tile, now);
       for (const tree of cached.trees) {
-        const center = [tree.x, tree.y + tree.height * 0.5, tree.z],
-          distance = Math.hypot(
-            ...center.map((v, i) => v - camera.position[i]),
-          );
+        const y = tree.y + tree.height * 0.5;
+        const distance = Math.hypot(
+          tree.x - camera.position[0],
+          y - camera.position[1],
+          tree.z - camera.position[2],
+        );
         if (
           distance > far ||
           planes.some(
             (p) =>
-              p[0] * center[0] + p[1] * center[1] + p[2] * center[2] + p[3] <
+              p[0] * tree.x + p[1] * y + p[2] * tree.z + p[3] <
               -tree.height * 0.6,
           )
         )
           continue;
         candidates.push({ tree, id, level, distance });
-      }
-    }
-    if (this.cache.size > 512) {
-      const victims = Array.from(this.cache).sort(
-        (a, b) =>
-          Number(keep.has(a[0])) - Number(keep.has(b[0])) ||
-          a[1].time - b[1].time,
-      );
-      for (const [key] of victims) {
-        if (this.cache.size <= 512) break;
-        this.cache.delete(key);
       }
     }
     candidates.sort((a, b) => a.distance - b.distance);
@@ -234,7 +221,7 @@ class Trees {
     for (let lod = 0; lod < 3; lod++) {
       const first = at;
       for (const { tree, id, level, distance } of buckets[lod]) {
-        const entry = t.entries.get(id),
+        const entry = t.drawEntries.get(id),
           divs = t.options.maxDivs >> level,
           stored = t.options.maxDivs >> entry.lod,
           step = stored / divs,
@@ -246,26 +233,22 @@ class Trees {
             tree.v,
           ),
           o = at++ * 16;
-        f32.set([tree.x, 0, tree.z, tree.height], o);
-        f32.set(
-          [
-            tree.yaw,
-            tree.tint,
-            Math.min(1, (far - distance) / (far * 0.15)),
-            lod,
-          ],
-          o + 4,
-        );
-        u32.set(
-          attachment.ids.map(
-            (index) =>
-              entry.slot * t.stride +
-              Math.floor(index / (divs + 1)) * step * (stored + 1) +
-              (index % (divs + 1)) * step,
-          ),
-          o + 8,
-        );
-        f32.set(attachment.weights, o + 12);
+        f32[o] = tree.x;
+        f32[o + 1] = 0;
+        f32[o + 2] = tree.z;
+        f32[o + 3] = tree.height;
+        f32[o + 4] = tree.yaw;
+        f32[o + 5] = tree.tint;
+        f32[o + 6] = Math.min(1, (far - distance) / (far * 0.15));
+        f32[o + 7] = lod;
+        for (let k = 0; k < 3; k++) {
+          const index = attachment.ids[k];
+          u32[o + 8 + k] =
+            entry.base +
+            Math.floor(index / (divs + 1)) * step * (stored + 1) +
+            (index % (divs + 1)) * step;
+          f32[o + 12 + k] = attachment.weights[k];
+        }
       }
       if (at > first) {
         this.draws.push({ lod, first, instances: at - first });

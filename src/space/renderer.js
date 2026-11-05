@@ -37,6 +37,7 @@ class Renderer {
       pointSize: 2,
       lodDistance: 4000,
       nearRadius: 250,
+      maxMeshLevel: World.meshLevels - 1,
       caves: false,
     };
     this.chunks = new Map();

@@ -14,6 +14,7 @@ export interface SpaceSettings extends CommonSettings {
   uniform: boolean;
   pointSize: number;
   lodDistance: number;
+  maxMeshLevel: number;
   nearRadius: number;
   caves: boolean;
 }

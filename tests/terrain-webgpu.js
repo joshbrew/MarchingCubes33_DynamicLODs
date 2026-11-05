@@ -247,7 +247,7 @@ const AdaptiveTerrain = { Renderer: TerrainRenderer };
     terrain.needsSelection = true;
     const stress = await settle(undefined, undefined, {}, 32000);
     assert(
-      stress.drawn <= terrain.capacity &&
+      stress.drawn <= terrain.tiles.length &&
         terrain.entries.size <= terrain.capacity,
       "32 km stress range respects the resident budget",
     );

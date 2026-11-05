@@ -1,5 +1,5 @@
 struct Vertex { position: vec4<f32>, normal: vec4<f32> }
-struct BuildParams { origin: vec2<f32>, size: f32, divs: u32, slot: u32, stride: u32, seed: u32, pad: u32 }
+struct BuildParams { origin: vec2<f32>, size: f32, divs: u32, base: u32, stride: u32, seed: u32, pad: u32 }
 @group(0) @binding(0) var<storage,read_write> buildVertices: array<Vertex>;
 @group(0) @binding(1) var<uniform> build: BuildParams;
 @compute @workgroup_size(8,8)
@@ -8,13 +8,27 @@ fn generate(@builtin(global_invocation_id) gid: vec3<u32>) {
   let xz=build.origin+vec2<f32>(gid.xy)*(build.size/f32(build.divs));
   let h=terrain_height_gradient(xz,build.seed);
   let normal=normalize(vec3<f32>(-h.y,1.0,-h.z));
-  let at=build.slot*build.stride+gid.y*(build.divs+1u)+gid.x;
+  let at=build.base+gid.y*(build.divs+1u)+gid.x;
+  buildVertices[at]=Vertex(vec4<f32>(xz.x,h.x,xz.y,1),vec4<f32>(normal,0));
+}
+// Nine samples per map tile keep the entire horizon resident independently of
+// the high-detail LRU. One dispatch establishes coverage, including on turns.
+@compute @workgroup_size(8,8)
+fn generate_coverage(@builtin(global_invocation_id) gid: vec3<u32>) {
+  let side=build.pad;
+  if(gid.x>=side*3u || gid.y>=side*3u){return;}
+  let tile=gid.xy/3u;
+  let local=gid.xy%3u;
+  let xz=build.origin+(vec2<f32>(tile)+vec2<f32>(local)*0.5)*build.size;
+  let h=terrain_height_gradient(xz,build.seed);
+  let normal=normalize(vec3<f32>(-h.y,1.0,-h.z));
+  let at=build.base+(tile.y*side+tile.x)*9u+local.y*3u+local.x;
   buildVertices[at]=Vertex(vec4<f32>(xz.x,h.x,xz.y,1),vec4<f32>(normal,0));
 }
 struct Frame {
   viewProjection: mat4x4<f32>, camera: vec4<f32>, sun: vec4<f32>, reserved: vec4<f32>, settings: vec4<f32>
 }
-struct Instance { slot:u32, storedDivs:u32, renderDivs:u32, lod:u32 }
+struct Instance { base:u32, storedDivs:u32, renderDivs:u32, lod:u32 }
 @group(0) @binding(0) var<storage,read> renderVertices: array<Vertex>;
 @group(0) @binding(1) var<storage,read> instances: array<Instance>;
 @group(0) @binding(2) var<uniform> frame: Frame;
@@ -24,9 +38,9 @@ struct Varying {
 }
 @vertex
 fn vertex_main(@builtin(vertex_index) vertex:u32,@builtin(instance_index) instance:u32)->Varying {
-  let info=instances[instance];let stride=u32(frame.settings.x);let step=info.storedDivs/info.renderDivs;
+  let info=instances[instance];let step=info.storedDivs/info.renderDivs;
   let x=vertex%(info.renderDivs+1u);let z=vertex/(info.renderDivs+1u);
-  let v=renderVertices[info.slot*stride+z*step*(info.storedDivs+1u)+x*step];
+  let v=renderVertices[info.base+z*step*(info.storedDivs+1u)+x*step];
   var clip=frame.viewProjection*vec4<f32>(v.position.xyz,1);
   // THREE's projection is OpenGL depth; WebGPU depth occupies [0,w].
   clip.z=(clip.z+clip.w)*0.5;

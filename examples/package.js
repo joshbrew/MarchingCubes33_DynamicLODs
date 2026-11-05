@@ -187,6 +187,17 @@ function configureUI() {
     );
   }
   if (kind === "space") {
+    range(
+      "simulation",
+      "maxMeshLevel",
+      "Farthest mesh LOD",
+      0,
+      SpaceWorld.meshLevels - 1,
+      1,
+      settings.maxMeshLevel,
+      (maxMeshLevel) => view.configure({ maxMeshLevel }),
+      (v) => `Grade ${v} of ${SpaceWorld.meshLevels - 1}`,
+    );
     select(
       "simulation",
       "mode",
@@ -468,7 +479,7 @@ function updateHUD(now, stats) {
   else
     rows.push(
       [
-        "Tiles drawn / resident",
+        "Tiles drawn / detail cache",
         `${number(stats.drawn)} / ${number(stats.resident)}`,
       ],
       [
@@ -489,6 +500,16 @@ function updateHUD(now, stats) {
             ["Bundle builds", number(stats.bundleBuilds)],
           ]
         : [
+            [
+              "Coarse map / drawn",
+              `${number(stats.coverageTiles)} / ${number(stats.coarseDrawn)}`,
+            ],
+            ["Coarse coverage memory", mb(stats.coverageBytes)],
+            ["Map window width", meters(renderer.options.worldSize)],
+            [
+              "Bundle builds / plan reuses",
+              `${number(stats.bundleBuilds)} / ${number(stats.planReuses)}`,
+            ],
             ["Terrain triangles", number(stats.triangles)],
             [
               "Trees / tree triangles",
@@ -540,7 +561,7 @@ function updateHUD(now, stats) {
   const counts = stats.histogram || [];
   $("lodCounts").textContent =
     kind === "space"
-      ? `Mesh LOD 0–7: ${counts.slice(0, 8).map(number).join(" / ")}${stats.clouds ? ` · Point tiers: ${counts.slice(8).map(number).join(" / ")}` : ""}`
+      ? `Mesh LOD 0–${SpaceWorld.meshLevels - 1}: ${counts.slice(0, SpaceWorld.meshLevels).map(number).join(" / ")}${stats.clouds ? ` · Point tiers: ${counts.slice(SpaceWorld.meshLevels).map(number).join(" / ")}` : ""}`
       : `LOD 0–${Math.max(0, counts.length - 1)}: ${counts.map(number).join(" / ")}`;
   $("coords").textContent =
     `Position x ${meters(camera.position[0])} · y ${meters(camera.position[1])} · z ${meters(camera.position[2])} · ${canvas.width} × ${canvas.height} pixels`;
@@ -561,7 +582,7 @@ function updateHUD(now, stats) {
   const error = view.errors.at(-1);
   status.textContent =
     error ||
-    `${stats.pending || stats.waiting ? "Refining detail…" : "Cache ready"}${limited ? " · view budget reached" : ""}`;
+    `${stats.pending || stats.waiting ? "Refining detail…" : "Cache ready"}${limited ? (kind === "terrain" ? " · detail budget reached; horizon covered" : " · view budget reached") : ""}`;
   status.classList.toggle("error", Boolean(error));
   Object.assign(status.dataset, {
     pending: stats.pending || 0,

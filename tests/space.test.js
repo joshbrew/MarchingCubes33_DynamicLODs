@@ -167,7 +167,10 @@ test("asteroids, ringed planets and cave-bearing islands produce closed volumetr
           caves: true,
         }),
         edges = new Map();
-      assert.ok(mesh.count > 100);
+      assert.ok(
+        mesh.count >= 12,
+        "coarsest body remains a nonempty closed solid",
+      );
       assert.equal(mesh.vertices.length, mesh.count * 8);
       for (let i = 0; i < mesh.count; i += 3) {
         const keys = [];
@@ -274,23 +277,25 @@ test("island creases and cavities retain consistent outward winding at every det
         }
 });
 
-test("space has eight mesh resolutions with distance and near-detail controls", () => {
-  assert.equal(World.meshLevels, 8);
+test("space has ten mesh resolutions with distance and near-detail controls", () => {
+  assert.equal(World.meshLevels, 10);
   for (const divisions of World.meshDivisions) {
-    assert.equal(new Set(divisions).size, 8);
+    assert.equal(new Set(divisions).size, 10);
     for (let i = 1; i < divisions.length; i++)
       assert.ok(divisions[i] < divisions[i - 1]);
   }
   const body = { kind: 0, position: [0, 0, 0], radius: 100 },
     settings = { mode: "mesh", quality: 3, lodDistance: 4000, nearRadius: 0 };
-  const levels = [200, 700, 1500, 3000, 6000, 12000, 20000, 28000].map(
+  const levels = [
+    200, 700, 1500, 3000, 5000, 7000, 10000, 14000, 20000, 28000,
+  ].map(
     (distance) =>
       World.chooseLOD(body, [0, 0, distance + 100], 10, settings).level,
   );
   assert.deepEqual(
     levels,
-    [0, 1, 2, 3, 4, 5, 6, 7],
-    "all eight distance bands are reachable",
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    "all ten distance bands are reachable",
   );
   assert.ok(
     World.chooseLOD(body, [0, 0, 3100], 10, { ...settings, lodDistance: 16000 })
@@ -318,7 +323,7 @@ test("space has eight mesh resolutions with distance and near-detail controls", 
 
 test("distant planet proxies preserve closed outward spheres and rings in every variant", () => {
   for (let variant = 0; variant < 4; variant++)
-    for (let level = 5; level < 8; level++) {
+    for (let level = 5; level < World.meshLevels; level++) {
       const mesh = Geometry.build(1, variant, level),
         edges = new Map(),
         neighbors = new Map(),

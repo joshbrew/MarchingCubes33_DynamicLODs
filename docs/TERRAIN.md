@@ -11,10 +11,10 @@ in this mode. Space/E climb; C/Q descend; Shift speeds up manual movement.
 **Render distance** selects a 300–32,000 m visibility limit (default 1,800 m).
 Both CPU candidate selection and the fragment shader enforce this radial limit;
 the camera far plane updates with it. Terrain renders without fog. Increasing
-the range may exceed the fixed resident budget; the HUD reports this and the
-closest tiles take priority.
-The limit is an upper cutoff, not a guarantee that every tile out to it is
-resident. The bounded map and infinite generation window are each 8 km wide;
+the range keeps all visible map tiles covered, even when the detail cache fills.
+Nine GPU samples per map tile provide a coarse fallback, while the closest tiles
+receive the bounded detail slots. Both layers fit inside the same 64 MB budget.
+The bounded map and infinite generation window are each 8 km wide;
 raising the cutoff does not enlarge that window or the 64 MB atlas. Use
 **Uniform full detail** with a large range to stress full-resolution rendering.
 
@@ -28,7 +28,8 @@ at `marchingcubesclassic.html`.
 detail radius. Camera position, vertical FoV, framebuffer height and frustum
 change selection. `camera.player` can differ from `camera.position` for a
 third-person or detached camera. A 20% hysteresis band reduces oscillation;
-selection runs at most 10 Hz while rendering continues every display frame.
+selection normally runs at 10 Hz, with immediate refreshes for large turns,
+while rendering continues every display frame.
 The procedural spectrum supplies an **estimated** geometric error, not a
 proof that every triangle meets a strict pixel-error bound.
 
@@ -52,7 +53,8 @@ refined incrementally. The minimap follows this moving window.
 Noise is evaluated at absolute world coordinates with the same seed throughout
 the flight. Newly generated terrain therefore joins existing terrain, and return
 visits reproduce the same field. Generation writes GPU mesh samples directly;
-there is no full-map texture or mesh regeneration on each window shift. The
+the compact coarse layer is rebuilt in one compute dispatch on a window shift.
+Overlapping detail samples stay intact. The
 same 2:1 balancing, stitching, draw batching and memory budget apply to both
 bounded and infinite modes. Switching infinite mode off resets the demo to
 the original bounded map; Reset returns to the starting position in either mode.
@@ -67,12 +69,12 @@ every LOD, so normals agree at shared vertices. No mesh data is mapped or
 downloaded during normal rendering. `readPatch` exists solely for verification.
 
 The fixed atlas budget defaults to 64 MB and is checked against the device's
-buffer/storage limits. New visible tiles first receive a cheap coarse patch;
-nearby refinements take priority once coverage is established. Up to eight
-tiles are generated per frame. Finer cached samples also serve coarser draws,
-so zooming out does not trigger resampling. LRU eviction reuses slots belonging
-to tiles outside the current working set. A resident-capacity warning appears
-if the visible working set exceeds the atlas; nearest tiles then have priority.
+buffer/storage limits. The default layout uses 1.125 MiB for all 4,096 coarse
+patches and the remainder for 487 detail slots. Up to eight detail patches
+are generated per frame. Finer cached samples also serve coarser draws;
+extending the cutoff does not rebuild the coarse layer. Render bundles reuse
+unchanged draw plans. Tree roots reuse the same small stitch patterns across
+all patch sizes, avoiding a full patch topology rebuild on a new LOD.
 
 ## MC33/Bourke specialization and seams
 
@@ -203,6 +205,10 @@ does not yet load heightmap datasets or implement sparse volumetric/cave chunks.
 Its heightfield stitch templates cannot be used as general MC33 volume transitions.
 
 ## Checks
+
+The [long-range measurements](benchmarks/terrain-long-range-webgpu.txt) record
+the distance sweep and scripted CPU timing, including with trees on. Run
+`tests/terrain-range-webgpu.html` after `npm run build:checks` to repeat it.
 
 Nearby terrain now prefetches in every direction, with a radius derived from
 35% of the fixed atlas capacity. Visible coverage is built first, then offscreen

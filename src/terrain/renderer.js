@@ -64,6 +64,7 @@ class Renderer {
     this.templates = new Map();
     this.previous = new Map();
     this.selected = new Map();
+    this.detailSelected = new Map();
     this.visibleIds = [];
     this.needsSelection = true;
     this.lastSelect = -Infinity;
@@ -95,12 +96,27 @@ class Renderer {
       device.limits.maxBufferSize,
       this.options.memoryMB * 1024 ** 2,
     );
-    this.capacity = Math.min(1024, Math.floor(atlasLimit / bytesPerSlot));
+    this.coverageBytes = this.tiles.length * 9 * 32;
+    this.capacity = Math.min(
+      1024,
+      Math.floor((atlasLimit - this.coverageBytes) / bytesPerSlot),
+    );
     if (this.capacity < 16)
-      throw new Error("GPU memory budget is too small for terrain patches");
+      throw new Error(
+        "GPU memory budget is too small for map coverage and 16 detail patches",
+      );
+    this.coverageBase = this.capacity * this.stride;
+    this.coverageGeneration = -1;
+    this.coverageOrigin = [];
+    this.coverageEntries = this.tiles.map((tile) => ({
+      id: tile.id,
+      base: this.coverageBase + tile.id * 9,
+      lod: this.levels - 1,
+      ready: true,
+    }));
     this.atlas = device.createBuffer({
       label: "Resident terrain samples",
-      size: this.capacity * bytesPerSlot,
+      size: this.capacity * bytesPerSlot + this.coverageBytes,
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
     });
     this.free = Array.from(
@@ -109,7 +125,7 @@ class Renderer {
     );
     this.buildBudget = this.options.buildsPerFrame;
     this.buildParams = device.createBuffer({
-      size: this.buildBudget * 256,
+      size: (this.buildBudget + 1) * 256,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
     this.frameParams = device.createBuffer({
@@ -117,7 +133,7 @@ class Renderer {
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
     this.instanceBuffer = device.createBuffer({
-      size: this.capacity * 16,
+      size: this.tiles.length * 16,
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
     const module = device.createShaderModule({
@@ -151,6 +167,10 @@ class Renderer {
     this.compute = await device.createComputePipelineAsync({
       layout: device.createPipelineLayout({ bindGroupLayouts: [buildLayout] }),
       compute: { module, entryPoint: "generate" },
+    });
+    this.coverageCompute = await device.createComputePipelineAsync({
+      layout: device.createPipelineLayout({ bindGroupLayouts: [buildLayout] }),
+      compute: { module, entryPoint: "generate_coverage" },
     });
     this.buildGroup = device.createBindGroup({
       layout: buildLayout,
@@ -211,7 +231,9 @@ class Renderer {
         { binding: 2, resource: { buffer: this.frameParams } },
       ],
     });
-    this.stats.atlasBytes = this.capacity * bytesPerSlot;
+    this.stats.atlasBytes = this.capacity * bytesPerSlot + this.coverageBytes;
+    this.stats.coverageBytes = this.coverageBytes;
+    this.stats.coverageTiles = this.tiles.length;
     // Timing is asynchronous and sampled, never a render-loop queue wait.
     this.timers = [];
     if (device.features.has("timestamp-query"))
@@ -289,7 +311,10 @@ class Renderer {
     const start = performance.now();
     const cull = PLOC.query(
       this.tree,
-      LOD.relativePlanes(guardPlanes(planes, camera.far), this.origin),
+      LOD.relativePlanes(
+        guardPlanes(planes, Math.min(camera.far, this.options.tileSize * 8)),
+        this.origin,
+      ),
     );
     cull.ids = cull.ids.filter(
       (id) => LOD.distanceTo(this.tiles[id], camera.position) <= camera.far,
@@ -323,15 +348,7 @@ class Renderer {
           keep.add(z * this.side + x);
           this.prefetchIds.add(z * this.side + x);
         }
-    let ids = Array.from(keep);
-    this.stats.capacityLimited = ids.length > this.capacity;
-    if (ids.length > this.capacity)
-      ids.sort(
-        (a, b) =>
-          LOD.distanceTo(this.tiles[a], camera.position) -
-          LOD.distanceTo(this.tiles[b], camera.position),
-      );
-    ids = ids.slice(0, this.capacity);
+    const ids = Array.from(keep);
     const selection = LOD.select(
       this.tiles,
       ids,
@@ -340,7 +357,22 @@ class Renderer {
       this.settings,
       this.previous,
     );
-    this.visibleIds = cull.ids.filter((id) => selection.levels.has(id));
+    const detailIds = ids.filter(
+      (id) => selection.levels.get(id) < this.levels - 1,
+    );
+    this.stats.capacityLimited = detailIds.length > this.capacity;
+    if (detailIds.length > this.capacity)
+      detailIds.sort(
+        (a, b) =>
+          LOD.distanceTo(this.tiles[a], camera.position) -
+          LOD.distanceTo(this.tiles[b], camera.position),
+      );
+    this.detailSelected = new Map(
+      detailIds
+        .slice(0, this.capacity)
+        .map((id) => [id, selection.levels.get(id)]),
+    );
+    this.visibleIds = cull.ids;
     this.selected = selection.levels;
     this.previous = new Map(selection.levels);
     this.stats.selectionMs = performance.now() - start;
@@ -352,7 +384,7 @@ class Renderer {
     this.lastSelect = now;
     this.selectionPlanes = planes.map((p) => p.slice());
     this.needsSelection = false;
-    this.drawPlan = null;
+    this.drawDirty = true;
   }
   getTemplate(divs, mask) {
     const key = `${this.algorithm}:${divs}:${mask}`;
@@ -400,30 +432,32 @@ class Renderer {
       ready: false,
       generation: this.generation,
     };
+    entry.base = entry.slot * this.stride;
     this.entries.set(id, entry);
     return entry;
   }
   planBuilds(camera, now) {
     if (
       this.stats.pending === 0 &&
+      !this.drawDirty &&
       this.drawPlan &&
       this.planGeneration === this.generation
     )
       return [];
-    const keep = new Set(this.selected.keys()),
+    const keep = new Set(this.detailSelected.keys()),
       missing = [],
       updates = [];
-    for (const [id, lod] of this.selected) {
+    for (const [id, lod] of this.detailSelected) {
       const e = this.entries.get(id),
         distance = LOD.distanceTo(this.tiles[id], camera.position);
       if (e) e.touched = now;
       if (!e || !e.ready || e.generation !== this.generation)
-        missing.push({ id, lod: this.levels - 1, distance });
+        missing.push({ id, lod, distance });
       else if (e.lod > lod) updates.push({ id, lod, distance, refine: true });
       else this.stats.cacheHits++;
     }
     missing.sort((a, b) => a.distance - b.distance);
-    // Establish inexpensive full coverage first, then refine nearby patches.
+    // The coverage layer is already resident; spend this bounded batch on detail.
     updates.sort(
       (a, b) => Number(b.refine) - Number(a.refine) || a.distance - b.distance,
     );
@@ -458,33 +492,65 @@ class Renderer {
     return changed;
   }
   prepareDrawPlan() {
-    const actual = new Map();
+    const actual = new Map(),
+      drawEntries = new Map();
     for (const [id, target] of this.selected) {
-      const entry = this.entries.get(id);
-      if (entry?.ready && entry.generation === this.generation)
-        actual.set(id, Math.max(target, entry.lod));
+      const cached = this.entries.get(id),
+        entry =
+          cached?.ready && cached.generation === this.generation
+            ? cached
+            : this.coverageEntries[id];
+      actual.set(id, Math.max(target, entry.lod));
+      drawEntries.set(id, entry);
     }
     LOD.balance(actual, this.side, "coarsen");
     const masks = LOD.seams(actual, this.side),
       buckets = new Map();
+    this.lastActual = actual;
+    this.lastMasks = masks;
+    this.drawEntries = drawEntries;
+    this.drawDirty = false;
+    const state = new Uint32Array(this.visibleIds.length * 4);
+    for (let i = 0; i < this.visibleIds.length; i++) {
+      const id = this.visibleIds[i],
+        entry = drawEntries.get(id),
+        at = i * 4;
+      state[at] = id;
+      state[at + 1] = entry.base;
+      state[at + 2] = entry.lod;
+      state[at + 3] = (actual.get(id) << 4) | masks.get(id);
+    }
+    if (
+      this.drawPlan &&
+      this.drawState?.length === state.length &&
+      state.every((value, i) => this.drawState[i] === value) &&
+      this.planAlgorithm === this.algorithm &&
+      this.planGeneration === this.generation
+    ) {
+      this.stats.planReuses = (this.stats.planReuses || 0) + 1;
+      return;
+    }
+    this.drawState = state;
     const histogram = new Array(this.levels).fill(0);
     let triangles = 0,
+      coarseDrawn = 0,
       samples = 0,
       seamCount = 0;
     for (const id of this.visibleIds) {
       const level = actual.get(id);
       if (level === undefined) continue;
-      const entry = this.entries.get(id),
+      const entry = drawEntries.get(id),
         divs = this.options.maxDivs >> level,
         mask = masks.get(id),
         key = `${divs}:${mask}`;
+      if (entry.base >= this.coverageBase) coarseDrawn++;
       if (!buckets.has(key)) buckets.set(key, { divs, mask, entries: [] });
       buckets.get(key).entries.push({ entry, level });
       histogram[level]++;
       samples += (divs + 1) ** 2;
       if (mask) seamCount++;
     }
-    const records = new Uint32Array(this.capacity * 4),
+    const records = new Uint32Array(this.visibleIds.length * 4),
       draws = [];
     let instance = 0;
     for (const bucket of buckets.values()) {
@@ -492,7 +558,7 @@ class Renderer {
         base = instance;
       for (const { entry, level } of bucket.entries) {
         records.set(
-          [entry.slot, this.options.maxDivs >> entry.lod, bucket.divs, level],
+          [entry.base, this.options.maxDivs >> entry.lod, bucket.divs, level],
           instance * 4,
         );
         instance++;
@@ -510,6 +576,7 @@ class Renderer {
       );
     Object.assign(this.stats, {
       triangles,
+      coarseDrawn,
       drawCalls: draws.length,
       drawn: instance,
       histogram,
@@ -517,7 +584,6 @@ class Renderer {
       activeSamples: samples,
       uniformSamples: instance * (this.options.maxDivs + 1) ** 2,
     });
-    this.lastActual = actual;
     this.drawPlan = draws;
     this.planAlgorithm = this.algorithm;
     this.planGeneration = this.generation;
@@ -543,8 +609,12 @@ class Renderer {
     const timer =
       this.frameIndex++ % 20 === 0 ? this.timers.find((t) => !t.busy) : null;
     if (timer) timer.busy = true;
-    if (builds.length) {
-      const uniforms = new ArrayBuffer(builds.length * 256),
+    const coverageChanged =
+      this.coverageGeneration !== this.generation ||
+      this.coverageSeed !== this.seed ||
+      this.origin.some((v, i) => v !== this.coverageOrigin[i]);
+    if (builds.length || coverageChanged) {
+      const uniforms = new ArrayBuffer((this.buildBudget + 1) * 256),
         f32 = new Float32Array(uniforms),
         u32 = new Uint32Array(uniforms);
       builds.forEach(({ entry, lod }, i) => {
@@ -555,7 +625,7 @@ class Renderer {
         f32[o + 1] = tile.oz;
         f32[o + 2] = tile.size;
         u32[o + 3] = divs;
-        u32[o + 4] = entry.slot;
+        u32[o + 4] = entry.base;
         u32[o + 5] = this.stride;
         u32[o + 6] = this.seed;
         entry.lod = lod;
@@ -564,6 +634,19 @@ class Renderer {
         this.stats.generated++;
         this.stats.samples += (divs + 1) ** 2;
       });
+      if (coverageChanged) {
+        const o = this.buildBudget * 64;
+        f32[o] = this.origin[0] - this.options.worldSize / 2;
+        f32[o + 1] = this.origin[1] - this.options.worldSize / 2;
+        f32[o + 2] = this.options.tileSize;
+        u32[o + 4] = this.coverageBase;
+        u32[o + 6] = this.seed;
+        u32[o + 7] = this.side;
+        this.coverageOrigin = this.origin.slice();
+        this.coverageSeed = this.seed;
+        this.coverageGeneration = this.generation;
+        this.stats.coverageBuilds = (this.stats.coverageBuilds || 0) + 1;
+      }
       device.queue.writeBuffer(this.buildParams, 0, uniforms);
       const pass = encoder.beginComputePass(
         timer
@@ -585,15 +668,55 @@ class Renderer {
           Math.ceil((divs + 1) / 8),
         );
       });
+      if (coverageChanged) {
+        pass.setPipeline(this.coverageCompute);
+        pass.setBindGroup(0, this.buildGroup, [this.buildBudget * 256]);
+        pass.dispatchWorkgroups(
+          Math.ceil((this.side * 3) / 8),
+          Math.ceil((this.side * 3) / 8),
+        );
+      }
       pass.end();
     }
     if (
       !this.drawPlan ||
+      this.drawDirty ||
       builds.length ||
       this.planAlgorithm !== this.algorithm
     )
       this.prepareDrawPlan();
     this.vegetation?.prepare(camera, planes, now);
+    if (
+      this.bundlePlan !== this.drawPlan ||
+      this.bundleTrees !== this.vegetation?.draws ||
+      this.bundleWire !== wireframe
+    ) {
+      const bundle = device.createRenderBundleEncoder({
+        colorFormats: [this.format],
+        depthStencilFormat: "depth24plus",
+      });
+      bundle.setPipeline(wireframe ? this.linePipeline : this.renderPipeline);
+      bundle.setBindGroup(0, this.renderGroup);
+      for (const draw of this.drawPlan) {
+        bundle.setIndexBuffer(
+          wireframe ? draw.template.line : draw.template.index,
+          "uint32",
+        );
+        bundle.drawIndexed(
+          wireframe ? draw.template.lineCount : draw.template.indexCount,
+          draw.count,
+          0,
+          0,
+          draw.base,
+        );
+      }
+      this.vegetation?.render(bundle);
+      this.renderBundle = bundle.finish();
+      this.bundlePlan = this.drawPlan;
+      this.bundleTrees = this.vegetation?.draws;
+      this.bundleWire = wireframe;
+      this.stats.bundleBuilds = (this.stats.bundleBuilds || 0) + 1;
+    }
     const frame = this.frameData;
     frame.set(camera.viewProjection, 0);
     frame.set([...camera.position, 1], 16);
@@ -626,27 +749,13 @@ class Renderer {
         endOfPassWriteIndex: 3,
       };
     const pass = encoder.beginRenderPass(descriptor);
-    pass.setPipeline(wireframe ? this.linePipeline : this.renderPipeline);
-    pass.setBindGroup(0, this.renderGroup);
-    for (const draw of this.drawPlan) {
-      pass.setIndexBuffer(
-        wireframe ? draw.template.line : draw.template.index,
-        "uint32",
-      );
-      pass.drawIndexed(
-        wireframe ? draw.template.lineCount : draw.template.indexCount,
-        draw.count,
-        0,
-        0,
-        draw.base,
-      );
-    }
-    this.vegetation?.render(pass);
+    pass.executeBundles([this.renderBundle]);
     pass.end();
     if (timer) {
       // Queries 0/1 are unwritten in frames without generation; resolve only 2/3.
-      const first = builds.length ? 0 : 2,
-        count = builds.length ? 4 : 2;
+      const generated = builds.length || coverageChanged;
+      const first = generated ? 0 : 2,
+        count = generated ? 4 : 2;
       encoder.resolveQuerySet(timer.queries, first, count, timer.resolve, 0);
       encoder.copyBufferToBuffer(timer.resolve, 0, timer.read, 0, count * 8);
     }
@@ -656,12 +765,14 @@ class Renderer {
         .mapAsync(GPUMapMode.READ)
         .then(() => {
           const stamps = new BigUint64Array(timer.read.getMappedRange());
-          const generate = builds.length
-              ? Number(stamps[1] - stamps[0]) / 1e6
-              : 0,
-            render = builds.length
-              ? Number(stamps[3] - stamps[2]) / 1e6
-              : Number(stamps[1] - stamps[0]) / 1e6;
+          const generate =
+              builds.length || coverageChanged
+                ? Number(stamps[1] - stamps[0]) / 1e6
+                : 0,
+            render =
+              builds.length || coverageChanged
+                ? Number(stamps[3] - stamps[2]) / 1e6
+                : Number(stamps[1] - stamps[0]) / 1e6;
           this.stats.gpuMs = render;
           this.stats.generationGpuMs = generate;
           timer.read.unmap();
@@ -679,7 +790,11 @@ class Renderer {
   }
   // Explicit diagnostics for tests; production rendering never calls this.
   async readPatch(id) {
-    const entry = this.entries.get(id);
+    const cached = this.entries.get(id);
+    const entry =
+      cached?.ready && cached.generation === this.generation
+        ? cached
+        : this.drawEntries?.get(id);
     if (!entry?.ready) throw new Error("Patch is not ready");
     const divs = this.options.maxDivs >> entry.lod,
       count = (divs + 1) ** 2;
@@ -689,13 +804,7 @@ class Renderer {
     });
     try {
       const e = this.device.createCommandEncoder();
-      e.copyBufferToBuffer(
-        this.atlas,
-        entry.slot * this.stride * 32,
-        read,
-        0,
-        count * 32,
-      );
+      e.copyBufferToBuffer(this.atlas, entry.base * 32, read, 0, count * 32);
       this.device.queue.submit([e.finish()]);
       await read.mapAsync(GPUMapMode.READ);
       const data = new Float32Array(read.getMappedRange()).slice();

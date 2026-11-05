@@ -82,9 +82,11 @@ function distanceTo(tile, position) {
   }
   return Math.sqrt(squared);
 }
-function desiredLevel(tile, camera, settings, previous) {
+function desiredLevel(tile, camera, settings, previous, errors) {
   const distance = Math.max(1, distanceTo(tile, camera.position));
-  const pixelScale = camera.height / (2 * Math.tan(camera.fov / 2));
+  const pixelScale = errors
+    ? 0
+    : camera.height / (2 * Math.tan(camera.fov / 2));
   const near = Math.hypot(
     Math.max(
       tile.ox - camera.player[0],
@@ -99,9 +101,10 @@ function desiredLevel(tile, camera, settings, previous) {
   );
   if (near < settings.nearRadius) return 0;
   const screenError = (level) =>
-    (field.estimatedError(tile.size / (settings.maxDivs >> level)) *
-      pixelScale) /
-    distance;
+    (errors
+      ? errors[level]
+      : field.estimatedError(tile.size / (settings.maxDivs >> level)) *
+        pixelScale) / distance;
   let level = 0;
   while (
     level < settings.levels - 1 &&
@@ -122,25 +125,34 @@ function desiredLevel(tile, camera, settings, previous) {
 // Desired grids refine coarse neighbors. Rendering can only coarsen finer
 // resident grids, so partially generated/streamed tiles remain compatible.
 function balance(levels, side, mode = "refine") {
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const [id, level] of levels)
-      for (const [neighbor] of neighbors(id, side)) {
-        const other = levels.get(neighbor);
-        if (other === undefined || Math.abs(levels.get(id) - other) <= 1)
-          continue;
-        const current = levels.get(id);
-        if (mode === "refine") {
-          const coarse = current > other ? id : neighbor;
-          const fine = Math.min(current, other);
-          levels.set(coarse, fine + 1);
-        } else {
-          const fine = current < other ? id : neighbor;
-          levels.set(fine, Math.max(current, other) - 1);
-        }
-        changed = true;
-      }
+  const queue = Array.from(levels.keys());
+  const relax = (id, neighbor) => {
+    const current = levels.get(id),
+      other = levels.get(neighbor);
+    if (other === undefined || Math.abs(current - other) <= 1) return;
+    const target =
+      mode === "refine"
+        ? current > other
+          ? id
+          : neighbor
+        : current < other
+          ? id
+          : neighbor;
+    levels.set(
+      target,
+      mode === "refine"
+        ? Math.min(current, other) + 1
+        : Math.max(current, other) - 1,
+    );
+    queue.push(target);
+  };
+  for (let head = 0; head < queue.length; head++) {
+    const id = queue[head],
+      x = id % side;
+    if (x) relax(id, id - 1);
+    if (x < side - 1) relax(id, id + 1);
+    if (id >= side) relax(id, id - side);
+    if (id + side < side * side) relax(id, id + side);
   }
   return levels;
 }
@@ -156,12 +168,22 @@ function seams(levels, side) {
 }
 function select(tiles, ids, side, camera, settings, previous = new Map()) {
   const levels = new Map();
+  const pixelScale = camera.height / (2 * Math.tan(camera.fov / 2));
+  const errors = ids.length
+    ? Array.from(
+        { length: settings.levels },
+        (_, level) =>
+          field.estimatedError(
+            tiles[ids[0]].size / (settings.maxDivs >> level),
+          ) * pixelScale,
+      )
+    : [];
   for (const id of ids)
     levels.set(
       id,
       settings.uniform
         ? 0
-        : desiredLevel(tiles[id], camera, settings, previous.get(id)),
+        : desiredLevel(tiles[id], camera, settings, previous.get(id), errors),
     );
   balance(levels, side);
   return { levels, masks: seams(levels, side) };

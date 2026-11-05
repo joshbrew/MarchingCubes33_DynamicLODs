@@ -303,7 +303,7 @@ export async function startDemo() {
       report(lastError, true);
     } else if (stats.capacityLimited)
       report(
-        "Visible range exceeds the resident cache; the closest tiles have priority.",
+        "Detail cache full; nearby detail has priority and coarse terrain keeps the horizon covered.",
       );
     else
       report(
