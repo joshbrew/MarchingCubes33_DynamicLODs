@@ -8,6 +8,7 @@ self.onmessage = ({ data: { values, side, settings } }) => {
   const transfer = [terrain.values.buffer];
   if (terrain.alluvium) transfer.push(terrain.alluvium.values.buffer);
   if (terrain.glacialIce) transfer.push(terrain.glacialIce.values.buffer);
+  if (terrain.impactMaterial) transfer.push(terrain.impactMaterial.values.buffer);
   if (terrain.springs) transfer.push(terrain.springs.values.buffer);
   if (terrain.dunes) transfer.push(terrain.dunes.values.buffer);
   for (const span of terrain.rockSpans ?? []) transfer.push(span.vertices.buffer);

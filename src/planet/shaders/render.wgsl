@@ -145,15 +145,18 @@ fn satellite_color(palette:vec3<f32>,radial:vec3<f32>,surface:PlanetSurface,mode
       smoothstep(-.30,.26,.44*grain+.37*patches+.19*chips));
     return mix(mix(palette,rust,.91),mix(plain,flow,ice),max(.96*sheet,ice));
   }
-  let tone=smoothstep(-.16,.16,.83*district+.23*grain+.10*patches);
-  let wear=smoothstep(-.30,.31,.52*grain+.36*patches+.12*chips);
-  let slate=mix(vec3<f32>(.026,.061,.126),vec3<f32>(.125,.206,.31),wear);
-  let oxidized=mix(vec3<f32>(.19,.047,.036),vec3<f32>(.42,.137,.087),wear);
+  let tone=smoothstep(-.17,.17,.77*district+.46*grain+.16*patches);
+  let wear=smoothstep(-.33,.27,.48*grain+.44*patches+.18*chips);
+  let slate=mix(vec3<f32>(.034,.074,.155),vec3<f32>(.166,.269,.412),wear);
+  let oxidized=mix(vec3<f32>(.20,.045,.029),vec3<f32>(.53,.179,.092),wear);
   let regolith=mix(slate,oxidized,tone);
-  let salts=smoothstep(.19,.47,.58*patches+.48*grain+.35*district)*smoothstep(.018,.11,surface.basin);
-  let curvature=.14*smoothstep(.002,.016,-surface.basin)-.19*smoothstep(.002,.016,surface.basin);
-  let rock=mix(palette,regolith,.90)*(1.0+.19*patches+.12*chips+curvature);
-  return mix(rock,vec3<f32>(.74,.72,.66),.84*salts);
+  let displacement=studio_deposits(surface.uv);
+  let floor=smoothstep(.03,.36,-displacement);
+  let rim=smoothstep(.022,.19,displacement);
+  let saltNoise=planet_noise(radial*47.0,seed+49253u).value;
+  let salts=smoothstep(.22,.49,.78*saltNoise+.27*grain)*smoothstep(.14,.42,-displacement);
+  let rock=mix(palette,regolith,.97)*(1.0+.23*patches+.14*chips+.26*rim-.32*floor);
+  return mix(rock,vec3<f32>(.58,.56,.50),.60*salts);
 }
 fn frost_margin(dir:vec3<f32>,height:f32)->f32{
   let latitude=dot(dir,style.climate.xyz);
@@ -228,7 +231,7 @@ fn ocean_color(radial:vec3<f32>,view:vec3<f32>,depth:f32,pixel:f32,bottom:vec3<f
     slope=mix(slope,craterSlope,.86*craterLight);
   }
   var windblown=0.0;
-  if(style.detail.y>0.0 && abs(radial.y)<.81 && material.rock.y+material.rock.z+material.rock.w>.20){
+  if(satellite!=4.0 && style.detail.y>0.0 && abs(radial.y)<.81 && material.rock.y+material.rock.z+material.rock.w>.20){
     let seed=u32(style.modes.z)|(u32(style.modes.w)<<16u);
     let dryness=studio_dryness(radial,material.rock,seed)*style.detail.y;
     let sheltered=1.0-smoothstep(.34,.92,length(material.baseGradient)*style.world.x);

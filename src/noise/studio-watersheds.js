@@ -18,11 +18,28 @@ export function applyStudioRunoff(
   const impactBasins = lunar || variation > 0 ? giantImpactSites(seed, lunar) : [];
   if (lunar) {
     regularizeStudioPoles(values, side);
+    const depositSide = Math.min(side, alluviumAtlasSide);
+    const impactMaterial = craterDetail >= 1 ? { side: depositSide, values: new Float32Array(depositSide ** 2) } : undefined;
+    const sampleIndex = (i) => Math.round(i * (side - 1) / (depositSide - 1));
+    if (impactMaterial) {
+      for (let y = 0; y < depositSide; y++) {
+        for (let x = 0; x < depositSide; x++)
+          impactMaterial.values[y * depositSide + x] = values[sampleIndex(y) * side + sampleIndex(x)];
+      }
+    }
     bakePlanetImpacts(values, side, seed, variation, featureDensity, true, impactBasins, craterDetail);
-    const iceSide = Math.min(side, alluviumAtlasSide);
-    const glacialIce = cryoGlaciers ? { side: iceSide, values: new Float32Array(iceSide ** 2) } : undefined;
+    if (impactMaterial) {
+      // Signed displacement distinguishes rim material from excavated floors at any camera distance.
+      for (let y = 0; y < depositSide; y++) {
+        for (let x = 0; x < depositSide; x++) {
+          const at = y * depositSide + x;
+          impactMaterial.values[at] = values[sampleIndex(y) * side + sampleIndex(x)] - impactMaterial.values[at];
+        }
+      }
+    }
+    const glacialIce = cryoGlaciers ? { side: depositSide, values: new Float32Array(depositSide ** 2) } : undefined;
     const glacialSites = glacialIce ? carveStudioGlacialValleys(values, side, seed, .87, glacialIce) : [];
-    return { values, glacialSites, glacialIce, landmarks: {}, impactBasins, ocean: { seed, datum: null } };
+    return { values, glacialSites, glacialIce, impactMaterial, landmarks: {}, impactBasins, ocean: { seed, datum: null } };
   }
   const glacialSites = landmarkPatches ? carveStudioGlacialValleys(values, side, seed, variation) : [];
   const landmarks = landmarkPatches ? shapeStudioLandmarks(values, side, seed, variation, glacialSites, regions) : {};

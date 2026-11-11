@@ -21,7 +21,7 @@
 // 5  VORO_FLAT_SHADE       cells=1, edges=0 where edges defined by (gap < threshold) with feather=edgeK
 // 6  VORO_FLAT_SHADE_INV   edges=1, cells=0  where edges defined by (gap < threshold) with feather=edgeK
 //
-// 7  VORO_INTERIOR_SQ       gapSq = F2^2 - F1^2  (legacy cellular3D semantics)
+// 7  VORO_INTERIOR_SQ       gapSq = F2^2 - F1^2  (cellular3D output)
 // 8  VORO_EDGES_SQ          clamp(gapSq * edgeK) (if edgeK<=0 uses default scale)
 // 9  VORO_EDGE_THRESH_SQ    (gapSq >= threshold) ? gapSq : 0
 // 10 VORO_FLAT_SHADE_SQ     cells=1, edges=0 where edges defined by (gapSq < threshold) with feather=edgeK

@@ -229,7 +229,7 @@ test("glacial valleys cut localized relief and keep the longitude seam closed", 
   for (let row = 0; row < side; row++) assert.equal(first[row * side], first[row * side + span]);
 });
 
-test("Pluto carves many ice-filled troughs into the dry impact terrain", () => {
+test("Pluto carves narrow ice canyons into dry impact terrain", () => {
   const side = 385, span = side - 1, seed = 227429;
   const input = Float32Array.from({ length: side ** 2 }, (_, i) => {
     const phi = (i % side % span) * 2 * Math.PI / span;
@@ -246,7 +246,8 @@ test("Pluto carves many ice-filled troughs into the dry impact terrain", () => {
   assert.ok(frozen.glacialSites.length >= 11);
   const lengths = frozen.glacialSites.map(({ head, overlook }) => Math.acos(dot(head, overlook)));
   assert.ok(Math.max(...lengths) > .30 && lengths.filter(length => length > .21).length >= 8);
-  assert.ok(frozen.glacialSites.every(({ overlook }) => sampleStudioAlluvium(frozen.glacialIce, overlook) > .45));
+  const visibleOutlets = frozen.glacialSites.filter(({ overlook }) => sampleStudioAlluvium(frozen.glacialIce, overlook) > .20);
+  assert.ok(visibleOutlets.length >= 10);
   assert.ok(frozen.values.some((height, i) => height < rocky.values[i] - .35));
   for (const atlas of [{ side, values: frozen.values }, frozen.glacialIce]) {
     for (let row = 0; row < atlas.side; row++)
@@ -345,10 +346,27 @@ test("Ceres and Pluto add distinct populations of smaller craters around the sam
   const lunar = bake(0);
   const pluto = bake(getPreset("pluto").craterDetail);
   const ceres = bake(getPreset("ceres").craterDetail);
+  const profile = getPreset("ceres-crater-fields");
+  const fields = bake(profile.craterDetail);
   assert.ok(pluto.count > lunar.count + 50 && ceres.count > 2 * pluto.count && ceres.count > 550);
+  assert.ok(fields.count > 1.4 * ceres.count);
   assert.ok(ceres.values.some((height, i) => height < lunar.values[i] - .12));
-  for (let row = 0; row < side; row++)
-    assert.equal(ceres.values[row * side], ceres.values[(row + 1) * side - 1]);
+  const terrain = applyStudioRunoff(new Float32Array(side ** 2), side, profile.geology,
+    seed, .8, undefined, false, .375, 0, profile.lunar, profile.craterDetail);
+  assert.deepEqual(terrain.values, fields.values);
+  assert.ok(terrain.impactMaterial.values.some(height => height > .05));
+  assert.ok(terrain.impactMaterial.values.some(height => height < -.12));
+  let impacted = 0;
+  for (let i = 0; i < 1024; i++) {
+    const y = 1 - (2 * i + 1) / 1024;
+    const radial = Math.sqrt(1 - y * y), angle = i * 2.39996323;
+    const point = [radial * Math.cos(angle), y, radial * Math.sin(angle)];
+    impacted += Number(Math.abs(sampleStudioAlluvium(terrain.impactMaterial, point)) > .025);
+  }
+  assert.ok(impacted > 665, `${impacted} of 1024 samples show impact relief`);
+  for (const atlas of [{ side, values: ceres.values }, { side, values: fields.values }, terrain.impactMaterial])
+    for (let row = 0; row < atlas.side; row++)
+      assert.equal(atlas.values[row * atlas.side], atlas.values[(row + 1) * atlas.side - 1]);
 });
 
 test("impact histories vary the layout and shape even on the same underlying terrain", () => {
@@ -607,7 +625,7 @@ test("planet stress settings can plan about 16 million grid vertices within the 
 });
 
 test("every planet preset fits the GPU palette and can use the same explicit seed", () => {
-  assert.equal(PlanetPresets.length, 25);
+  assert.equal(PlanetPresets.length, 26);
   assert.equal(getPreset("gas-giant").name, "Amberstone");
   const dir = unit([0.7, 0.2, 0.6]);
   for (const { id } of PlanetPresets) {

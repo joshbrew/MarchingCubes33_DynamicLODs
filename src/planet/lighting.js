@@ -27,6 +27,7 @@ const presetSkies = {
   "verdigris-sea": "teal", "amethyst-tide": "violet",
   "lunar-highlands": "thin", "basalt-mare": "thin",
   titan: "titan", io: "airless", pluto: "pluto", ceres: "airless",
+  "ceres-crater-fields": "airless",
 };
 
 export function atmosphereColors(preset, atmosphere) {

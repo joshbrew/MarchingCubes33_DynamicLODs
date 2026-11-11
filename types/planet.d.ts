@@ -31,7 +31,8 @@ export type PlanetPresetId =
   | "titan"
   | "io"
   | "pluto"
-  | "ceres";
+  | "ceres"
+  | "ceres-crater-fields";
 export const PlanetPresets: ReadonlyArray<
   Readonly<{ id: PlanetPresetId; name: string; wet: boolean }>
 >;
@@ -60,7 +61,7 @@ export interface PlanetOptions extends GPUOptions {
   progressiveStartup?: boolean;
   minSpacing?: number;
   preset?: PlanetPresetId;
-  /** Include the legacy local landmark patches. Defaults to false. */
+  /** Include local landmark patches. Defaults to false. */
   landmarkPatches?: boolean;
   /** Base terrain sampling resolution. Defaults to 1000, or 1536 for smaller worlds. */
   atlasSegments?: number;

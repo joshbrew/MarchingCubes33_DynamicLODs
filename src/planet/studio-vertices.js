@@ -64,8 +64,11 @@ export class StudioVertices {
     ints.set([seed, geologyMode[geology], studioLandscapes[detail.landscape], divs, map.side, referenceSegments], 128);
     d.queue.writeBuffer(this.recipe, 0, packed);
     d.queue.writeBuffer(this.permutations, 0, permutations);
-    this.guide ??= d.createBuffer({ size: map.guide.byteLength,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+    if (this.guide?.size !== map.guide.byteLength) {
+      this.guide?.destroy();
+      this.guide = d.createBuffer({ size: map.guide.byteLength,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+    }
     d.queue.writeBuffer(this.guide, 0, map.guide);
     this.probeGroups = this.groups(this.probeJob, this.probeOutput);
   }

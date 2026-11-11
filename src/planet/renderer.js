@@ -383,6 +383,9 @@ export class PlanetRenderer {
 
   async bakeWorld({ profile, seed, detail, radius: size, terrainSampling }, compileVertices = true) {
     const procedural = terrainSampling === "procedural";
+    const segments = procedural
+      ? (profile.cryoGlaciers || profile.craterDetail >= 1 ? 768 : guideSegments)
+      : this.options.atlasSegments ?? atlasSegments(size);
     const results = await Promise.allSettled([
       bakeStudioMap(this.noiseBuilder, {
         seed, erosion: true, geology: profile.geology, variation: detail.variation,
@@ -393,7 +396,7 @@ export class PlanetRenderer {
         craterDetail: profile.craterDetail,
         cryoGlaciers: profile.cryoGlaciers,
         landmarkPatches: this.options.landmarkPatches,
-        segments: procedural ? guideSegments : this.options.atlasSegments ?? atlasSegments(size),
+        segments,
         proceduralGuide: procedural,
       }),
       procedural && compileVertices ? this.initializeStudioVertices() : undefined,
@@ -555,7 +558,7 @@ export class PlanetRenderer {
     const d = this.device;
     this.tileCache.clear();
     this.state = null;
-    const deposits = map.glacialIce ?? map.alluvium;
+    const deposits = map.glacialIce ?? map.impactMaterial ?? map.alluvium;
     const required = map.values.byteLength + coarse.byteLength + map.regions.values.byteLength +
       districtAtlasSide ** 2 * 8 + (deposits?.values.byteLength ?? 0);
     if (!this.studioBuffer || this.studioBuffer.size !== required) {
@@ -686,7 +689,7 @@ export class PlanetRenderer {
     style[208] = Number(this.profile.lunar);
     style[209] = this.detail.erosionStrength;
     style[210] = this.profile.material;
-    style[211] = Number(!!this.studioMap.glacialIce);
+    style[211] = Number(Boolean(this.studioMap.glacialIce ?? this.studioMap.impactMaterial));
     if (this.studioMap.springs) {
       style[145] = this.studioMap.springs.side;
       style.set(this.studioMap.springs.chart, 148);

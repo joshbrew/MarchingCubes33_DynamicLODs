@@ -5,6 +5,85 @@ const smooth = (a, b, value) => {
   return t * t * (3 - 2 * t);
 };
 
+function iceCanyonOffset(t, bend, cirque) {
+  return bend * (.9 * Math.sin(tau * t) + .34 * Math.sin(1.7 * tau * t + cirque * tau));
+}
+
+function carveIceCanyons(values, side, ice, patch, strength, random) {
+  const { x, y, xScale, yScale, dx, dy, length, width, bend, branch, cirque, head, outlet } = patch;
+  const span = side - 1;
+  const iceSpan = ice.side - 1;
+  const relief = clamp(head - outlet, .14, .73);
+  const lateralBend = bend / length;
+  const floor = (t) => outlet - .04 * relief + .70 * relief * (1 - clamp(t, 0, 1)) ** 2;
+  const channels = [];
+  const forks = 4 + Math.floor(4 * cirque);
+  for (let i = 0; i < forks; i++) {
+    const end = .16 + .79 * (i + .15 + .7 * random()) / forks;
+    const run = .10 + .24 * random();
+    const offset = branch * (i % 2 ? -1 : 1) * (.065 + .14 * random());
+    const start = end - run;
+    const bank = (.31 + .30 * random()) * width / length;
+    channels.push({ start, end, offset, root: 0, bank, depth: .43 + .24 * random() });
+    if (random() < .74) {
+      const join = .33 + .32 * random();
+      const tip = start + run * join;
+      const root = offset * (1 - join) ** 1.3;
+      channels.push({ start: tip - (.055 + .105 * random()), end: tip,
+        offset: -offset * (.24 + .28 * random()), root, bank: .63 * bank, depth: .32 });
+    }
+  }
+
+  const pathX = dx * length / xScale, pathY = dy * length / yScale;
+  const padding = .39 * length;
+  const firstRow = Math.max(1, Math.floor(y + Math.min(-.37 * pathY, 1.11 * pathY) - padding / yScale));
+  const lastRow = Math.min(span - 1, Math.ceil(y + Math.max(-.37 * pathY, 1.11 * pathY) + padding / yScale));
+  const firstColumn = Math.floor(x + Math.min(-.37 * pathX, 1.11 * pathX) - padding / xScale);
+  const lastColumn = Math.ceil(x + Math.max(-.37 * pathX, 1.11 * pathX) + padding / xScale);
+  const minWidth = .58 * Math.hypot(dy * xScale, dx * yScale) / length;
+  for (let row = firstRow; row <= lastRow; row++) {
+    const iceRow = Math.round(row * iceSpan / span) * ice.side;
+    for (let col = firstColumn; col <= lastColumn; col++) {
+      const east = (col - x) * xScale, south = (row - y) * yScale;
+      const along = (east * dx + south * dy) / length;
+      if (along <= -.37 || along >= 1.11) continue;
+      const across = (-east * dy + south * dx) / length - iceCanyonOffset(along, lateralBend, cirque);
+      if (Math.abs(across) > .30) continue;
+      const column = ((col % span) + span) % span;
+      const at = row * side + column;
+      const height = values[at];
+      const taper = smooth(-.02, .23, along);
+      const widthAt = Math.max(minWidth, width / length * (.32 + .68 * taper) *
+        (1 + .22 * Math.sin(13 * along + cirque * tau)));
+      const sideOfFault = across * branch < 0 ? .69 : 1.13;
+      const wall = Math.max(0, 1 - Math.abs(across) / (widthAt * sideOfFault));
+      const run = smooth(-.03, .14, along) * (1 - smooth(.94, 1.11, along));
+      let cut = run * wall ** 1.25 * clamp(height - floor(along) + .24 * relief, 0, .88);
+      let cover = run * wall;
+
+      for (const channel of channels) {
+        if (along <= channel.start || along >= channel.end + .025) continue;
+        const t = clamp((along - channel.start) / (channel.end - channel.start), 0, 1);
+        const offset = channel.root + channel.offset * (1 - t) ** 1.3;
+        const bank = Math.max(minWidth * .75, channel.bank * (.22 + .78 * t));
+        const incision = Math.max(0, 1 - Math.abs(across - offset) / bank);
+        const join = smooth(0, .46, t) * (1 - smooth(channel.end, channel.end + .025, along));
+        const hangingFloor = floor(channel.end) + relief * .42 * (1 - t);
+        cut = Math.max(cut, join * incision * clamp(height - hangingFloor + .10 * relief, 0, .72) * channel.depth);
+        cover = Math.max(cover, .72 * join * incision);
+      }
+      values[at] = height - strength * cut;
+      if (cover > 0) {
+        const iceCol = Math.round(column * iceSpan / span) % iceSpan;
+        const iceAt = iceRow + iceCol;
+        ice.values[iceAt] = Math.max(ice.values[iceAt], strength * cover);
+        if (iceCol === 0) ice.values[iceRow + iceSpan] = ice.values[iceAt];
+      }
+    }
+    values[row * side + span] = values[row * side];
+  }
+}
+
 // These valleys are cut into the height bake before runoff, so streams can
 // follow their floors. Each patch uses a local angular scale and wraps in X.
 export function carveStudioGlacialValleys(values, side, seed, variation, ice) {
@@ -40,9 +119,9 @@ export function carveStudioGlacialValleys(values, side, seed, variation, ice) {
       const yScale = Math.PI / span;
       const length = (icy ? 0.195 : 0.075) + (icy ? 0.25 : 0.055) * random();
       const widthRoll = random();
-      const width = icy ? 0.024 + length * (0.048 + 0.055 * widthRoll)
+      const width = icy ? 0.005 + length * (0.019 + 0.023 * widthRoll)
         : length * (0.17 + 0.065 * widthRoll);
-      const bend = width * (random() - 0.5) * 1.25;
+      const bend = (icy ? length * .12 : width * 1.25) * (random() - 0.5);
       const branch = random() < 0.5 ? -1 : 1;
       const cirque = random();
       const phase = random() * tau;
@@ -95,22 +174,30 @@ export function carveStudioGlacialValleys(values, side, seed, variation, ice) {
     if (patches.length === (icy ? 11 + (seed >>> 5) % 5 : 4)) break;
   }
 
-  return patches.map(({ x, y, xScale, yScale, dx, dy, length, width, bend, branch, cirque, head, outlet }) => {
-    const relief = icy ? clamp(head - outlet, 0.14, 0.73) : clamp(head - outlet, 0.26, 1.14);
-    const before = icy ? -0.17 : 0, after = icy ? 1.29 : 1;
+  return patches.map((patch) => {
+    const { x, y, xScale, yScale, dx, dy, length, width, bend, branch, cirque, head, outlet } = patch;
+    const alongPath = (t) => {
+      const offset = ice ? iceCanyonOffset(t, bend, cirque) : 0;
+      return direction(x + (t * dx * length - dy * offset) / xScale,
+        y + (t * dy * length + dx * offset) / yScale);
+    };
+    const site = { overlook: alongPath(.93), head: alongPath(.12) };
+    if (ice) {
+      carveIceCanyons(values, side, ice, patch, strength, random);
+      return site;
+    }
+    const relief = clamp(head - outlet, 0.26, 1.14);
     const pathX = dx * length / xScale, pathY = dy * length / yScale;
-    const startX = Math.floor(x + Math.min(before * pathX, after * pathX) - 3.2 * width / xScale);
-    const endX = Math.ceil(x + Math.max(before * pathX, after * pathX) + 3.2 * width / xScale);
-    const startY = Math.max(1, Math.floor(y + Math.min(before * pathY, after * pathY) - 3.2 * width / yScale));
-    const endY = Math.min(span - 1, Math.ceil(y + Math.max(before * pathY, after * pathY) + 3.2 * width / yScale));
+    const startX = Math.floor(x + Math.min(0, pathX) - 3.2 * width / xScale);
+    const endX = Math.ceil(x + Math.max(0, pathX) + 3.2 * width / xScale);
+    const startY = Math.max(1, Math.floor(y + Math.min(0, pathY) - 3.2 * width / yScale));
+    const endY = Math.min(span - 1, Math.ceil(y + Math.max(0, pathY) + 3.2 * width / yScale));
     const floorAt = (t) => outlet - 0.09 * relief + 0.63 * relief * (1 - t) ** 2;
     for (let row = startY; row <= endY; row++) {
       for (let col = startX; col <= endX; col++) {
         const east = (col - x) * xScale, south = (row - y) * yScale;
         const along = (east * dx + south * dy) / length;
-        if (icy && (along <= before || along >= after)) continue;
-        const meander = bend * (icy ? 0.64 * Math.sin(tau * along) + 0.26 * Math.sin(Math.PI * along) :
-          Math.sin(Math.PI * along));
+        const meander = bend * Math.sin(Math.PI * along);
         const across = (-east * dy + south * dx - meander) / width;
         const t = clamp(along, 0, 1);
         // Wide headwall cirques narrow into a deep trunk, then widen again at its mouth.
@@ -121,20 +208,6 @@ export function carveStudioGlacialValleys(values, side, seed, variation, ice) {
         const at = row * side + wrap(col);
         const h = values[at];
         let cut = trough * clamp(h - floorAt(t), 0, 0.95);
-        let iceCover = trough;
-        if (icy) {
-          // Offset the deep floor toward one wall. Vary the foot and crown
-          // widths independently so the opposite wall has a longer apron.
-          const fault = across * branch - 0.15 * Math.sin(tau * t + cirque * Math.PI);
-          const rimWidth = fault < 0 ? 0.41 + 0.18 * cirque : 0.75 + 0.12 * cirque;
-          const corridor = smooth(-0.12, 0.035, along) * (1 - smooth(0.93, 1.18, along));
-          const rift = corridor * (1 - smooth(0.24, rimWidth, Math.abs(fault)));
-          const scarp = relief * (0.36 + 0.40 * cirque) * rift;
-          cut = Math.max(cut, rift * clamp(h - floorAt(t), 0, .62) + scarp);
-          const tongue = smooth(0.33, 0.60, along) * (1 - smooth(1.03, 1.29, along)) *
-            (1 - smooth(0.44, 1.26, Math.abs(across + 0.12 * branch)));
-          iceCover = Math.max(rift, 0.68 * trough, 0.86 * tongue);
-        }
 
         // Two shorter cirques hang above the trunk and open into its walls.
         const forks = cirque > 0.28 ? 2 : 1;
@@ -148,7 +221,6 @@ export function carveStudioGlacialValleys(values, side, seed, variation, ice) {
           const mask = bowl * smooth(0.21, 0.72, rise) * (1 - smooth(reach * 0.59, reach, rise));
           const hangingFloor = floorAt(junction) + relief * (0.18 + 0.09 * clamp(rise, 0, 2.6));
           cut = Math.max(cut, mask * clamp(h - hangingFloor, 0, 0.62));
-          if (icy) iceCover = Math.max(iceCover, 0.76 * mask);
         }
         // A low, broken moraine arcs around the mouth of some troughs.
         const terminal = 0.89 - 0.11 * across * across;
@@ -156,20 +228,9 @@ export function carveStudioGlacialValleys(values, side, seed, variation, ice) {
           (1 - smooth(0.56, 0.97, Math.abs(across))) *
           smooth(-0.70, 0.28, across * branch) * relief * cirque * 0.075;
         values[at] = h + strength * (moraine - cut);
-        if (icy && iceCover > 0) {
-          const last = ice.side - 1;
-          const iceRow = Math.round(row / span * last) * ice.side;
-          const iceColumn = Math.round(wrap(col) / span * last) % last;
-          const at = iceRow + iceColumn;
-          ice.values[at] = Math.max(ice.values[at], strength * iceCover);
-          if (iceColumn === 0) ice.values[iceRow + last] = ice.values[at];
-        }
       }
       values[row * side + span] = values[row * side];
     }
-    return {
-      overlook: direction(x + 0.93 * dx * length / xScale, y + 0.93 * dy * length / yScale),
-      head: direction(x + 0.12 * dx * length / xScale, y + 0.12 * dy * length / yScale),
-    };
+    return site;
   });
 }

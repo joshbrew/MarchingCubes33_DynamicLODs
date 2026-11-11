@@ -103,6 +103,8 @@ export interface StudioPlanetNoiseMap {
   impactBasins?: { center: [number, number, number]; longitude: number; size: number }[];
   alluvium?: { side: number; values: Float32Array };
   glacialIce?: { side: number; values: Float32Array };
+  /** Signed height change from impacts. Negative values mark excavated floors. */
+  impactMaterial?: { side: number; values: Float32Array };
   invertedRidges?: [number, number, number][];
   regions?: { side: number; values: Uint32Array };
   glacialSites?: { overlook: [number, number, number]; head: [number, number, number] }[];
@@ -149,7 +151,7 @@ export function bakeStudioPlanetNoise(
     oceanCoverage?: number;
     /** Give the eroded world a dry surface and large lunar impact basins. */
     lunar?: boolean;
-    /** Density of smaller craters on lunar terrain, from 0 to 1. */
+    /** Density of smaller lunar craters, from 0 to 2. Above 1, impacts overlap heavily. */
     craterDetail?: number;
     /** Carve ice-filled fault valleys on a lunar world. */
     cryoGlaciers?: boolean;

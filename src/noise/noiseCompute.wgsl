@@ -1162,11 +1162,6 @@ fn voro_eval3D_metrics(m: Voro3DMetrics, params: NoiseParams, freqOrScale: f32) 
   );
 }
 
-fn voro_legacy_cell_or_eval3D(m: Voro3DMetrics, params: NoiseParams, freqOrScale: f32, legacyCellValue: f32) -> f32 {
-  let modeValue = voro_eval3D_metrics(m, params, freqOrScale);
-  return select(modeValue, legacyCellValue, params.voroMode == VORO_CELL);
-}
-
 
 // f1Sq/f2Sq are squared distances; cellVal in [0,1].
 // edgeK is scale (edges modes) or feather (mask modes). freqOrScale unused.
@@ -3411,10 +3406,8 @@ fn voronoiCircleGradient(pos: vec3<f32>, params: NoiseParams) -> f32 {
     let centerGrad = 1.0 - min(minDist, 1.0);
     let edgeDist = max(secondDist - minDist, 0.0);
     let edgeGrad = select(1.0, 0.0, edgeDist < params.threshold);
-    let legacyCellValue = centerGrad * edgeGrad;
-
-    let modeValue = voro_legacy_cell_or_eval3D(m, params, max(params.freq, 1e-6), legacyCellValue);
-    return select(modeValue * centerGrad, legacyCellValue, params.voroMode == VORO_CELL);
+    let modeValue = voro_eval3D_metrics(m, params, max(params.freq, 1e-6));
+    return select(modeValue, edgeGrad, params.voroMode == VORO_CELL) * centerGrad;
 }
 
 // Octaved generator matching your JS .generateNoise()
@@ -3478,10 +3471,8 @@ fn voronoiCircleGradient2Raw(pos: vec3<f32>, params: NoiseParams) -> f32 {
     let m = voro3D_metrics(pos);
     let centerDist = sqrt(max(m.f1Sq, 0.0));
     let gradient = sin(centerDist * PI);
-    let legacyCellValue = m.cellVal * gradient;
-
-    let modeValue = voro_legacy_cell_or_eval3D(m, params, max(params.freq, 1e-6), legacyCellValue);
-    return select(modeValue * gradient, legacyCellValue, params.voroMode == VORO_CELL);
+    let modeValue = voro_eval3D_metrics(m, params, max(params.freq, 1e-6));
+    return select(modeValue, m.cellVal, params.voroMode == VORO_CELL) * gradient;
 }
 
 fn generateVoronoiCircle2(pos: vec3<f32>, params: NoiseParams) -> f32 {
@@ -3562,10 +3553,8 @@ fn voronoiRipple3DRaw(pos: vec3<f32>, params: NoiseParams) -> f32 {
     let edgeDist = voro_edge_dist(m.f1Sq, m.f2Sq);
     let ripple = sin(PI + edgeDist * PI * params.rippleFreq + params.time);
     let rippleAmp = (1.0 + ripple) * 0.5;
-    let legacyCellValue = m.cellVal * rippleAmp;
-
-    let modeValue = voro_legacy_cell_or_eval3D(m, params, max(params.freq, 1e-6), legacyCellValue);
-    return select(modeValue * rippleAmp, legacyCellValue, params.voroMode == VORO_CELL);
+    let modeValue = voro_eval3D_metrics(m, params, max(params.freq, 1e-6));
+    return select(modeValue, m.cellVal, params.voroMode == VORO_CELL) * rippleAmp;
 }
 
 fn generateVoronoiRipple3D(pos: vec3<f32>, params: NoiseParams) -> f32 {
@@ -3596,10 +3585,8 @@ fn voronoiRipple3D2Raw(pos: vec3<f32>, params: NoiseParams) -> f32 {
     let edgeDist = voro_edge_dist(m.f1Sq, m.f2Sq);
     let ripple = sin(PI + params.zoom * edgeDist * PI * params.rippleFreq + params.time);
     let rippleAmp = (1.0 + ripple) * 0.5;
-    let legacyCellValue = m.cellVal * rippleAmp;
-
-    let modeValue = voro_legacy_cell_or_eval3D(m, params, max(params.freq, 1e-6), legacyCellValue);
-    return select(modeValue * rippleAmp, legacyCellValue, params.voroMode == VORO_CELL);
+    let modeValue = voro_eval3D_metrics(m, params, max(params.freq, 1e-6));
+    return select(modeValue, m.cellVal, params.voroMode == VORO_CELL) * rippleAmp;
 }
 
 fn generateVoronoiRipple3D2(pos: vec3<f32>, params: NoiseParams) -> f32 {
@@ -3630,10 +3617,8 @@ fn voronoiCircularRippleRaw(pos: vec3<f32>, params: NoiseParams) -> f32 {
     let minDist = sqrt(max(m.f1Sq, 0.0));
     let ripple = sin(PI + minDist * PI * params.rippleFreq + params.time);
     let rippleAmp = (1.0 + ripple) * 0.5;
-    let legacyCellValue = m.cellVal * rippleAmp;
-
-    let modeValue = voro_legacy_cell_or_eval3D(m, params, max(params.freq, 1e-6), legacyCellValue);
-    return select(modeValue * rippleAmp, legacyCellValue, params.voroMode == VORO_CELL);
+    let modeValue = voro_eval3D_metrics(m, params, max(params.freq, 1e-6));
+    return select(modeValue, m.cellVal, params.voroMode == VORO_CELL) * rippleAmp;
 }
 
 fn generateVoronoiCircularRipple(pos: vec3<f32>, params: NoiseParams) -> f32 {

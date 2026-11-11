@@ -129,9 +129,21 @@ export function bakePlanetImpacts(values, side, seed, variation, density = 1, lu
   const population = lunar ? mix(115, 190, random(0, 1)) : history < .48 ? mix(0, 5, random(0, 1)) :
     history < .79 ? mix(12, 31, random(0, 1)) : mix(62, 134, random(0, 1));
   const count = Math.min(640, Math.round(variation * craterDensity ** 2 * population));
-  const crowded = craterDetail ** 4;
-  const mediumCount = Math.round(crowded * mix(190, 255, history) * mix(.72, 1, variation));
-  const smallCount = Math.round((craterDetail * mix(295, 440, history) + 710 * crowded) * mix(.65, 1, variation));
+  const detail = Math.min(1, craterDetail);
+  const saturation = Math.max(0, craterDetail - 1);
+  const crowded = detail ** 4;
+  const areaScale = Math.max(1, craterDensity);
+  const mediumCount = Math.round((crowded * mix(190, 255, history) +
+    saturation * areaScale * mix(355, 490, history)) * mix(.72, 1, variation));
+  const smallCount = Math.round((detail * mix(295, 440, history) +
+    710 * crowded + 860 * saturation * areaScale) * mix(.65, 1, variation));
+  const rowSin = Float64Array.from({ length: side }, (_, row) => Math.sin(row * latitudeStep));
+  const rowCos = Float64Array.from({ length: side }, (_, row) => Math.cos(row * latitudeStep));
+  const columnSin = Float64Array.from({ length: span }, (_, col) => Math.sin(col * longitudeStep));
+  const columnCos = Float64Array.from({ length: span }, (_, col) => Math.cos(col * longitudeStep));
+  const offsetSin = new Float64Array(span);
+  const offsetCos = new Float64Array(span);
+  const wrappedColumns = new Int32Array(span);
   let baked = 0;
   // Work from older basins to fresh impacts, so younger craters can cut
   // through earlier rims. Each impact touches only its own atlas window.
@@ -141,11 +153,11 @@ export function bakePlanetImpacts(values, side, seed, variation, density = 1, lu
     const small = i >= count + mediumCount;
     const sizeRoll = random(i, 2);
     const size = basin?.size ?? (small
-      ? (.008 + .067 * sizeRoll ** mix(3, 2.30, crowded)) / Math.sqrt(craterDensity)
-      : medium ? (.036 + .092 * sizeRoll ** 2.7) / Math.sqrt(craterDensity)
+      ? (.008 + .067 * sizeRoll ** mix(mix(3, 2.30, crowded), 1.7, saturation)) / Math.sqrt(craterDensity)
+      : medium ? (.036 + .092 * sizeRoll ** mix(2.7, 1.7, saturation)) / Math.sqrt(craterDensity)
       : (.014 + .103 * sizeRoll ** 2.3) / craterDensity);
     if (size < 2.1 * latitudeStep || (!basin && size > .28)) continue;
-    const margin = Math.min(.94, Math.cos(2.0 * size + .04));
+    const margin = saturation > 0 && (medium || small) ? .998 : Math.min(.94, Math.cos(2.0 * size + .04));
     const latitude = Math.acos(basin?.center[1] ?? mix(-margin, margin, random(i, 3)));
     const longitude = basin ? (basin.longitude + tau) % tau : tau * random(i, 4);
     const r = Math.sin(latitude), y = Math.cos(latitude);
@@ -163,8 +175,8 @@ export function bakePlanetImpacts(values, side, seed, variation, density = 1, lu
     const wear = basin ? mix(.38, .62, age) : small || medium ? mix(.12, .85, age) :
       mix(.86, .13, (i + age) / Math.max(1, count));
     const depth = basin ? mix(.79, 1.15, size / .43) : shape.depth * mix(1.02, .63, wear) *
-      (small ? mix(.12 + .065 * crowded, .51 + .15 * crowded, sizeRoll ** 1.8)
-        : medium ? mix(.42, .92, sizeRoll)
+      (small ? mix(.12 + .065 * crowded, .51 + .15 * crowded, sizeRoll ** 1.8) + .22 * saturation
+        : medium ? mix(.42, .92, sizeRoll) + .22 * saturation
         : mix(.31, .95, (size * craterDensity - .014) / .103));
     const event = basin ? { ...shape, wear, depth, size: 1, stretch: mix(.90, .99, random(i, 7)), warp: .42 * shape.warp,
       breach: .18, rim: .38, rebound: random(i, 8) < .32 ? 3 : 0, reboundHeight: .28, flatFloor: true }
@@ -172,20 +184,31 @@ export function bakePlanetImpacts(values, side, seed, variation, density = 1, lu
         rim: medium ? Math.max(.49, shape.rim) : shape.rim,
         rebound: small && sizeRoll < .84 ? 0 : shape.rebound };
     const reach = Math.asin(1.53 * event.size * (1.021 + event.warp) * size);
-    const first = Math.max(1, Math.floor((latitude - reach) / latitudeStep));
-    const last = Math.min(span - 1, Math.ceil((latitude + reach) / latitudeStep));
-    const halfWidth = Math.ceil(Math.asin(clamp(Math.sin(reach) / r, 0, 1)) / longitudeStep) + 1;
+    const coversPole = reach >= Math.min(latitude, Math.PI - latitude);
+    const first = Math.max(coversPole ? 0 : 1, Math.ceil((latitude - reach) / latitudeStep));
+    const last = Math.min(coversPole ? span : span - 1, Math.floor((latitude + reach) / latitudeStep));
+    const halfWidth = coversPole ? Math.floor(span / 2) :
+      Math.ceil(Math.asin(clamp(Math.sin(reach) / r, 0, 1)) / longitudeStep) + 1;
     const column = Math.round(longitude / longitudeStep);
+    const columns = Math.min(span, 2 * halfWidth + 1);
+    for (let k = 0; k < columns; k++) {
+      const col = (column - halfWidth + k + span) % span;
+      wrappedColumns[k] = col;
+      offsetSin[k] = (columnSin[col] * cos - columnCos[col] * sin) / size;
+      offsetCos[k] = (columnCos[col] * cos + columnSin[col] * sin) / size;
+    }
     for (let row = first; row <= last; row++) {
-      const radial = Math.sin(row * latitudeStep), vertical = Math.cos(row * latitudeStep);
-      for (let x = column - halfWidth; x <= column + halfWidth; x++) {
-        const angle = x * longitudeStep - longitude;
-        const u = radial * Math.sin(angle) / size;
-        const v = (r * vertical - y * radial * Math.cos(angle)) / size;
-        const at = row * side + (x + span) % span;
+      const radial = row === 0 || row === span ? 0 : rowSin[row];
+      const northward = r * rowCos[row] / size;
+      const rowStart = row * side;
+      for (let k = 0; k < columns; k++) {
+        if (coversPole && y * rowCos[row] + r * radial * offsetCos[k] * size <= 0) continue;
+        const u = radial * offsetSin[k];
+        const v = northward - y * radial * offsetCos[k];
+        const at = rowStart + wrappedColumns[k];
         values[at] = impactHeight(u, v, values[at], event);
       }
-      values[row * side + span] = values[row * side];
+      values[rowStart + span] = values[rowStart];
     }
     baked++;
   }

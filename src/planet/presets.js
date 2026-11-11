@@ -67,7 +67,7 @@ const palettes = [
 ];
 
 const catalog = new Map();
-const lunarPresets = new Set(["moon-dust", "lunar-highlands", "basalt-mare", "pluto", "ceres"]);
+const lunarPresets = new Set(["moon-dust", "lunar-highlands", "basalt-mare", "pluto", "ceres", "ceres-crater-fields"]);
 const terrainStyles = {
   lakeshore: "alpine",
   ice: "alpine",
@@ -177,11 +177,18 @@ add(
   1013 * (palettes.length + 7),
   { material: 3, craterDetail: .62, cryoGlaciers: true },
 );
+const ceresColors = "211824 302c40 2c405d 47618a 65515f 8e5144 a76953 b78770 adaba7";
 add(
   "Ceres",
-  "241a23 332d40 303e5b 3f5979 65535c 875e57 a67164 aa8e8c d1cdc0",
+  ceresColors,
   1013 * (palettes.length + 8),
-  { material: 4, craterDetail: 1 },
+  { material: 4, craterDetail: 1.25 },
+);
+add(
+  "Ceres Crater Fields",
+  ceresColors,
+  1013 * (palettes.length + 8),
+  { material: 4, craterDetail: 2 },
 );
 
 export const PlanetPresets = Object.freeze(

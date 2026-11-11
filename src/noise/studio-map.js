@@ -103,8 +103,8 @@ export async function bakeStudioMap(
     throw new RangeError("Planet Studio noise needs 8–1536 segments.");
   if (!Number.isInteger(seed))
     throw new RangeError("Use an integer noise seed.");
-  if (!Number.isFinite(craterDetail) || craterDetail < 0 || craterDetail > 1)
-    throw new RangeError("Lunar crater detail must be between 0 and 1.");
+  if (!Number.isFinite(craterDetail) || craterDetail < 0 || craterDetail > 2)
+    throw new RangeError("Lunar crater detail must be between 0 and 2.");
   if (!Number.isFinite(featureDensity) || featureDensity < .0625 || featureDensity > 8)
     throw new RangeError("Feature density must be between 0.0625 and 8.");
   if (oceanCoverage !== undefined && !(oceanCoverage >= 0 && oceanCoverage < 1 && Number.isFinite(oceanCoverage)))
@@ -219,16 +219,19 @@ export async function bakeStudioMap(
     }
     readback.destroy();
     readback = null;
-    let glacialSites, glacialIce, landmarks, springs, dunes, rockSpans, alluvium, invertedRidges, ocean, impactBasins;
-    const hostRelief = erosion && lunar ? .46 - .25 * craterDetail ** 8 : 1;
+    let runoff;
+    const hostRelief = erosion && lunar
+      ? .46 - .25 * Math.min(1, craterDetail) ** 8 - .13 * Math.max(0, craterDetail - 1)
+      : 1;
     if (erosion) {
       if (lunar) {
         for (let i = 0; i < values.length; i++) values[i] *= hostRelief;
       }
-      ({ values, glacialSites, glacialIce, landmarks, springs, dunes, rockSpans, alluvium, invertedRidges, ocean, impactBasins } =
-        await finishRunoff(values, side, {
-          geology, seed, variation, regions, landmarkPatches, featureDensity, oceanCoverage, lunar, craterDetail, cryoGlaciers,
-        }));
+      const { values: eroded, ...features } = await finishRunoff(values, side, {
+        geology, seed, variation, regions, landmarkPatches, featureDensity, oceanCoverage, lunar, craterDetail, cryoGlaciers,
+      });
+      values = eroded;
+      runoff = features;
     } else {
       // Match the original Studio texture when baking the raw noise stack.
       const blendRows = Math.min(8, Math.floor(segments / 8));
@@ -261,8 +264,7 @@ export async function bakeStudioMap(
       map.guide = guide;
       map.hostRelief = hostRelief;
     }
-    return regions ? { ...map, regions, glacialSites, glacialIce, landmarks, springs, dunes, rockSpans, alluvium,
-      invertedRidges, ocean, impactBasins, reliefScale: studioPlanetRelief(seed) } : map;
+    return regions ? { ...map, regions, ...runoff, reliefScale: studioPlanetRelief(seed) } : map;
   } finally {
     readback?.destroy();
     builder.destroyTexturePair(textureKey);
