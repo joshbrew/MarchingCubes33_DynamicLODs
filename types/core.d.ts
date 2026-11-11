@@ -138,6 +138,8 @@ export function createGPUDevice(options?: {
   adapterOptions?: Record<string, unknown>;
   requiredFeatures?: string[];
   requiredLimits?: Record<string, number>;
+  /** Request up to this many bytes for storage buffers, subject to adapter limits. */
+  preferredStorageBufferSize?: number;
   timestamps?: boolean;
 }): Promise<GPUDeviceLike>;
 export function isWebGPUSupported(): boolean;

@@ -1,5 +1,15 @@
 import { clamp, cross, dot, unit } from "./field.js";
 
+export const minFlightClearance = 2;
+
+export function cruiseElevation(elevation, target, ground, ahead, dt) {
+  const floor = ground + minFlightClearance;
+  const desired = Math.max(floor, target, ahead + minFlightClearance);
+  if (Math.abs(desired - elevation) < 0.01) return desired;
+  const rate = desired > elevation ? 6 : 2;
+  return Math.max(floor, elevation + (desired - elevation) * -Math.expm1(-rate * dt));
+}
+
 export function surfaceFrame(direction) {
   const east = unit(
     cross(Math.abs(direction[1]) > 0.98 ? [0, 0, 1] : [0, 1, 0], direction),

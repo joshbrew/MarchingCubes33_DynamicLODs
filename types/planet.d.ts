@@ -23,18 +23,50 @@ export type PlanetPresetId =
   | "gas-giant"
   | "copper-oxide"
   | "moon-dust"
-  | "coral-sea";
+  | "coral-sea"
+  | "verdigris-sea"
+  | "amethyst-tide"
+  | "lunar-highlands"
+  | "basalt-mare"
+  | "titan"
+  | "io"
+  | "pluto"
+  | "ceres";
 export const PlanetPresets: ReadonlyArray<
   Readonly<{ id: PlanetPresetId; name: string; wet: boolean }>
 >;
+export interface PlanetNoiseDetail {
+  range: "hybrid" | "ridges" | "rolling";
+  landscape: "natural" | "mesas" | "fractal" | "mosaic";
+  landscapeStrength: number;
+  relief: number;
+  slopes: "erosion" | "incised" | "soft";
+  ground: "erosion" | "incised" | "soft";
+  slopeOctaves: number;
+  groundOctaves: number;
+  erosionStrength: number;
+  variation: number;
+}
 export interface PlanetOptions extends GPUOptions {
   radius?: number;
   seed?: number;
   studioSeed?: number;
   divs?: 8 | 16 | 32;
   maxTiles?: number;
+  tileBudget?: number;
+  /** Limit new terrain splits per update and favor the center of the view. */
+  streamingLod?: boolean;
+  /** Draw a lightweight atlas view while the full terrain pipelines compile. */
+  progressiveStartup?: boolean;
   minSpacing?: number;
   preset?: PlanetPresetId;
+  /** Include the legacy local landmark patches. Defaults to false. */
+  landmarkPatches?: boolean;
+  /** Base terrain sampling resolution. Defaults to 1000, or 1536 for smaller worlds. */
+  atlasSegments?: number;
+  /** Select per-vertex noise generation or the baked atlas. Defaults to cached. */
+  terrainSampling?: "cached" | "procedural";
+  detail?: Partial<PlanetNoiseDetail>;
 }
 export interface PlanetSample {
   height: number;
@@ -54,6 +86,7 @@ export interface PlanetStats {
   planBuilds: number;
   drawCalls: number;
   instanceBytes: number;
+  baseTileBuilds?: number;
 }
 export class PlanetRenderer {
   constructor(canvas: CanvasLike, options?: PlanetOptions);
@@ -61,24 +94,41 @@ export class PlanetRenderer {
   readonly device: GPUDeviceLike;
   readonly stats: PlanetStats;
   readonly errors: string[];
+  readonly terrainSampling: "cached" | "procedural";
   readonly preset: PlanetPresetId;
   readonly studioSeed: number;
+  readonly radius: number;
   readonly oceanLevel: number | null;
   readonly geology: "mixed" | "alpine" | "mesa" | "volcanic";
+  readonly detail: Readonly<PlanetNoiseDetail>;
   initialize(): Promise<this>;
+  /** Maximum tile budget for this device and terrain sampling mode. */
+  maxTileBudget(sampling?: "cached" | "procedural"): number;
   configure(settings?: {
     pixelError?: number;
     lodScale?: number;
     tileBudget?: number;
     preset?: PlanetPresetId;
     studioSeed?: number;
+    radius?: number;
+    detail?: Partial<PlanetNoiseDetail>;
+    terrainSampling?: "cached" | "procedural";
   }): Promise<void>;
   sampleSurface(direction: Vec3): PlanetSample;
+  /** Read the generated base height at a direction for close flight. */
+  probeSurface(direction: Vec3): Promise<PlanetSample | null>;
+  sampleLandforms(direction: Vec3): { alpine: number; canyon: number; granite: number; volcanic: number };
   resize(): void;
   render(
     camera: CameraInput & { clearance?: number },
     now?: number,
-    options?: { lodColors?: boolean; wireframe?: boolean },
+    options?: {
+      lodColors?: boolean;
+      wireframe?: boolean;
+      /** Sun orbit in turns. Defaults to a fixed angle at 0. */
+      sunPhase?: number;
+      atmosphere?: "preset" | "blue" | "amber" | "violet" | "teal" | "thin";
+    },
   ): PlanetStats;
   dispose(): void;
 }
@@ -116,6 +166,7 @@ export const PlanetField: {
     studioMap: StudioPlanetNoiseMap,
     oceanLevel?: number | null,
     geology?: PlanetRenderer["geology"],
+    detail?: PlanetNoiseDetail,
   ): PlanetSample;
 };
 export interface PlanetTile {

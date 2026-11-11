@@ -1,3 +1,5 @@
+import { studioPolarErosionWeight } from "./studio-poles.js";
+
 // A drainage pass on the spherical height bake. Longitude wraps and latitude
 // uses area-weighted rainfall and distances, so there is no rectangular edge.
 export function erodeSphericalTerrain(values, side, strength = 1) {
@@ -148,11 +150,7 @@ export function erodeSphericalTerrain(values, side, strength = 1) {
   }
 
   for (let y = 1; y < width; y++) {
-    const polar = Math.min(
-      1,
-      Math.min(y, width - y) / Math.max(2, width * 0.015),
-    );
-    const fade = strength * polar * polar * (3 - 2 * polar);
+    const fade = strength * studioPolarErosionWeight(y, width);
     for (let x = 0; x < width; x++) {
       const id = (y - 1) * width + x;
       let spread = 0;

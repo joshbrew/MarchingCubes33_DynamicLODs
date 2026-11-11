@@ -40,6 +40,13 @@ export interface NoiseComputeOptions {
   heightScale?: number;
   sphereOffset?: number;
   sphereOffset2?: number;
+  sphereBlend?: number;
+  sphereBlendPhase?: number;
+  sphereRangeWeight?: number;
+  spherePolarFade?: number;
+  sphereLandscape?: number;
+  sphereLandscapeStrength?: number;
+  sphereFeatureDensity?: number;
   [key: string]: unknown;
 }
 
@@ -90,6 +97,31 @@ export interface StudioPlanetNoiseMap {
   min: number;
   max: number;
   mean: number;
+  reliefScale?: number;
+  featureDensity?: number;
+  ocean?: { seed: number; datum: number | null };
+  impactBasins?: { center: [number, number, number]; longitude: number; size: number }[];
+  alluvium?: { side: number; values: Float32Array };
+  glacialIce?: { side: number; values: Float32Array };
+  invertedRidges?: [number, number, number][];
+  regions?: { side: number; values: Uint32Array };
+  glacialSites?: { overlook: [number, number, number]; head: [number, number, number] }[];
+  landmarks?: Partial<Record<"impact" | "karst" | "rift" | "springs" | "dunes" | "arches", {
+    overlook: [number, number, number];
+    target: [number, number, number];
+  }[]>>;
+  springs?: { chart: [number, number, number, number]; side: number; values: Uint32Array };
+  dunes?: { chart: [number, number, number, number]; side: number; values: Uint32Array; wind: [number, number, number] };
+  rockSpans?: {
+    direction: [number, number, number];
+    span: [number, number, number];
+    depth: [number, number, number];
+    size: number;
+    rise: number;
+    tint: number;
+    site: { overlook: [number, number, number]; target: [number, number, number] };
+    vertices: Float32Array;
+  }[];
 }
 export function createStudioPlanetNoise(
   seed?: number,
@@ -108,6 +140,21 @@ export function bakeStudioPlanetNoise(
     reseedLayers?: boolean;
     erosion?: boolean;
     geology?: "mixed" | "alpine" | "mesa" | "volcanic";
+    variation?: number;
+    rangeWeight?: number;
+    landscape?: "natural" | "mesas" | "fractal" | "mosaic";
+    landscapeStrength?: number;
+    featureDensity?: number;
+    /** Target flooded fraction of the surface for eroded maps, between 0 and 1. */
+    oceanCoverage?: number;
+    /** Give the eroded world a dry surface and large lunar impact basins. */
+    lunar?: boolean;
+    /** Density of smaller craters on lunar terrain, from 0 to 1. */
+    craterDetail?: number;
+    /** Carve ice-filled fault valleys on a lunar world. */
+    cryoGlaciers?: boolean;
+    /** Include local landmark patches in eroded maps. Defaults to true. */
+    landmarkPatches?: boolean;
   },
 ): Promise<StudioPlanetNoiseMap>;
 export function sampleStudioPlanetNoise(

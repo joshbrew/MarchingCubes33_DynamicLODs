@@ -27,7 +27,7 @@
         border: 1px solid #90b4d84d;
         border-radius: 12px;
         background: #101d2bee;
-        padding: 16px;
+        padding: 14px;
         scrollbar-width: thin;
       }
       header {
@@ -41,7 +41,7 @@
         display: flex;
         gap: 5px;
         flex-wrap: wrap;
-        margin-bottom: 18px;
+        margin-bottom: 12px;
       }
       nav a {
         color: #b8ddfc;
@@ -58,7 +58,7 @@
       h1 {
         font-size: 23px;
         line-height: 1.15;
-        margin: 0 0 6px;
+        margin: 0;
       }
       p {
         color: #b2c6db;
@@ -69,7 +69,7 @@
         display: flex;
         gap: 7px;
         flex-wrap: wrap;
-        margin: 14px 0;
+        margin: 12px 0;
       }
       button,
       select {
@@ -92,8 +92,21 @@
         justify-content: space-between;
         align-items: center;
         gap: 8px;
-        margin: 12px 0;
+        margin: 9px 0;
       }
+      .heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .heading button { white-space: nowrap; }
+      .row select { width: 174px; max-width: 62%; }
+      details { border-top: 1px solid #90b4d830; padding-top: 8px; margin-top: 8px; }
+      summary { cursor: pointer; }
+      #showInterface { position: fixed; top: 16px; left: 16px; }
+      [hidden] { display: none !important; }
       input[type="range"] {
         width: 135px;
         accent-color: #8ccaf0;
@@ -116,7 +129,7 @@
       aside {
         right: 16px;
         bottom: 16px;
-        width: 280px;
+        width: 320px;
       }
       aside h2 {
         font-size: 14px;
@@ -124,9 +137,10 @@
       }
       dl {
         display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 6px;
+        grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+        gap: 6px 10px;
         margin: 0;
+        line-height: 1.35;
       }
       dt {
         color: #afc7de;
@@ -135,6 +149,7 @@
         margin: 0;
         font-variant-numeric: tabular-nums;
         text-align: right;
+        overflow-wrap: anywhere;
       }
       .hint {
         font-size: 12px;
@@ -149,7 +164,7 @@
         aside {
           bottom: 10px;
           right: 10px;
-          width: 238px;
+          width: min(280px, calc(100vw - 20px));
           font-size: 12px;
         }
       }
@@ -161,7 +176,10 @@
       tabindex="0"
       aria-label="Fly around the procedural planet"
     ></canvas>
-    <header class="panel">
+    <button id="showInterface" type="button" aria-controls="controls performance" aria-expanded="false" hidden>
+      Show UI
+    </button>
+    <header id="controls" class="panel">
       <nav aria-label="Demos">
         <a href="index.html?demo=sphere">Sphere</a
         ><a href="index.html?demo=terrain">Terrain</a>
@@ -169,14 +187,57 @@
         ><a href="index.html?demo=progressive">Noise tiles</a>
         <a href="index.html?demo=planet" aria-current="page">Planet approach</a>
       </nav>
-      <h1>Planet approach</h1>
-      <p>
-        Pick a world and fly from orbit to the surface. The mesh gets finer as
-        you descend.
-      </p>
+      <div class="heading">
+        <h1>Planet approach</h1>
+        <button id="hideInterface" type="button" aria-controls="controls performance" title="Hide the controls and performance panel (H)">Hide UI</button>
+      </div>
       <div class="row">
         <label for="preset">Planet preset</label>
         <select id="preset"></select>
+      </div>
+      <div class="row">
+        <label for="planetSize">World size</label>
+        <select id="planetSize">
+          <option value="98304">Moon</option>
+          <option value="262144" selected>Planet</option>
+          <option value="786432">Super-planet</option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="terrainSampling">Terrain sampling</label>
+        <select id="terrainSampling">
+          <option value="procedural" selected>Procedural vertices</option>
+          <option value="cached">Cached atlas</option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="region">Explore region</label>
+        <select id="region">
+          <option value="">Choose a landform</option>
+          <option value="alpine">Rocky mountains</option>
+          <option value="canyon">Canyons and mesas</option>
+          <option value="granite">Granite domes</option>
+          <option value="volcanic">Volcanic terrain</option>
+          <option value="impact-basins">Giant impact basins</option>
+          <option value="islands">Volcanic islands</option>
+          <option value="drowned-canyons">Drowned canyons</option>
+          <option value="sediment-shelves">Shallow coastal shelves</option>
+          <option value="glacial-highlands">Glacial highlands</option>
+          <option value="terraced-plateaus">Terraced plateaus</option>
+          <option value="pinnacle-rims">Pinnacle rims</option>
+          <option value="fractal-outcrops">Fractal outcrops</option>
+          <option value="dune-seas">Sand-filled basins</option>
+          <option value="wind-badlands">Wind-cut badlands</option>
+          <option value="fault-blocks">Fault-block ranges</option>
+          <option value="rift-inlets">Flooded rift valleys</option>
+          <option value="alluvial-fans">Alluvial fans and dry washes</option>
+          <option value="inverted-valleys">Inverted valleys</option>
+          <option value="granite-divides">Granite divides</option>
+          <option value="flatirons">Folded foothills</option>
+          <option value="lava-benches">Lava-cut canyons</option>
+          <option value="sandstone-fins">Sandstone fins and domes</option>
+          <option value="basalt-highlands">Basalt highlands</option>
+        </select>
       </div>
       <div class="buttons">
         <button id="approach">Start approach</button
@@ -199,53 +260,142 @@
           aria-label="Height"
         />
       </div>
-      <div class="row">
+      <details>
+        <summary>Mesh detail</summary>
+        <div class="row">
         <label for="detail"
-          >Pixel error <output id="detailValue">3 px</output></label
+          >Pixel error <output id="detailValue">1.25 px</output></label
         >
         <input
           id="detail"
           type="range"
-          min="1.25"
+          min="1"
           max="24"
           step=".25"
-          value="3"
+          value="1.25"
         />
       </div>
       <div class="row">
-        <label for="lodScale">Distant LOD <output id="lodScaleValue">1.50×</output></label>
-        <input id="lodScale" type="range" min=".25" max="4" step=".05" value="1.5" />
+        <label for="lodScale">Distant LOD <output id="lodScaleValue">4.00×</output></label>
+        <input id="lodScale" type="range" min=".25" max="32" step=".25" value="4" />
       </div>
       <div class="row">
-        <label for="patchBudget">Patch budget <output id="patchBudgetValue">768</output></label>
-        <input id="patchBudget" type="range" min="192" max="1200" step="24" value="768" />
+        <label for="triangleBudget">Triangle budget <output id="triangleBudgetValue">800,000</output></label>
+        <input id="triangleBudget" type="range" min="100000" max="28325000" step="25000" value="800000" />
       </div>
       <div class="row">
         <label><input id="colors" type="checkbox" />LOD colors</label
         ><label><input id="wire" type="checkbox" />Wireframe</label>
       </div>
+      </details>
+      <details>
+        <summary>Day and night</summary>
+        <div class="row">
+          <label><input id="sunCycle" type="checkbox" checked />Animate sun</label>
+        </div>
+        <div class="row">
+          <label for="sunPhase">Sun orbit <output id="sunPhaseValue">0°</output></label>
+          <input id="sunPhase" type="range" min="0" max="360" step="1" value="0" />
+        </div>
+        <div class="row">
+          <label for="atmosphere">Atmosphere</label>
+          <select id="atmosphere">
+            <option value="preset">Planet preset</option>
+            <option value="blue">Blue</option>
+            <option value="amber">Amber</option>
+            <option value="violet">Violet</option>
+            <option value="teal">Teal</option>
+            <option value="thin">Thin atmosphere</option>
+          </select>
+        </div>
+      </details>
+      <details>
+        <summary>Terrain noise</summary>
+        <div class="row">
+          <label for="landscape">Landscape</label>
+          <select id="landscape">
+            <option value="natural">Natural mix</option>
+            <option value="mesas">Terraced mesas</option>
+            <option value="fractal">Alien fractal</option>
+            <option value="mosaic">Regional mosaic</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="landscapeStrength">Style strength</label>
+          <input id="landscapeStrength" type="range" min="0" max="1" step=".05" value="1" />
+        </div>
+        <div class="row">
+          <label for="terrainRelief">Relief multiplier</label>
+          <input id="terrainRelief" type="range" min=".25" max="1.25" step=".05" value="1" />
+        </div>
+        <div class="row">
+          <label for="rangeShape">Mountain ranges</label>
+          <select id="rangeShape">
+            <option value="hybrid">Mixed terrain</option>
+            <option value="ridges">Sharper ridges</option>
+            <option value="rolling">Rolling relief</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="slopeNoise">Hillside detail</label>
+          <select id="slopeNoise">
+            <option value="erosion">Downhill erosion</option>
+            <option value="incised">Incised ridges</option>
+            <option value="soft">Soft noise</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="slopeOctaves">Hillside octaves</label>
+          <input id="slopeOctaves" type="number" min="0" max="4" value="4" />
+        </div>
+        <div class="row">
+          <label for="erosionStrength">Local erosion <output id="erosionStrengthValue" for="erosionStrength">1.20×</output></label>
+          <input id="erosionStrength" type="range" min="0" max="2" step=".05" value="1.2" />
+        </div>
+        <div class="row">
+          <label for="groundNoise">Ground detail</label>
+          <select id="groundNoise">
+            <option value="erosion">Downhill erosion</option>
+            <option value="incised">Incised ridges</option>
+            <option value="soft">Soft noise</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="groundOctaves">Ground octaves</label>
+          <input id="groundOctaves" type="number" min="0" max="5" value="5" />
+        </div>
+        <div class="row">
+          <label for="noiseVariation">Regional variation</label>
+          <input id="noiseVariation" type="range" min="0" max="1" step=".05" value=".8" />
+        </div>
+      </details>
       <p class="hint">
-        Left drag turns the planet. Right drag changes the view angle. WASD to
-        move, Space/C to climb or descend, Shift for speed.
+        Left drag to orbit, right drag to look. WASD to fly, Space/C to climb or descend, Shift for speed, H to toggle the UI.
       </p>
       <output id="status">Preparing the planet…</output>
     </header>
-    <aside class="panel" aria-label="Planet performance">
+    <aside id="performance" class="panel" aria-label="Planet performance">
       <h2>Surface and performance</h2>
       <dl>
         <dt>Height above ground</dt>
         <dd id="heightReadout">—</dd>
         <dt>Seed</dt>
         <dd id="seedReadout">—</dd>
+        <dt>Terrain relief</dt>
+        <dd id="reliefReadout">—</dd>
         <dt>World surface</dt>
         <dd id="oceanReadout">—</dd>
+        <dt>Climate</dt>
+        <dd id="climateReadout">—</dd>
         <dt>Landforms</dt>
         <dd id="geologyReadout">—</dd>
         <dt>Finest grid spacing</dt>
         <dd id="spacing">—</dd>
         <dt>Triangles</dt>
         <dd id="tris">—</dd>
-        <dt>Drawn / planned patches</dt>
+        <dt>Grid vertices</dt>
+        <dd id="gridVertices">—</dd>
+        <dt title="Drawn / planned patches">Patches</dt>
         <dd id="tiles">—</dd>
         <dt>Visible LOD grades</dt>
         <dd id="grades">—</dd>

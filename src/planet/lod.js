@@ -56,6 +56,8 @@ export function project(p) {
 // Two 20-bit tile coordinates plus face/level fit exactly in a JS number.
 const key = (face, level, x, y) =>
   (face * 32 + level) * 1099511627776 + x * 1048576 + y;
+export const parentTileKey = (tile) =>
+  tile.level > 0 ? key(tile.face, tile.level - 1, tile.x >> 1, tile.y >> 1) : null;
 function tile(face, level, x, y) {
   const size = 2 / 2 ** level,
     u = x * size - 1,
@@ -96,6 +98,13 @@ function neighbor(node, leaves, edge) {
 }
 export function neighbors(node, leaves) {
   return [0, 1, 2, 3].map((edge) => neighbor(node, leaves, edge));
+}
+function smoothstep(start, end, value) {
+  const t = clamp((value - start) / (end - start), 0, 1);
+  return t * t * (3 - 2 * t);
+}
+export function orbitDetailWeight(height, start, full) {
+  return smoothstep(start, full, height) * (1 - smoothstep(500000, 850000, height));
 }
 class Heap {
   items = [];
@@ -140,12 +149,17 @@ export function selectPlanet(
     minSpacing = 2,
     elevationBounds,
     sampleRelief,
+    centerPriority = false,
+    previousFocal = new Set(),
+    splitBudget = Infinity,
   } = {},
   previous = new Set(),
 ) {
   const leaves = new Map(),
     split = new Set(),
-    heap = new Heap();
+    focalSplit = new Set(),
+    heap = new Heap(),
+    focalHeap = new Heap();
   const eye = camera.position,
     eyeLength = Math.hypot(...eye),
     eyeDir = unit(eye);
@@ -163,7 +177,19 @@ export function selectPlanet(
   const horizon =
     Math.acos(clamp(inner / eyeLength, -1, 1)) + Math.acos(inner / outer);
   const margin = Math.min(5000, Math.max(64, height * 0.1));
+  const spreadDistance = Math.max(1800, height * .12);
+  const focalGain = .67;
+  const orbitalGain = centerPriority
+    ? (4 + 3 * smoothstep(300000, 500000, height)) * orbitDetailWeight(height, 100000, 220000)
+    : 0;
+  const nadirStart = Math.min(height * .12, radius * .16);
+  const nadirEnd = Math.min(height * .55, radius * .60);
   const planes = camera.planes || [];
+  const sidePlanes = Math.min(4, planes.length);
+  const eyeForward = centerPriority ? dot(eye, camera.forward) : 0;
+  const eyeRight = centerPriority ? dot(eye, camera.right) : 0;
+  const eyeUp = centerPriority ? dot(eye, camera.up) : 0;
+  let remainingSplits = splitBudget, deferred = false, distanceDeferred = false;
   const metrics = Array.from({ length: deepest + 1 }, (_, level) => {
     const size = 2 / 2 ** level,
       chord = Math.SQRT1_2 * size,
@@ -200,15 +226,25 @@ export function selectPlanet(
     );
     if (!node.visible && lateral >= m.nearby) return;
     const distance = Math.hypot(height, lateral);
-    let weight = 1 + (lodScale - 1) * clamp((lateral - 150) / 1800, 0, 1);
+    const spread = clamp((lateral - 150) / spreadDistance, 0, 1);
+    let weight = 1 + (lodScale - 1) * spread;
+    const wasFocal = previousFocal.has(node.key);
+    const wasDistance = previous.has(node.key) && !wasFocal;
+    const distanceThreshold = pixelError * (wasDistance ? .8 : 1);
+    const focalThreshold = pixelError * (wasFocal ? .8 : 1);
+    const canFocus = centerPriority && node.visible;
     if (sampleRelief && height < 60000 && node.visible && node.level >= 3) {
+      // Ruggedness can increase the weight by at most 1 + 1.6.
+      const maxError = (m.error * (weight * (1 + 1.6))) / distance;
+      if (maxError <= distanceThreshold && (!canFocus || maxError * (1 + focalGain) <= focalThreshold))
+        return;
       const [ground, variation] = sampleRelief(node);
       const rugged = clamp(variation / Math.max(1, m.lateral) - 0.16, 0, 1);
       weight *= 1 + rugged * 1.6;
       // The conservative globe bounds include mountains far outside this
       // patch. Deprioritize tiles outside the view at their local elevation.
       const viewBound = m.lateral * 1.1 + variation + Math.min(650, m.lateral);
-      for (let i = 0; i < Math.min(4, planes.length); i++) {
+      for (let i = 0; i < sidePlanes; i++) {
         if (
           (radius + ground) * dot(planes[i], node.dir) + planes[i][3] <
           -viewBound - margin
@@ -219,12 +255,38 @@ export function selectPlanet(
       }
     }
     const error = (m.error * weight) / distance;
-    if (error > pixelError * (previous.has(node.key) ? 0.8 : 1))
-      heap.push({ node, score: error * (node.visible ? 1.15 : 1) });
+    const orbitalFocus = orbitalGain > 0 && lateral < nadirEnd ? orbitalGain : 0;
+    let focus = 0;
+    if (canFocus && ((orbitalFocus > 0 && error * (1 + orbitalFocus) > distanceThreshold) ||
+        (error <= distanceThreshold && error * (1 + focalGain) > focalThreshold))) {
+      const depth = Math.max(1, midpoint * dot(node.dir, camera.forward) - eyeForward);
+      const x = (Math.abs(midpoint * dot(node.dir, camera.right) - eyeRight) - m.lateral * .35) /
+        (depth * camera.tanX);
+      const y = (Math.abs(midpoint * dot(node.dir, camera.up) - eyeUp) - m.lateral * .35) /
+        (depth * camera.tanY);
+      const edge = clamp((Math.hypot(Math.max(0, x), Math.max(0, y)) - .12) / .98, 0, 1);
+      focus = 1 - edge * edge * (3 - 2 * edge);
+    }
+    // At orbital heights the distance pass can fill the budget before
+    // ordinary center refinement. Prioritize the visible sub-camera region
+    // within that pass so the extra detail still fits the same patch cap.
+    const orbitalBonus = orbitalFocus > 0 && focus > 0
+      ? orbitalFocus * (1 - smoothstep(nadirStart, nadirEnd, lateral)) * focus * focus
+      : 0;
+    const distanceError = error * (1 + orbitalBonus);
+    if (distanceError > distanceThreshold) {
+      heap.push({ node, score: distanceError * (node.visible ? 1.15 : 1) *
+        (centerPriority && wasDistance ? 1.10 : 1) });
+    } else if (focus > 0) {
+      const focusedError = error * (1 + focalGain * focus);
+      if (focus > 0 && focusedError > focalThreshold)
+        focalHeap.push({ node, score: focusedError });
+    }
   }
   for (let f = 0; f < 6; f++) add(tile(f, 0, 0, 0));
-  while (heap.items.length && leaves.size + 3 <= maxTiles) {
-    const { node } = heap.pop();
+  while ((heap.items.length || (!distanceDeferred && focalHeap.items.length)) && leaves.size + 3 <= maxTiles) {
+    const focal = !heap.items.length;
+    const { node } = (focal ? focalHeap : heap).pop();
     if (!leaves.has(node.key)) continue;
     const required = new Set();
     function addSplit(n) {
@@ -237,9 +299,20 @@ export function selectPlanet(
     }
     addSplit(node);
     if (leaves.size + 3 * required.size > maxTiles) continue;
+    if (remainingSplits < Infinity) {
+      let newSplits = 0;
+      for (const candidate of required) if (!previous.has(candidate.key)) newSplits++;
+      if (newSplits > remainingSplits) {
+        deferred = true;
+        if (!focal) distanceDeferred = true;
+        continue;
+      }
+      remainingSplits -= newSplits;
+    }
     for (const n of required) {
       leaves.delete(n.key);
       split.add(n.key);
+      if (focal) focalSplit.add(n.key);
       for (let y = 0; y < 2; y++)
         for (let x = 0; x < 2; x++)
           add(tile(n.face, n.level + 1, n.x * 2 + x, n.y * 2 + y));
@@ -249,10 +322,11 @@ export function selectPlanet(
   for (const node of leaves.values()) {
     if (!node.visible) continue;
     let mask = 0;
-    neighbors(node, leaves).forEach((n, i) => {
-      if (n && n.level < node.level) mask |= 1 << i;
-    });
+    for (let edge = 0; edge < 4; edge++) {
+      const adjacent = neighbor(node, leaves, edge);
+      if (adjacent && adjacent.level < node.level) mask |= 1 << edge;
+    }
     visible.push({ ...node, mask, spacing: (radius * node.size) / divs });
   }
-  return { leaves, visible, split };
+  return { leaves, visible, split, focalSplit, deferred };
 }

@@ -14,8 +14,8 @@ const demos = {
     load: () => import("./src/progressive/demo.js"),
   },
 };
-const selected = new URLSearchParams(location.search).get("demo") || "sphere";
-const demo = demos[selected] || demos.sphere;
+const selected = new URLSearchParams(location.search).get("demo");
+const demo = Object.hasOwn(demos, selected) ? demos[selected] : demos.planet;
 const page = new DOMParser().parseFromString(demo.page, "text/html");
 document.title = page.title;
 document.head.append(

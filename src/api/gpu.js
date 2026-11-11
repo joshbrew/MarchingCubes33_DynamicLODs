@@ -3,6 +3,7 @@ export async function createGPUDevice({
   adapterOptions,
   requiredFeatures = [],
   requiredLimits,
+  preferredStorageBufferSize = 0,
   timestamps = true,
 } = {}) {
   const gpu = globalThis.navigator?.gpu;
@@ -15,6 +16,15 @@ export async function createGPUDevice({
   const features = new Set(requiredFeatures);
   if (timestamps && adapter.features.has("timestamp-query"))
     features.add("timestamp-query");
+  if (preferredStorageBufferSize > 0) {
+    const size = Math.min(preferredStorageBufferSize,
+      adapter.limits.maxStorageBufferBindingSize, adapter.limits.maxBufferSize);
+    requiredLimits = {
+      ...requiredLimits,
+      maxStorageBufferBindingSize: Math.max(size, requiredLimits?.maxStorageBufferBindingSize ?? 0),
+      maxBufferSize: Math.max(size, requiredLimits?.maxBufferSize ?? 0),
+    };
+  }
   return adapter.requestDevice({
     requiredFeatures: [...features],
     requiredLimits,
@@ -26,9 +36,9 @@ export function isWebGPUSupported() {
 }
 
 // Each renderer owns its canvas context. A supplied device remains caller-owned.
-export async function initializeGPU(renderer) {
+export async function initializeGPU(renderer, deviceOptions) {
   renderer.ownsDevice = !renderer.options.device;
-  renderer.device = renderer.options.device || (await createGPUDevice());
+  renderer.device = renderer.options.device || (await createGPUDevice(deviceOptions));
   const d = renderer.device;
   renderer.onGPUError = (event) => renderer.errors.push(event.error.message);
   d.addEventListener("uncapturederror", renderer.onGPUError);

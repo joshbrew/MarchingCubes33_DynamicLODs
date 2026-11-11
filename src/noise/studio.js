@@ -1,5 +1,64 @@
 export const studioSeed = 123456789;
 export const studioSegments = 1000;
+export const studioLandscapes = Object.freeze({ natural: 0, mesas: 1, fractal: 2, mosaic: 3 });
+
+export function studioMosaic(seed) {
+  const key = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+  const selection = key >>> 30;
+  const phase = (key & 65535) * (2 * Math.PI / 65536);
+  const weight = (v) => {
+    const t = Math.max(0, Math.min(1, (v - 0.15) / 0.63));
+    return t * t * (3 - 2 * t);
+  };
+  return {
+    mesas: selection !== 1,
+    fractal: selection !== 0,
+    // Match studio_mosaic in noiseCompute.wgsl so Explore region sees the bake's regions.
+    score([x, y, z]) {
+      const bend = Math.sin(-3.4 * x + 6.2 * y + 4.1 * z - phase);
+      const belt = 0.72 * Math.sin(7.2 * x - 4.6 * y + 3.8 * z + phase + 0.94 * bend) +
+        0.28 * Math.sin(11.8 * x + 5.7 * y - 7.3 * z - phase);
+      return [selection === 1 ? 0 : weight(belt), selection === 0 ? 0 : weight(-belt)];
+    },
+  };
+}
+
+export function studioPlanetRelief(seed) {
+  let value = (seed ^ 0x50a86d25) >>> 0;
+  value = Math.imul(value ^ (value >>> 16), 0x7feb352d);
+  value = Math.imul(value ^ (value >>> 15), 0x846ca68b);
+  const roll = ((value ^ (value >>> 16)) >>> 0) / 4294967296;
+  return 0.24 + 0.88 * roll ** 1.12;
+}
+
+export function studioRegionWeights({ regions }, [x, y, z], geology) {
+  if (!regions) {
+    if (geology === "mesa") return [0, 1, 0, 0];
+    if (geology === "volcanic") return [0, 0, 0, 1];
+    return [1, 0, 0, 0];
+  }
+  const { side, values } = regions;
+  const span = side - 1;
+  const horizontal = Math.hypot(x, z);
+  const longitude = horizontal > 0 ? Math.atan2(z, x) / (2 * Math.PI) : 0;
+  const u = (longitude - Math.floor(longitude)) * span;
+  const v = Math.atan2(horizontal, y) * span / Math.PI;
+  const col = Math.floor(u), row = Math.floor(v);
+  const nextRow = Math.min(span, row + 1);
+  const dx = u - col, dy = v - row;
+  const a = values[row * side + col], b = values[row * side + Math.min(span, col + 1)];
+  const c = values[nextRow * side + col], d = values[nextRow * side + Math.min(span, col + 1)];
+  const band = (shift) => (
+    ((a >>> shift) & 255) * (1 - dx) * (1 - dy) +
+    ((b >>> shift) & 255) * dx * (1 - dy) +
+    ((c >>> shift) & 255) * (1 - dx) * dy +
+    ((d >>> shift) & 255) * dx * dy
+  ) / 255;
+  const canyon = band(0), granite = band(8), volcanic = band(16);
+  const total = canyon + granite + volcanic;
+  const scale = 1 / Math.max(1, total);
+  return [Math.max(0, 1 - total), canyon * scale, granite * scale, volcanic * scale];
+}
 
 // Bake a low-pass atlas for views where a full-resolution texel is smaller
 // than the projected footprint. The duplicate longitude and poles stay closed.
@@ -93,26 +152,53 @@ function cubic(a, b, c, d, t) {
           (a - 2.5 * b + 2 * c - 0.5 * d + t * (0.5 * (d - a) + 1.5 * (b - c))))
   );
 }
+function cubicSlope(a, b, c, d, t) {
+  return 0.5 * (c - a) +
+    t * (2 * (a - 2.5 * b + 2 * c - 0.5 * d) + t * (1.5 * (d - a) + 4.5 * (b - c)));
+}
 
 // The last longitude column duplicates the first. Cubic interpolation wraps
 // across that seam and gives the near terrain a continuous broad slope.
-export function sampleStudioPlanetNoise({ side, values }, [x, y, z]) {
+export function sampleStudioPlanetNoise({ side, values }, [x, y, z], slope) {
   const horizontal = Math.hypot(x, z);
   const longitude = horizontal > 0 ? Math.atan2(z, x) / (2 * Math.PI) : 0;
   const u = (longitude - Math.floor(longitude)) * (side - 1);
   const v = (Math.atan2(horizontal, y) * (side - 1)) / Math.PI;
-  const i = Math.floor(u),
-    j = Math.floor(v);
+  const j = Math.floor(v);
   const wrap = (column) => (column + side - 1) % (side - 1);
-  const row = (offset) => {
-    const base = Math.min(side - 1, Math.max(0, j + offset)) * side;
-    return cubic(
-      values[base + wrap(i - 1)],
-      values[base + wrap(i)],
-      values[base + wrap(i + 1)],
-      values[base + wrap(i + 2)],
-      u - i,
+  const ring = (latitude, longitude, sample = cubic) => {
+    if (latitude < 0 || latitude >= side) {
+      latitude = latitude < 0 ? -latitude : 2 * (side - 1) - latitude;
+      longitude += (side - 1) * 0.5;
+    }
+    const col = Math.floor(longitude);
+    const base = latitude * side;
+    return sample(
+      values[base + wrap(col - 1)],
+      values[base + wrap(col)],
+      values[base + wrap(col + 1)],
+      values[base + wrap(col + 2)],
+      longitude - col,
     );
   };
-  return cubic(row(-1), row(0), row(1), row(2), v - j);
+  const row = (offset, sample = cubic) => ring(j + offset, u, sample);
+  const a = row(-1), b = row(0), c = row(1), d = row(2);
+  if (slope && horizontal > 1e-5) {
+    const du = cubic(row(-1, cubicSlope), row(0, cubicSlope), row(1, cubicSlope), row(2, cubicSlope), v - j);
+    const dv = cubicSlope(a, b, c, d, v - j);
+    const uScale = du / (2 * Math.PI * horizontal ** 2);
+    const vScale = dv / (Math.PI * horizontal);
+    const scale = (side - 1) * 0.023;
+    slope[0] = (-z * uScale + x * y * vScale) * scale;
+    slope[1] = -horizontal * horizontal * vScale * scale;
+    slope[2] = (x * uScale + z * y * vScale) * scale;
+  } else if (slope) {
+    const span = side - 1;
+    const first = y > 0 ? 1 : span - 1;
+    const scale = 0.023 / (2 * Math.sin(Math.PI / span));
+    slope[0] = (ring(first, 0) - ring(first, span * 0.5)) * scale;
+    slope[1] = 0;
+    slope[2] = (ring(first, span * 0.25) - ring(first, span * 0.75)) * scale;
+  }
+  return cubic(a, b, c, d, v - j);
 }

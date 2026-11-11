@@ -155,16 +155,42 @@ Import `PlanetPresets` for the list of preset IDs and labels. Switch worlds
 with `await planet.configure({ preset: "volcanic" })`. Call
 `planet.configure({ pixelError: 2, lodScale: 2 })` to request finer patches
 and increase distant detail. Set `maxTiles` when you create the renderer to
-allocate patch capacity, then adjust `tileBudget` while it runs. Call
+set the patch ceiling, then adjust `tileBudget` while it runs.
+`planet.maxTileBudget("procedural")` and `planet.maxTileBudget("cached")`
+report the device limits for each mode. Distant LOD accepts `0.25` to `32`.
+Call
 `planet.dispose()` when you remove the canvas.
 
 Set `studioSeed` on `createPlanet` to reproduce a world. A preset change
 chooses its own default seed. To regenerate terrain while keeping the palette,
 call `await planet.configure({ studioSeed: 20783 })`. Pass the current
-`planet.studioSeed` with a new preset to preview its palette on the same terrain.
+`planet.studioSeed` with another preset in the same geology to preview its palette.
+A different geology rebuilds the terrain, even with the same seed.
 The current `planet.geology` gives the landform style of the baked terrain.
+Call `planet.sampleLandforms(unitDirection)` for the local `alpine`, `canyon`,
+`granite` and `volcanic` weights. They sum to one and can be used for local
+materials or points of interest.
 On wet worlds, `planet.oceanLevel` gives the sea elevation in meters and
 `planet.sampleSurface(direction).depth` gives the water depth at that point.
+
+```js
+await planet.configure({
+  detail: { range: "ridges", slopes: "erosion", ground: "incised", groundOctaves: 3 },
+});
+```
+
+Range options are `hybrid`, `ridges` and `rolling`. Both local bands support
+`erosion`, `incised` and `soft`. Use `slopeOctaves` from 0 to 4 and
+`groundOctaves` from 0 to 5. Set `variation` between 0 and 1 to control
+regional blending. At zero, the preset's geology applies everywhere.
+Use `landscape: "mesas"` for broad stepped tablelands or `landscape: "fractal"`
+for outward-growing ridges and billows. `landscape: "natural"` is the default.
+`landscape: "mosaic"` gives the seed regional bands of one or both styles.
+Use `landscapeStrength` from 0 to 1 to blend either style into the natural relief
+on the same seed. Range, regional variation, and landscape changes regenerate
+the height map. Set `relief` from 0.25 to 1.25 to scale the terrain and sea level
+without regenerating the noise.
+Use `erosionStrength` from 0 to 2 to control the local cuts.
 
 ## Generate noise
 
@@ -189,11 +215,25 @@ The map contains raw noise values and can also be sampled in Node. Use
 `PlanetField.surface(direction, radius, seed, preset, map)` for the
 CPU elevation with fine relief. On a live planet, use `planet.sampleSurface(direction)`.
 
-For custom 2D textures or 3D volumes, use `NoiseComputeBuilder` from the same import.
-Create it with `new NoiseComputeBuilder(device, device.queue)`, call
-`buildPermTable(seed)`, and pass a kernel name such as `computeFBM` in
-`noiseChoices` when calling `computeToTexture` or `computeToTexture3D`.
-Call `dispose()` when you finish with its textures.
+For a custom 2D texture, select a kernel and supply its parameters:
+
+```js
+import { NoiseComputeBuilder } from "marching-cubes-bourke-mc33/noise";
+
+const builder = new NoiseComputeBuilder(device, device.queue);
+builder.buildPermTable(20783);
+const view = await builder.computeToTexture(
+  512, 512,
+  { seed: 20783, zoom: 180, freq: 1, octaves: 5, lacunarity: 2, gain: 0.5, scalar: 1 },
+  { textureKey: "land", noiseChoices: ["clearTexture", "computeFBM"] },
+);
+// Bind view in a render or compute pass. Call builder.dispose() when finished.
+```
+
+Use `computeToTexture3D(width, height, depth, params, options)` for volumes.
+See the [noise parameter types](../types/noise.d.ts) and the
+[upstream Noise Compute repository](https://github.com/joshbrew/webgpu_noise_compute_textures)
+for kernel names and compositing settings.
 
 ## Change settings
 

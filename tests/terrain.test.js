@@ -208,6 +208,19 @@ test("fine and coarse tiles share exactly the same seam segments", () => {
     assert.deepEqual(fine, coarse);
   }
 });
+test("planet tiles alternate diagonals without changing stitched boundaries", () => {
+  const divs = 16;
+  for (let mask = 0; mask < 16; mask++) {
+    const uniform = Surface.buildIndices(divs, mask);
+    const alternating = Surface.buildIndices(divs, mask, "mc33", true);
+    assert.equal(alternating.length, uniform.length);
+    assert.deepEqual(
+      topology(alternating, divs).map(JSON.stringify).sort(),
+      topology(uniform, divs).map(JSON.stringify).sort(),
+    );
+    assert.notDeepEqual(alternating, uniform);
+  }
+});
 test("PLOC stackless culling agrees with a linear scan, including duplicate bounds", () => {
   const { tiles } = LOD.makeTiles(2048, 128),
     boxes = tiles.concat([{ ...tiles[3], id: tiles.length }]);

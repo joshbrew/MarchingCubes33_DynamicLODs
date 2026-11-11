@@ -22,7 +22,7 @@ function cellCorners(algorithm) {
   }
   return corners;
 }
-function buildIndices(divs, mask = 0, algorithm = "mc33") {
+function buildIndices(divs, mask = 0, algorithm = "mc33", alternateDiagonals = false) {
   if (!Number.isInteger(divs) || divs < 2 || divs & (divs - 1))
     throw new Error("Divisions must be a power of two of at least 2");
   if (!Number.isInteger(mask) || mask < 0 || mask > 15)
@@ -44,13 +44,14 @@ function buildIndices(divs, mask = 0, algorithm = "mc33") {
   }
   // Interior cells have identical topology. Compute their oriented offsets
   // once rather than allocating slices/maps/coordinate arrays per triangle.
-  const cell = [];
+  const cell = [], flipped = [];
   for (let t = 0; t < corners.length; t += 3) {
     const [a, b, c] = corners.slice(t, t + 3);
     const area = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
     const p = [a[1] * row + a[0], b[1] * row + b[0], c[1] * row + c[0]];
     if (area > 0) [p[1], p[2]] = [p[2], p[1]];
     cell.push(...p);
+    flipped.push(...p.map((index) => index + (index % row === 0 ? 1 : -1)).reverse());
   }
   // Stitch each affected 2x2 block as a perimeter fan. Omitting the odd edge
   // vertex makes the border identical to its coarse neighbor. This also
@@ -86,10 +87,12 @@ function buildIndices(divs, mask = 0, algorithm = "mc33") {
         for (let i = 0; i < perimeter.length; i++)
           emit([center, perimeter[i], perimeter[(i + 1) % perimeter.length]]);
       } else {
-        for (let dz = 0; dz < 2; dz++)
-          for (let dx = 0; dx < 2; dx++)
-            for (let t = 0; t < cell.length; t++)
-              indices[count++] = (z + dz) * row + x + dx + cell[t];
+        for (let dz = 0; dz < 2; dz++) {
+          for (let dx = 0; dx < 2; dx++) {
+            const offsets = alternateDiagonals && dx !== dz ? flipped : cell;
+            for (const offset of offsets) indices[count++] = (z + dz) * row + x + dx + offset;
+          }
+        }
       }
     }
   return indices.slice(0, count);

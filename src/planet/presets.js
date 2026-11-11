@@ -49,7 +49,7 @@ const palettes = [
     "0c0a1c 181230 2a1c48 3e2a62 583a7e 764e9a 9668b2 b684c4 ce9ccc e2b8d2 f0d0d8 ceb0ac b08e88 8c6a66 6c5052 503e44 4e7286 709cb0 a4cad4 f4f4f6",
   ],
   [
-    "Gas Giant",
+    "Amberstone",
     "22140e 3a2216 58361e 784e2a 986636 b68042 cc9a52 deb468 eaca82 f2dca0 e4ccb0 d2ba9e bea48c a8907c 927c6c 7c6c5e 685a50 967462 bc947a f5ece0",
   ],
   [
@@ -67,6 +67,7 @@ const palettes = [
 ];
 
 const catalog = new Map();
+const lunarPresets = new Set(["moon-dust", "lunar-highlands", "basalt-mare", "pluto", "ceres"]);
 const terrainStyles = {
   lakeshore: "alpine",
   ice: "alpine",
@@ -77,13 +78,19 @@ const terrainStyles = {
   badlands: "mesa",
   desert: "mesa",
   "copper-oxide": "mesa",
+  "verdigris-sea": "mesa",
   volcanic: "volcanic",
+  "amethyst-tide": "volcanic",
   "mars-dawn": "volcanic",
-  "moon-dust": "volcanic",
   toxic: "volcanic",
+  io: "volcanic",
 };
-function add(name, colors, seedOffset) {
-  const id = name.toLowerCase().replaceAll(" ", "-");
+const vegetatedCover = {
+  lakeshore: .87, forest: .98, jungle: 1, oceanic: .36,
+  utahish: .32, "coral-sea": .40, toxic: .52, "lavender-dusk": .26,
+};
+function add(name, colors, seedOffset, { id = name.toLowerCase().replaceAll(" ", "-"), ocean, dry = false,
+  material = 0, craterDetail = 0, cryoGlaciers = false } = {}) {
   const stops = colors.split(" ").map((hex) => parseInt(hex, 16));
   catalog.set(id, {
     id,
@@ -91,6 +98,13 @@ function add(name, colors, seedOffset) {
     stops,
     seedOffset,
     geology: terrainStyles[id] ?? "mixed",
+    vegetation: vegetatedCover[id] ?? .045,
+    lunar: lunarPresets.has(id),
+    ocean,
+    dry,
+    material,
+    craterDetail,
+    cryoGlaciers,
   });
 }
 add(
@@ -98,11 +112,81 @@ add(
   "183b5b 285c7e 4b8b95 b8a979 59794e 789660 86996a 8e8976 bdbaa8 e1e7e9",
   0,
 );
-palettes.forEach((p, i) => add(...p, 1013 * (i + 1)));
+palettes.forEach((p, i) => add(...p, 1013 * (i + 1), p[0] === "Amberstone" ? { id: "gas-giant" } : undefined));
+
+add(
+  "Verdigris Sea",
+  "173f40 448e7a d8c58f d7a873 b47851 a85a42 784438 5a4541 6c7774 b3bc9f f3e8ce",
+  1013 * (palettes.length + 1),
+  { ocean: {
+    coverage: .86,
+    shallow: [.06, .30, .19, .006],
+    deep: [.006, .064, .065, .0018],
+    sediment: [.66, .51, .29],
+    outcrop: [.33, .12, .060],
+    shoal: [.16, .45, .29, 440],
+  } },
+);
+add(
+  "Amethyst Tide",
+  "241943 524873 d2a9c5 b888b6 885da2 674785 493855 404059 78758d b3a7c4 e1d7ed",
+  1013 * (palettes.length + 2),
+  { ocean: {
+    coverage: .93,
+    shallow: [.23, .12, .36, .008],
+    deep: [.043, .014, .097, .0019],
+    sediment: [.52, .37, .53],
+    outcrop: [.095, .063, .13],
+    shoal: [.42, .23, .47, 320],
+  } },
+);
+
+add(
+  "Lunar Highlands",
+  "24272e 41454c 565b64 6c717a 80868e 999da3 aeb3b7 c3c6c7 d4d6d5 e3e5e2",
+  1013 * (palettes.length + 3),
+);
+add(
+  "Basalt Mare",
+  "17161a 28272d 3a373c 504847 655953 74645b 8c786b a39181 b8a898 d1c1af",
+  1013 * (palettes.length + 4),
+);
+add(
+  "Titan",
+  "192d31 304549 796746 9c8252 b7a274 ccb688 e0cca5 bca783 9c9f86 b8bda3 d6d3bb",
+  1013 * (palettes.length + 5),
+  { material: 1, ocean: {
+    name: "Methane seas",
+    coverage: .095,
+    shallow: [.027, .073, .076, .014],
+    deep: [.006, .016, .026, .005],
+    sediment: [.38, .29, .16],
+    outcrop: [.17, .13, .087],
+    shoal: [.049, .10, .089, 160],
+  } },
+);
+add(
+  "Io",
+  "302529 614033 a7603c d08536 e1ad47 e9c461 ead178 dcca98 b5a6bb c8bfd6 efe3cc",
+  1013 * (palettes.length + 6),
+  { material: 2, dry: true },
+);
+add(
+  "Pluto",
+  "431e24 793227 a04d35 ca6845 ce8667 dba990 b9c9ce d8e1df e9e7d9 f7f4e7",
+  1013 * (palettes.length + 7),
+  { material: 3, craterDetail: .62, cryoGlaciers: true },
+);
+add(
+  "Ceres",
+  "241a23 332d40 303e5b 3f5979 65535c 875e57 a67164 aa8e8c d1cdc0",
+  1013 * (palettes.length + 8),
+  { material: 4, craterDetail: 1 },
+);
 
 export const PlanetPresets = Object.freeze(
-  Array.from(catalog.values(), ({ id, name }) =>
-    Object.freeze({ id, name, wet: false }),
+  Array.from(catalog.values(), ({ id, name, ocean }) =>
+    Object.freeze({ id, name, wet: ocean !== undefined }),
   ),
 );
 
