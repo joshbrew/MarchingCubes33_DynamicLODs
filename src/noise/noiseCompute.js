@@ -279,9 +279,9 @@ export class NoiseComputeBuilder {
     this.permBuffer?.destroy();
     this.nullPosBuffer?.destroy();
 
-    // Options UBO: 48 bytes payload
+    // Options UBO matches NoiseComputeOptions.
     this.optionsBuffer = this.device.createBuffer({
-      size: 64,
+      size: 96,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
@@ -304,7 +304,7 @@ export class NoiseComputeBuilder {
     });
 
     // Initialize with zeros / default perm
-    this.queue.writeBuffer(this.optionsBuffer, 0, new ArrayBuffer(64));
+    this.queue.writeBuffer(this.optionsBuffer, 0, new ArrayBuffer(96));
     this.queue.writeBuffer(this.paramsBuffer, 0, new ArrayBuffer(24 * 4)); // <- updated
     this.queue.writeBuffer(this.permBuffer, 0, new Uint32Array(512));
   }
@@ -585,11 +585,14 @@ export class NoiseComputeBuilder {
       sphereLandscape = 0,
       sphereLandscapeStrength = 0,
       sphereFeatureDensity = 1,
+      sphereRegionSeed = 0,
+      sphereRegion = [0, 0, 0, 0],
+      sphereLayerWeights = [1, 1, 1, 1],
     } = opts;
 
     this.useCustomPos = useCustomPos >>> 0;
 
-    const buf = new ArrayBuffer(64);
+    const buf = new ArrayBuffer(96);
     const dv = new DataView(buf);
     dv.setUint32(0, getGradient, true);
     dv.setUint32(4, this.useCustomPos, true);
@@ -606,6 +609,11 @@ export class NoiseComputeBuilder {
     dv.setUint32(48, sphereLandscape, true);
     dv.setFloat32(52, sphereLandscapeStrength, true);
     dv.setFloat32(56, sphereFeatureDensity, true);
+    dv.setUint32(60, sphereRegionSeed, true);
+    for (let i = 0; i < 4; i++) {
+      dv.setFloat32(64 + 4 * i, sphereRegion[i], true);
+      dv.setFloat32(80 + 4 * i, sphereLayerWeights[i], true);
+    }
     this.queue.writeBuffer(this.optionsBuffer, 0, buf);
 
     // mark tile bind groups dirty so new options are used

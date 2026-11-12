@@ -50,6 +50,8 @@ Planet **Mesh detail** defaults to **1.25 px**, **4× distant LOD**, and **800,0
 
 Open **Terrain noise** in Planet Approach. The package accepts the same choices in `createPlanet(canvas, { detail })` and `planet.configure({ detail })`.
 
+Open **Terrain layers and region map** to choose the noise and uniforms for each of the five base layers. The region map uses the planet seed, an algorithm, a frequency, and a blend width. Each layer has a 0–1 weight for mountains, canyons, granite, and volcanic terrain. Blank uniforms inherit the preset values. In code, pass this recipe as `detail.noiseMix`, or pass `null` to restore the preset mix.
+
 | Control | Input | What it changes |
 | --- | --- | --- |
 | Landscape | `landscape` | `natural`, `mesas`, `fractal` or `mosaic`. Choose the broad landforms. |

@@ -389,7 +389,7 @@ export class PlanetRenderer {
     const results = await Promise.allSettled([
       bakeStudioMap(this.noiseBuilder, {
         seed, erosion: true, geology: profile.geology, variation: detail.variation,
-        rangeWeight: rangeWeights[detail.range], landscape: detail.landscape,
+        rangeWeight: rangeWeights[detail.range], landscape: detail.landscape, noiseMix: detail.noiseMix,
         landscapeStrength: detail.landscapeStrength, featureDensity: featureDensity(size),
         oceanCoverage: profile.dry ? 0 : profile.ocean?.coverage,
         lunar: profile.lunar,
@@ -788,6 +788,7 @@ export class PlanetRenderer {
           profile.craterDetail !== this.profile.craterDetail ||
           profile.cryoGlaciers !== this.profile.cryoGlaciers ||
           nextDetail.variation !== this.detail.variation || nextDetail.range !== this.detail.range ||
+          nextDetail.noiseMix !== this.detail.noiseMix ||
           nextDetail.landscape !== this.detail.landscape ||
           (nextDetail.landscape !== "natural" && nextDetail.landscapeStrength !== this.detail.landscapeStrength)) {
         const [baked, compiled] = await Promise.allSettled([
@@ -851,7 +852,8 @@ export class PlanetRenderer {
     this.depth = this.device.createTexture({
       size: [width, height],
       format: "depth24plus",
-      usage: GPUTextureUsage.RENDER_ATTACHMENT,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT |
+        (this.options.sampleDepth ? GPUTextureUsage.TEXTURE_BINDING : 0),
     });
     this.dirty = true;
   }
@@ -1135,7 +1137,7 @@ export class PlanetRenderer {
         view: this.depth.createView(),
         depthClearValue: 1,
         depthLoadOp: "clear",
-        depthStoreOp: "discard",
+        depthStoreOp: this.options.sampleDepth ? "store" : "discard",
       },
       ...(timed
         ? {

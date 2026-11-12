@@ -1,6 +1,7 @@
 import { BaseNoise } from "../noise/noiseCompute.js";
 import { geologyMode, studioLayers } from "../noise/studio-map.js";
 import { studioLandscapes } from "../noise/studio.js";
+import { studioNoiseAlgorithms, studioRegionUniforms } from "../noise/studio-mix.js";
 import { rangeWeights } from "./detail.js";
 import noiseWGSL from "../noise/noiseCompute.wgsl";
 import canyonBedsWGSL from "../noise/canyon-beds.wgsl";
@@ -34,7 +35,8 @@ export class StudioVertices {
     if (errors.length) throw new Error(errors.map(({ message }) => message).join("\n"));
     this.pipeline = await d.createComputePipelineAsync({ layout: "auto",
       compute: { module, entryPoint: "sample_studio_vertices" } });
-    this.recipe = d.createBuffer({ size: 5 * 96 + 64, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+    this.recipe = d.createBuffer({ size: 5 * 96 + 64 + 16 + 5 * 16 + 32,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
     this.permutations = d.createBuffer({ size: 5 * 512 * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
     this.probeJob = d.createBuffer({ size: 32, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
     this.probeOutput = d.createBuffer({ size: 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
@@ -45,23 +47,30 @@ export class StudioVertices {
     const d = this.device;
     const rangeWeight = rangeWeights[detail.range];
     const { sphereOffset, sphereOffset2, layers } =
-      studioLayers(seed, geology, true, detail.variation, rangeWeight, map.featureDensity);
+      studioLayers(seed, geology, true, detail.variation, rangeWeight, map.featureDensity, undefined, detail.noiseMix);
     const packed = new ArrayBuffer(this.recipe.size);
     const values = new Float32Array(packed), ints = new Uint32Array(packed);
     const permutations = new Uint32Array(5 * 512);
-    layers.forEach(({ layer }, index) => {
+    const algorithms = Object.keys(studioNoiseAlgorithms);
+    layers.forEach(({ layer, entryPoint, weights }, index) => {
       const at = 24 * index;
       values.set([0, layer.zoom, layer.freq, 0, layer.lacunarity, layer.gain,
-        layer.xShift, layer.yShift, layer.zShift, 0, layer.seedAngle, 1, 0, layer.threshold,
-        10, 0, layer.warpAmp, 4, 8, 0, 0, 0, layer.scalar, layer.transform], at);
+        layer.xShift, layer.yShift, layer.zShift, 0, layer.seedAngle, layer.exp1, layer.exp2, layer.threshold,
+        layer.rippleFreq, layer.time, layer.warpAmp, layer.gaborRadius, layer.terraceStep, 0, 0,
+        layer.edgeK, layer.scalar, layer.transform], at);
       ints[at] = layer.seed;
       ints[at + 3] = layer.octaves;
+      ints[at + 9] = layer.turbulence;
+      ints[at + 19] = layer.toroidal;
       ints[at + 20] = layer.voroMode;
+      values.set(weights ?? [1, 1, 1, 1], 140 + 4 * index);
+      ints[160 + index] = algorithms.indexOf(entryPoint);
       permutations.set(new BaseNoise(layer.seed).perm, index * 512);
     });
     values.set([size, sphereOffset, sphereOffset2, map.featureDensity, detail.variation,
       rangeWeight, detail.landscapeStrength, map.hostRelief ?? 1], 120);
     ints.set([seed, geologyMode[geology], studioLandscapes[detail.landscape], divs, map.side, referenceSegments], 128);
+    values.set(studioRegionUniforms(detail.noiseMix, geologyMode[geology]), 136);
     d.queue.writeBuffer(this.recipe, 0, packed);
     d.queue.writeBuffer(this.permutations, 0, permutations);
     if (this.guide?.size !== map.guide.byteLength) {

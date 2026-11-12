@@ -1,5 +1,6 @@
 import { NoiseComputeBuilder } from "./noiseCompute.js";
 import { applyStudioRunoff } from "./studio-watersheds.js";
+import { studioNoiseDefaults, studioRegionUniforms } from "./studio-mix.js";
 import erosionWorkerURL from "./studio-erosion.worker.js";
 import {
   createStudioPlanetNoise,
@@ -10,13 +11,13 @@ import {
 } from "./studio.js";
 export const geologyMode = { mixed: 0, alpine: 1, mesa: 2, volcanic: 3 };
 
-export function studioLayers(seed, geology, erosion, variation, rangeWeight, featureDensity, reseedLayers) {
+export function studioLayers(seed, geology, erosion, variation, rangeWeight, featureDensity, reseedLayers, mix) {
   const recipe = createStudioPlanetNoise(seed, { reseedLayers });
   const mountainRanges = geology === "alpine" || geology === "mixed";
   const ridgeBoost = geology === "alpine" ? 2.20 : geology === "volcanic" ? 1.36 : 1.75;
   const rollingReduction = mountainRanges ? .48 : geology === "mesa" ? .43 : .25;
   const layers = recipe.layers.map(({ entryPoint, params }, index) => {
-    const layer = { ...params, zoom: params.zoom / featureDensity };
+    const layer = { ...studioNoiseDefaults, ...params };
     if (erosion && entryPoint === "computeRidgedMultifractal4") {
       const boost = 1 + (ridgeBoost - 1) * rangeWeight;
       layer.scalar = boost;
@@ -28,7 +29,11 @@ export function studioLayers(seed, geology, erosion, variation, rangeWeight, fea
       if (entryPoint === "computeFBM2") layer.scalar *= 1 - rollingReduction * rangeWeight;
       if (mountainRanges && entryPoint === "computeLanczosBillow") layer.scalar *= 1 - .52 * rangeWeight;
     }
-    return { entryPoint, layer, blend: erosion && index > 0 ? variation : 0,
+    const custom = mix?.layers[index];
+    if (custom) Object.assign(layer, custom.uniforms);
+    layer.zoom /= featureDensity;
+    return { entryPoint: custom?.algorithm ?? entryPoint, layer, weights: custom?.weights,
+      blend: erosion && index > 0 ? variation : 0,
       phase: 13.7 * index + (seed >>> 0) % 997 * 0.13 };
   });
   return { ...recipe, layers, mountainRanges };
@@ -97,6 +102,7 @@ export async function bakeStudioMap(
     cryoGlaciers = false,
     landmarkPatches = true,
     proceduralGuide = false,
+    noiseMix = null,
   } = {},
 ) {
   if (!Number.isInteger(segments) || segments < 8 || segments > 1536)
@@ -119,7 +125,8 @@ export async function bakeStudioMap(
     throw new RangeError("Planet variation must be 0–1 and range weight 0.35–1.35.");
   const side = segments + 1;
   const { sphereOffset, sphereOffset2, layers, mountainRanges } =
-    studioLayers(seed, geology, erosion, variation, rangeWeight, featureDensity, reseedLayers);
+    studioLayers(seed, geology, erosion, variation, rangeWeight, featureDensity, reseedLayers, noiseMix);
+  const sphereRegion = studioRegionUniforms(noiseMix, geologyMode[geology]);
   const { device } = builder;
   const textureKey = "planet-studio-height";
   let readback;
@@ -137,7 +144,7 @@ export async function bakeStudioMap(
         noiseChoices: ["clearTexture"],
       },
     );
-    for (const { entryPoint, layer, blend, phase } of layers) {
+    for (const { entryPoint, layer, weights, blend, phase } of layers) {
       builder.buildPermTable(layer.seed);
       await builder.computeToTexture(side, side, layer, {
         textureKey,
@@ -147,6 +154,9 @@ export async function bakeStudioMap(
         spherePolarFade: erosion ? 0.15 : 0,
         sphereBlend: blend,
         sphereBlendPhase: phase,
+        sphereRegion,
+        sphereRegionSeed: seed,
+        sphereLayerWeights: weights,
         noiseChoices: [entryPoint],
       });
     }
@@ -167,7 +177,7 @@ export async function bakeStudioMap(
       const params = { seed, voroMode: geologyMode[geology] };
       const options = { textureKey, sphereBlend: variation, sphereRangeWeight: rangeWeight,
         sphereLandscape: studioLandscapes[landscape], sphereLandscapeStrength: landscapeStrength,
-        sphereFeatureDensity: featureDensity };
+        sphereFeatureDensity: featureDensity, sphereRegion, sphereRegionSeed: seed };
       const passes = ["computeStudioSphereMountainErosion",
         ...(mountainRanges && variation === 0 ? [] : ["computeStudioSphereErosion"])];
       if (proceduralGuide) {

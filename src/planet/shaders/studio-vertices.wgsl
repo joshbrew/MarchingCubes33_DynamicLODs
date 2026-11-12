@@ -4,6 +4,9 @@ struct VertexRecipe {
   style:vec4<f32>,
   world:vec4<u32>,
   grid:vec4<u32>,
+  region:vec4<f32>,
+  regionWeights:array<vec4<f32>,5>,
+  algorithms:array<vec4<u32>,2>,
 }
 struct VertexJob {
   origin:vec2<f32>, size:f32, face:u32, level:u32, slot:u32, parent:u32, quadrant:u32,
@@ -24,24 +27,33 @@ fn studio_vertex_height(dir:vec3<f32>)->vec4<f32>{
   options.sphereOffset2=recipe.shape.z;
   options.spherePolarFade=.15;
   options.sphereFeatureDensity=recipe.shape.w;
+  options.sphereRegion=recipe.region;
+  options.sphereRegionSeed=recipe.world.x;
   let point=studio_sphere_position(dir,theta,phi);
+  var regions=vec4<f32>(1,0,0,0);
+  if(recipe.region.z>0.0){regions=studio_region_map(dir);}
   var raw=0.0;
   for(var layer=0u;layer<5u;layer++){
     studioPermutationSlot=layer;
     let p=recipe.layers[layer];
     var height:f32;
-    switch layer {
+    switch recipe.algorithms[layer/4u][layer%4u] {
       case 0u:{height=generateFBM(point,p);}
       case 1u:{height=generateFBM2(point,p);}
       case 2u:{height=generateVoronoiTileNoise(point,p);}
       case 3u:{height=generateRidgedMultifractal4(point,p);}
-      default:{height=generateLanczosBillow(point,p);}
+      case 4u:{height=generateLanczosBillow(point,p);}
+      case 5u:{height=generateLanczosAntiBillow(point,p);}
+      case 6u:{height=generateSimplexFBM(point,p);}
+      case 7u:{height=generateBillow(point,p);}
+      case 8u:{height=generateRidgedMultifractal(point,p);}
+      default:{height=generateVoronoiBM1(point,p);}
     }
     options.sphereBlend=select(recipe.style.x,0.0,layer==0u);
     options.sphereBlendPhase=13.7*f32(layer)+f32(recipe.world.x%997u)*.13;
     var value=height*p.scalar+p.transform;
     if(options.sphereBlend>0.0){value*=studio_layer_mask(point);}
-    raw+=value;
+    raw+=value*dot(regions,recipe.regionWeights[layer]);
   }
   options.sphereBlend=recipe.style.x;
   options.sphereRangeWeight=recipe.style.y;
@@ -64,7 +76,7 @@ fn studio_vertex_height(dir:vec3<f32>)->vec4<f32>{
   }
   // Match the reference Studio recipe's footprint for collapse and landforms.
   let angularSample=PI/f32(recipe.grid.y)*max(1.0,2.0*radial);
-  let relief=studio_sphere_relief(dir,raw,broad,angularSample);
+  let relief=studio_sphere_relief(dir,raw,broad,angularSample,regions);
   let erosion=guide_at(dir,side*side).height;
   return vec4<f32>(relief.x*recipe.style.w+erosion,relief.yzw);
 }

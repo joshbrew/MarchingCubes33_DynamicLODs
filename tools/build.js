@@ -63,11 +63,23 @@ if (process.argv.includes("--checks")) {
     },
     false,
   );
+  await bundleESM(
+    {
+      ...website.bundler,
+      entryPoints: ["src/entries/planet-approach.js"],
+      outfile: "dist/planet-approach.esm.js",
+      plugins: [workers()],
+      defaultConfig: true,
+      bundle: true,
+    },
+    false,
+  );
   // Netlify publishes exactly index.html + dist, without source or node_modules.
   await mkdir("site/dist", { recursive: true });
   await copyFile("index.html", "site/index.html");
   for (const file of [
     "demo.js",
+    "planet-approach.esm.js",
     "index.js",
     "space.worker.js",
     ...["index", ...features].flatMap(

@@ -20,6 +20,9 @@ struct NoiseComputeOptions {
   sphereLandscape : u32,
   sphereLandscapeStrength : f32,
   sphereFeatureDensity : f32,
+  sphereRegionSeed : u32,
+  sphereRegion : vec4<f32>,
+  sphereLayerWeights : vec4<f32>,
 };
 @group(0) @binding(0) var<uniform> options : NoiseComputeOptions;
 
@@ -321,6 +324,11 @@ fn writeChannel(fx:i32, fy:i32, fz:i32, v0:f32, channel:u32, overwrite:u32) {
   var v = v0 * params.scalar + params.transform;
   if(options.useCustomPos==2u && options.sphereBlend>0.0){
     v*=studio_layer_mask(fetchPos(fx,fy,fz));
+  }
+  if(options.useCustomPos==2u && options.sphereRegion.z>0.0 &&
+      any(options.sphereLayerWeights!=vec4<f32>(1.0))){
+    let dir=studio_atlas_direction(fx,fy);
+    v*=dot(studio_region_map(dir),options.sphereLayerWeights);
   }
   let needsAccum = (overwrite == 0u);
   let writesAll = (channel == 0u);
@@ -4783,6 +4791,55 @@ fn studioMountainRange(radial:vec3<f32>,height:f32,broad:f32,offset:vec3<f32>)->
   return strength*uplift*(relief+.82*(broad-height));
 }
 
+fn studio_atlas_direction(x:i32,y:i32)->vec3<f32>{
+  let span=max(i32(frame.fullWidth)-1,1);
+  let last=max(i32(frame.fullHeight)-1,1);
+  if(y<=0){return vec3<f32>(0,1,0);}
+  if(y>=last){return vec3<f32>(0,-1,0);}
+  let theta=PI*f32(y)/f32(last);
+  let phi=TWO_PI*f32((x%span+span)%span)/f32(span);
+  return vec3<f32>(sin(theta)*cos(phi),cos(theta),sin(theta)*sin(phi));
+}
+
+// A separate seeded field keeps province boundaries independent of the
+// permutation and parameters selected for any individual height layer.
+fn studio_region_noise(p:vec3<f32>,salt:u32,valueNoise:bool)->f32{
+  let cell=vec3<i32>(floor(p));
+  let f=fract(p);
+  let blend=f*f*f*(f*(6.0*f-15.0)+10.0);
+  var result=0.0;
+  for(var i=0u;i<8u;i++){
+    let corner=vec3<i32>(i32(i&1u),i32((i>>1u)&1u),i32(i>>2u));
+    let c=cell+corner;
+    let hash=hash3_u32(c.x,c.y,c.z,options.sphereRegionSeed,salt);
+    var height=2.0*rnd01(hash)-1.0;
+    if(!valueNoise){height=dot(gradient(hash%12u),f-vec3<f32>(corner));}
+    let w=select(1.0-blend,blend,corner!=vec3<i32>(0));
+    result+=height*w.x*w.y*w.z;
+  }
+  return result;
+}
+
+fn studio_region_map(dir:vec3<f32>)->vec4<f32>{
+  let mode=u32(options.sphereRegion.z);
+  let p=dir*options.sphereRegion.x+seedOffset3(options.sphereRegionSeed);
+  var scores:vec4<f32>;
+  for(var i=0u;i<4u;i++){
+    let salt=(i+1u)*0x9e3779b9u;
+    var score=studio_region_noise(p,salt,mode==4u);
+    if(mode==2u){score=.5-abs(score);}
+    if(mode==3u){score+=.43*studio_region_noise(p*2.07,salt,false);}
+    scores[i]=score;
+  }
+  // Region order is mountains, canyons, granite and volcanic.
+  let geology=u32(options.sphereRegion.w);
+  if(geology!=0u){scores[select(select(0u,1u,geology==2u),3u,geology==3u)]+=.17;}
+  let peak=max(max(scores.x,scores.y),max(scores.z,scores.w));
+  let influence=clamp(1.0-(peak-scores)/options.sphereRegion.y,vec4<f32>(0),vec4<f32>(1));
+  let weights=influence*influence;
+  return weights/dot(weights,vec4<f32>(1));
+}
+
 fn studioProvinces(dir:vec3<f32>,offset:vec3<f32>,hotspot:f32)->vec4<f32>{
   var home=vec4<f32>(1,0,0,0);
   if(params.voroMode==2u){home=vec4<f32>(0,1,0,0);}
@@ -5200,15 +5257,18 @@ fn computeStudioSphereRelief(@builtin(global_invocation_id) gid:vec3<u32>){
     broad=mix(raw,.28*raw+.18*around,smoothstep(.035,.155,radial));
   }
   let texel=step*max(1.0,2.0*radial);
-  storeRGBA(x,y,0,studio_sphere_relief(dir,raw,broad,texel));
+  var regions=vec4<f32>(0);
+  if(options.sphereRegion.z>0.0){regions=studio_region_map(dir);}
+  storeRGBA(x,y,0,studio_sphere_relief(dir,raw,broad,texel,regions));
 }
 
-fn studio_sphere_relief(dir:vec3<f32>,raw:f32,broad:f32,texel:f32)->vec4<f32>{
+fn studio_sphere_relief(dir:vec3<f32>,raw:f32,broad:f32,texel:f32,regions:vec4<f32>)->vec4<f32>{
   let radial=length(dir.xz);
   let offset=seedOffset3(params.seed);
   var arc=vec2<f32>(0);
   if(options.sphereBlend>0.0){arc=studioIslandArc(dir,broad,texel);}
-  let weights=studioProvinces(dir,offset,arc.y);
+  var weights=regions;
+  if(options.sphereRegion.z==0.0){weights=studioProvinces(dir,offset,arc.y);}
   var relief=0.0;
   if(weights.x>0.0){relief+=weights.x*studioMountainRange(dir,raw,broad,offset);}
   if(weights.z>0.0){relief+=weights.z*studioGraniteRelief(dir,raw,broad,offset,weights.z,texel);}

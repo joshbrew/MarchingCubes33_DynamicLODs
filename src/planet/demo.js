@@ -2,6 +2,8 @@ import { createCamera } from "../api/camera.js";
 import { createPlanet } from "./renderer.js";
 import { unit, cross, dot, clamp } from "./field.js";
 import { getPreset, PlanetPresets } from "./presets.js";
+import { mountTerrainNoiseEditor } from "./noise-editor.js";
+import { planetDetail } from "./detail.js";
 import { sunDirection } from "./lighting.js";
 import { frostMargin, studioClimate } from "../noise/studio-climate.js";
 import { studioDryness } from "../noise/studio-wind.js";
@@ -379,7 +381,7 @@ const distance = (m) =>
     ? `${(m / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })} km`
     : `${m.toLocaleString(undefined, { maximumFractionDigits: 2 })} m`;
 
-export async function startDemo() {
+export async function startDemo({ onFrame, onDispose, onTerrainReady, sampleDepth = false } = {}) {
   const $ = (id) => document.getElementById(id),
     canvas = $("planet"),
     status = $("status");
@@ -410,6 +412,7 @@ export async function startDemo() {
     tileBudget: tileLimit(triangleBudget.valueAsNumber),
     streamingLod: true,
     progressiveStartup: true,
+    sampleDepth,
   });
   await planet.configure({
     pixelError: $("detail").valueAsNumber,
@@ -553,28 +556,31 @@ export async function startDemo() {
     }
   }
   $("orbit").onclick = orbit;
-  async function changeWorld(preset, studioSeed, size, sampling, resetSun = false) {
+  async function changeWorld(preset, studioSeed, size, sampling, resetSun = false, detail) {
     landingRequest++;
     stop();
     baking = true;
     bakeError = "";
     const worldControls = [presetSelect, $("random"), regionSelect, sizeSelect, terrainSampling, triangleBudget];
     for (const control of worldControls) control.disabled = true;
+    terrainEditor.disabled = true;
     status.textContent = "Generating Planet Studio terrain…";
     status.hidden = false;
     try {
       const budget = sampling ? Math.min(triangleBudget.valueAsNumber, triangleLimit(sampling)) : undefined;
-      await planet.configure({ preset, studioSeed, radius: size, terrainSampling: sampling,
+      await planet.configure({ preset, studioSeed, radius: size, terrainSampling: sampling, detail,
         tileBudget: budget === undefined ? undefined : tileLimit(budget) });
       groundProbe = null;
       radius = planet.radius;
       $("altitude").max = Math.log2(maximumClearance());
       updateRegions();
       refreshDestination();
-      if (!sampling) await orbit();
+      if (!sampling && !detail) await orbit();
       if (resetSun) setSunPhase(0);
+      terrainEditor.syncPreset();
     } catch (error) {
       bakeError = error.message;
+      if (detail) throw error;
     } finally {
       baking = false;
       presetSelect.value = planet.preset;
@@ -582,6 +588,7 @@ export async function startDemo() {
       terrainSampling.value = planet.terrainSampling;
       syncBudgetLimit();
       for (const control of worldControls) control.disabled = false;
+      terrainEditor.disabled = false;
     }
   }
   presetSelect.onchange = () => changeWorld(presetSelect.value, newSeed());
@@ -700,6 +707,41 @@ export async function startDemo() {
   };
   const noiseInputs = Object.keys(detailControls).map($);
   const updateStyleStrength = () => { $("landscapeStrength").disabled = planet.detail.landscape === "natural"; };
+  function syncNoiseControls() {
+    for (const input of noiseInputs) input.value = planet.detail[detailControls[input.id]];
+    erosionStrength.oninput();
+    updateStyleStrength();
+  }
+  let pendingTerrain;
+  async function applyTerrain(detail, look) {
+    await changeWorld(look?.preset, look?.seed, look?.radius, look?.terrainSampling, false, detail);
+    syncNoiseControls();
+  }
+  const terrainEditor = mountTerrainNoiseEditor($("terrainMix"), planet, async noiseMix => {
+    await applyTerrain({ ...pendingTerrain?.detail, noiseMix }, pendingTerrain);
+    pendingTerrain = undefined;
+  });
+  onTerrainReady?.({
+    read() {
+      return {
+        preset: planet.preset, seed: planet.studioSeed, radius: planet.radius, terrainSampling: planet.terrainSampling,
+        ...pendingTerrain, detail: { ...(pendingTerrain?.detail ?? planet.detail), noiseMix: terrainEditor.read() },
+      };
+    },
+    stage(look) {
+      if (!look) return;
+      const detail = planetDetail(look.detail);
+      pendingTerrain = { ...look, detail };
+      terrainEditor.stage(detail.noiseMix);
+    },
+    async apply() {
+      const noiseMix = terrainEditor.read();
+      if (!pendingTerrain && noiseMix === planet.detail.noiseMix) return;
+      await applyTerrain({ ...pendingTerrain?.detail, noiseMix }, pendingTerrain);
+      pendingTerrain = undefined;
+      terrainEditor.refresh();
+    },
+  });
   for (const input of noiseInputs) {
     input.onchange = async () => {
       const key = detailControls[input.id];
@@ -716,6 +758,7 @@ export async function startDemo() {
       try {
         await planet.configure({ detail: { [key]: value } });
         updateRegions();
+        terrainEditor.syncPreset();
         if (rebake) refreshDestination();
       } catch (error) {
         bakeError = error.message;
@@ -885,6 +928,7 @@ export async function startDemo() {
       sunPhase,
       atmosphere: atmosphere.value,
     });
+    onFrame?.(planet, camera, sunPhase);
     if (now - lastHUD >= 225) {
       lastHUD = now;
       altitudeUI();
@@ -933,7 +977,11 @@ export async function startDemo() {
       window.removeEventListener("keydown", keyDown);
       window.removeEventListener("keyup", keyUp);
       window.removeEventListener("blur", blur);
-      planet.dispose();
+      try {
+        onDispose?.();
+      } finally {
+        planet.dispose();
+      }
     },
     { once: true },
   );

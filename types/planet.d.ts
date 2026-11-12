@@ -36,6 +36,24 @@ export type PlanetPresetId =
 export const PlanetPresets: ReadonlyArray<
   Readonly<{ id: PlanetPresetId; name: string; wet: boolean }>
 >;
+export interface PlanetNoiseMix {
+  regionMap: {
+    algorithm: "perlin" | "ridged" | "fbm" | "value";
+    frequency: number;
+    transition: number;
+  };
+  layers: ReadonlyArray<{
+    algorithm: "computeFBM" | "computeFBM2" | "computeVoronoiTileNoise" |
+      "computeRidgedMultifractal4" | "computeLanczosBillow" | "computeLanczosAntiBillow" |
+      "computeSimplexFBM" | "computeBillow" | "computeRidgedMultifractal" | "computeVoronoiBM1";
+    uniforms?: Partial<Record<"seed" | "zoom" | "freq" | "octaves" | "lacunarity" | "gain" |
+      "xShift" | "yShift" | "zShift" | "turbulence" | "seedAngle" | "exp1" | "exp2" |
+      "threshold" | "rippleFreq" | "time" | "warpAmp" | "gaborRadius" | "terraceStep" |
+      "toroidal" | "voroMode" | "edgeK" | "scalar" | "transform", number>>;
+    /** Mountains, canyons, granite, volcanic. Each weight is between zero and one. */
+    weights: readonly [number, number, number, number];
+  }>;
+}
 export interface PlanetNoiseDetail {
   range: "hybrid" | "ridges" | "rolling";
   landscape: "natural" | "mesas" | "fractal" | "mosaic";
@@ -47,6 +65,7 @@ export interface PlanetNoiseDetail {
   groundOctaves: number;
   erosionStrength: number;
   variation: number;
+  noiseMix: PlanetNoiseMix | null;
 }
 export interface PlanetOptions extends GPUOptions {
   radius?: number;

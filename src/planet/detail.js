@@ -1,4 +1,5 @@
 import { studioLandscapes } from "../noise/studio.js";
+import { normalizeStudioNoiseMix } from "../noise/studio-mix.js";
 
 const modes = ["erosion", "incised", "soft"];
 export const rangeWeights = { hybrid: 1, ridges: 1.35, rolling: 0.35 };
@@ -13,10 +14,12 @@ export const defaultDetail = Object.freeze({
   groundOctaves: 5,
   erosionStrength: 1.2,
   variation: 0.8,
+  noiseMix: null,
 });
 
 export function planetDetail(update, previous = defaultDetail) {
   const detail = { ...previous, ...update };
+  if (update && Object.hasOwn(update, "noiseMix")) detail.noiseMix = normalizeStudioNoiseMix(update.noiseMix);
   if (!Object.hasOwn(rangeWeights, detail.range) ||
       !Object.hasOwn(studioLandscapes, detail.landscape) ||
       !Number.isFinite(detail.landscapeStrength) || detail.landscapeStrength < 0 || detail.landscapeStrength > 1 ||
