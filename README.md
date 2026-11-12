@@ -30,6 +30,10 @@ Open the address printed by the server. Use the tabs to switch demos. The sphere
 | [![Low orbit over layered rocky relief](docs/gallery/rocky-limb.jpg)](docs/gallery/rocky-limb.jpg) | [![Warm light across branching mountain ridges](docs/gallery/eroded-ranges.jpg)](docs/gallery/eroded-ranges.jpg) |
 | [![Desert surface and low sun](docs/gallery/desert-surface.jpg)](docs/gallery/desert-surface.jpg) | [![Cratered badlands below the planet’s horizon](docs/gallery/cratered-badlands.jpg)](docs/gallery/cratered-badlands.jpg) |
 
+<img width="800" alt="image" src="https://github.com/user-attachments/assets/ca41c5dd-994a-4d2a-b608-85a48f6e9429" />
+
+
+
 ## Demos and settings
 
 | Demo | What to try |
