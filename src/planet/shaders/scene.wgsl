@@ -17,6 +17,7 @@ struct PlanetStyle {
 @group(0) @binding(5) var sunSampler:sampler;
 fn sun()->vec3<f32>{return frame.solar.xyz;}
 fn shadow_visibility(uv:vec2<f32>)->f32{
+  if(frame.surface.z<0.5){return 1.0;}
   let layer=i32(frame.dusk.w);
   let a=textureSampleLevel(sunVisibility,sunSampler,uv,layer,0.0).r;
   if(frame.solar.w==0.0){return a;}

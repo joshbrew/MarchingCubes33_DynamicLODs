@@ -78,6 +78,8 @@ export interface PlanetOptions extends GPUOptions {
   streamingLod?: boolean;
   /** Draw a lightweight atlas view while the full terrain pipelines compile. */
   progressiveStartup?: boolean;
+  /** Start independent GPU work while the terrain initializes. The renderer has not drawn yet. */
+  onDeviceReady?: (renderer: PlanetRenderer) => void;
   minSpacing?: number;
   preset?: PlanetPresetId;
   /** Include local landmark patches. Defaults to false. */
@@ -102,6 +104,9 @@ export interface PlanetStats {
   finest: number;
   cpuMs: number;
   gpuMs: number | null;
+  /** GPU time for the latest sampled terrain patch build batch. */
+  patchGpuMs: number | null;
+  patchGpuTiles: number;
   selectionMs: number;
   planBuilds: number;
   drawCalls: number;
@@ -201,9 +206,14 @@ export interface PlanetTile {
   dir: number[];
   visible: boolean;
 }
+type PlanetTileCoordinate = Pick<PlanetTile, "face" | "level" | "x" | "y">;
+
 export const PlanetLOD: {
   cube(face: number, u: number, v: number): number[];
   project(position: Vec3): [face: number, u: number, v: number];
+  parentTileKey(tile: PlanetTileCoordinate): number | null;
+  childTileKey(tile: PlanetTileCoordinate, quadrant: 0 | 1 | 2 | 3): number | null;
+  orbitDetailWeight(height: number, start: number, full: number): number;
   neighbors(
     tile: PlanetTile,
     leaves: Map<number, PlanetTile>,
@@ -218,11 +228,17 @@ export const PlanetLOD: {
       lodScale?: number;
       elevationBounds?: readonly [number, number];
       sampleRelief?: (tile: PlanetTile) => readonly [elevation: number, variation: number];
+      centerPriority?: boolean;
+      previousFocal?: Set<number>;
+      splitBudget?: number;
     },
     previous?: Set<number>,
   ): {
     leaves: Map<number, PlanetTile>;
     visible: Array<PlanetTile & { mask: number; spacing: number }>;
     split: Set<number>;
+    focalSplit: Set<number>;
+    deferred: boolean;
+    advanced: boolean;
   };
 };

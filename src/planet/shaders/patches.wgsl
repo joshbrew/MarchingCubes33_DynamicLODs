@@ -2,7 +2,7 @@ struct Tile { origin:vec2<f32>, size:f32, face:u32, level:u32, pad0:u32, pad1:u3
 @group(0) @binding(1) var<storage,read> tiles:array<Tile>;
 struct BaseVertex { fine:vec4<f32>, coarse:vec4<f32>, rock:vec4<f32> }
 @group(0) @binding(6) var<storage,read> baseVertices:array<vec4<u32>>;
-@group(0) @binding(7) var<storage,read> tileJobs:array<Tile>;
+@group(0) @binding(7) var<storage,read> tileJobs:array<TileJob>;
 @group(0) @binding(8) var<storage,read_write> tileOutput:array<BaseVertex>;
 fn cube_point(face:u32,p:vec2<f32>)->vec3<f32>{
   switch face {
@@ -24,16 +24,15 @@ fn tile_direction(tile:Tile,index:u32,divs:u32)->vec3<f32>{
   let row=divs+1u;
   let vertices=row*row;
   if(id.x>=vertices){return;}
-  let tile=tileJobs[id.y];
-  let at=tile.pad0*vertices+id.x;
+  let job=tileJobs[id.y];
+  let at=job.slot*vertices+id.x;
   let xy=vec2<u32>(id.x%row,id.x/row);
-  if(tile.pad1>0u && all((xy&vec2<u32>(1u))==vec2<u32>(0u))){
-    let quadrant=vec2<u32>(tile.pad2&1u,tile.pad2>>1u);
-    let parent=xy/2u+quadrant*(divs/2u);
-    tileOutput[at]=tileOutput[(tile.pad1-1u)*vertices+parent.y*row+parent.x];
+  let source=tile_sample_source(job,xy,divs);
+  if(source>0u){
+    tileOutput[at]=tileOutput[source-1u];
     return;
   }
-  let dir=tile_direction(tile,id.x,divs);
+  let dir=normalize(cube_point(job.face,job.origin+vec2<f32>(xy)*(job.size/f32(divs))));
   let uv=studio_uv(dir);
   let side=i32(style.palette.z);
   let fine=studio_level(dir,frame.eye.w,side,0,uv);

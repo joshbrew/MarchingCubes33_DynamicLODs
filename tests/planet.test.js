@@ -565,7 +565,7 @@ test("center refinement adds splits only after distance refinement", () => {
     }),
     clearance: 3200,
   };
-  const options = { maxTiles: 4096, pixelError: 8, lodScale: 2.25 };
+  const options = { maxTiles: 4096, pixelError: 7, lodScale: 2.25 };
   const distance = selectPlanet(camera, options);
   const focused = selectPlanet(camera, { ...options, centerPriority: true });
   assert.ok(focused.focalSplit.size > 0);
@@ -600,6 +600,19 @@ test("orbital refinement spends the patch budget on the visible terrain beneath 
     assert.ok(orbital.leaves.size <= options.maxTiles);
     assert.ok(finestBelow(orbital) <= finestBelow(baseline) / 2);
   }
+  const camera = {
+    ...createCamera({
+      position: [radius + 300000, 0, 0], forward: [-1, 0, 0], up: [0, 1, 0],
+      height: 540, aspect: 16 / 9, far: 2000000,
+    }),
+    clearance: 300000,
+  };
+  const plan = selectPlanet(camera, { ...options, centerPriority: true });
+  const center = plan.visible.filter(({ dir }) => dir[0] > .998);
+  const surround = plan.visible.filter(({ dir }) => dir[0] > .97 && dir[0] < .99);
+  assert.ok(center.length && surround.length);
+  assert.ok(Math.max(...center.map(({ spacing }) => spacing)) <=
+    Math.min(...surround.map(({ spacing }) => spacing)));
 });
 
 test("planet stress settings can plan about 16 million grid vertices within the patch cap", () => {

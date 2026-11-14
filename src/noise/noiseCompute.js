@@ -1378,6 +1378,19 @@ export class NoiseComputeBuilder {
   // ---------------------------
   // core compute runner
   // ---------------------------
+  async prepareTexturePipelines(entries) {
+    const results = await Promise.allSettled([...new Set(entries)].map(async (entryPoint) => {
+      if (this.pipelines.has(entryPoint)) return;
+      const pipeline = await this.device.createComputePipelineAsync({
+        layout: this.pipelineLayout,
+        compute: { module: this.shaderModule, entryPoint },
+      });
+      if (!this.disposed && !this.pipelines.has(entryPoint)) this.pipelines.set(entryPoint, pipeline);
+    }));
+    const failure = results.find((result) => result.status === "rejected");
+    if (failure) throw failure.reason;
+  }
+
   /**
    * Old implementation awaited per-dispatch completion via onSubmittedWorkDone which
    * forced GPU syncs and heavy CPU overhead. New behavior:

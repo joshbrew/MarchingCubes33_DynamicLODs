@@ -8,11 +8,8 @@ struct VertexRecipe {
   regionWeights:array<vec4<f32>,5>,
   algorithms:array<vec4<u32>,2>,
 }
-struct VertexJob {
-  origin:vec2<f32>, size:f32, face:u32, level:u32, slot:u32, parent:u32, quadrant:u32,
-}
 @group(1) @binding(0) var<uniform> recipe:VertexRecipe;
-@group(1) @binding(1) var<storage,read> vertexJobs:array<VertexJob>;
+@group(1) @binding(1) var<storage,read> vertexJobs:array<TileJob>;
 @group(1) @binding(2) var<storage,read_write> vertexSamples:array<vec4<u32>>;
 
 fn guide_at(dir:vec3<f32>,offset:i32)->StudioNoise{
@@ -43,11 +40,14 @@ fn studio_vertex_height(dir:vec3<f32>)->vec4<f32>{
       case 2u:{height=generateVoronoiTileNoise(point,p);}
       case 3u:{height=generateRidgedMultifractal4(point,p);}
       case 4u:{height=generateLanczosBillow(point,p);}
+      // Custom noise algorithms
       case 5u:{height=generateLanczosAntiBillow(point,p);}
       case 6u:{height=generateSimplexFBM(point,p);}
       case 7u:{height=generateBillow(point,p);}
       case 8u:{height=generateRidgedMultifractal(point,p);}
-      default:{height=generateVoronoiBM1(point,p);}
+      case 9u:{height=generateVoronoiBM1(point,p);}
+      // End custom noise algorithms
+      default:{height=0.0;}
     }
     options.sphereBlend=select(recipe.style.x,0.0,layer==0u);
     options.sphereBlendPhase=13.7*f32(layer)+f32(recipe.world.x%997u)*.13;
@@ -102,7 +102,7 @@ fn sample_studio_vertices(@builtin(workgroup_id) group:vec3<u32>,@builtin(local_
   let job=vertexJobs[group.y];
   let probe=job.face==6u;
   let xy=vec2<u32>(id%row,id/row);
-  let reuse=job.parent>0u && all((xy&vec2<u32>(1u))==vec2<u32>(0u));
+  let source=tile_sample_source(job,xy,divs);
   let dir=vertex_direction(job.face,job.origin+vec2<f32>(xy)*(job.size/f32(divs)));
   let axis=select(vec3<f32>(0,1,0),vec3<f32>(1,0,0),abs(dir.y)>.85);
   let east=normalize(cross(axis,dir));
@@ -110,7 +110,7 @@ fn sample_studio_vertices(@builtin(workgroup_id) group:vec3<u32>,@builtin(local_
   // Each lane runs the same height evaluator, so the driver only has to
   // compile it once. The stencil is fixed in world space across every LOD.
   let step=24.0/recipe.shape.x;
-  if(select(id<count && !reuse && lane.y<3u,id==0u && lane.y==0u,probe)){
+  if(select(id<count && source==0u && lane.y<3u,id==0u && lane.y==0u,probe)){
     var sampleDir=dir;
     if(probe){sampleDir=vec3<f32>(job.origin,job.size);}
     else if(lane.y!=0u){sampleDir=normalize(dir+step*select(east,north,lane.y==2u));}
@@ -123,10 +123,8 @@ fn sample_studio_vertices(@builtin(workgroup_id) group:vec3<u32>,@builtin(local_
     return;
   }
   let index=job.slot*count+id;
-  if(reuse){
-    let quadrant=vec2<u32>(job.quadrant&1u,job.quadrant>>1u);
-    let parent=xy/2u+quadrant*(divs/2u);
-    vertexSamples[index]=vertexSamples[(job.parent-1u)*count+parent.y*row+parent.x];
+  if(source>0u){
+    vertexSamples[index]=vertexSamples[source-1u];
     return;
   }
   let relief=sampledRelief[lane.x];

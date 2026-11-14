@@ -62,12 +62,16 @@ for(const feature of ['', '/core','/camera','/terrain','/space','/progressive','
 const api=await import(name),surface=await api.createSphere({radius:12,surface:'both',thickness:1});
 assert(surface.triangleCount>0&&surface.groups.length===2);
 assert.equal(typeof api.createTerrain,'function');assert.equal(typeof api.createSpace,'function');assert.equal(typeof api.createProgressiveTerrain,'function');
-assert.equal((await import(name+'/noise')).createStudioPlanetNoise().layers.length,5);
+assert.equal(typeof api.createPlanet,'function');
+assert.equal(typeof api.PlanetLOD.selectPlanet,'function');
+const noise=await import(name+'/noise');
+assert.equal(noise.createStudioPlanetNoise().layers.length,5);
+assert.equal(typeof noise.NoiseComputeBuilder.prototype.prepareTexturePipelines,'function');
 const context=vm.createContext({URL,Blob});
 vm.runInContext(await readFile(require.resolve(name+'/browser'),'utf8'),context);
 assert.equal(typeof context.MarchingCubes.createTerrain,'function');
 assert((await readFile(require.resolve(name+'/space.worker'),'utf8')).includes('onmessage'));
-console.log('PASS installed tarball: ESM + CommonJS for all 7 entries, browser global, sphere shells, noise compute, external worker; no runtime dependencies.');
+console.log('PASS installed tarball: ESM + CommonJS for all 7 entries, browser global, sphere shells, planet LOD, noise compute, external worker; no runtime dependencies.');
 `,
 );
 execFileSync(process.execPath, [join(folder, "check.mjs")], {

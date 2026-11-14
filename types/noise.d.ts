@@ -63,6 +63,7 @@ export class NoiseComputeBuilder {
   constructor(device: GPUDeviceLike, queue: GPUDeviceLike["queue"]);
   readonly entryPoints: string[];
   buildPermTable(seed?: number): void;
+  prepareTexturePipelines(entryPoints: Iterable<string>): Promise<void>;
   computeToTexture(
     width: number,
     height: number,

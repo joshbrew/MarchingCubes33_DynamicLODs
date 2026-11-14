@@ -8,9 +8,11 @@ import canyonBedsWGSL from "../noise/canyon-beds.wgsl";
 import studioWindWGSL from "../noise/studio-wind.wgsl";
 import volcanicReliefWGSL from "../noise/volcanic-relief.wgsl";
 import studioWGSL from "./shaders/studio.wgsl";
+import tileJobsWGSL from "./shaders/tile-jobs.wgsl";
 import verticesWGSL from "./shaders/studio-vertices.wgsl";
 
 export const guideSegments = 512;
+export const tileJobBytes = 48;
 
 // NoiseCompute binds a permutation per dispatch when building an atlas.
 // The point kernel chooses the same permutations independently at each sample.
@@ -20,30 +22,47 @@ const pointNoiseWGSL = noiseWGSL
   .replace("var<storage, read> permTable : PermTable;", "var<storage, read> permTables : array<PermTable,5>;\nvar<private> studioPermutationSlot:u32;")
   .replace("permTable.values[idx & PERM_MASK]", "permTables[studioPermutationSlot].values[idx & PERM_MASK]");
 
+const defaultVerticesWGSL = verticesWGSL.replace(
+  /\/\/ Custom noise algorithms[\s\S]*?\/\/ End custom noise algorithms/,
+  "",
+);
+
 export class StudioVertices {
   constructor(device) {
     this.device = device;
-  }
-
-  async initialize() {
-    const d = this.device;
-    const studio = studioWGSL.replace("@group(0) @binding(3)", "@group(1) @binding(3)");
-    const module = d.createShaderModule({ label: "Planet Studio point sampling",
-      code: canyonBedsWGSL + studioWindWGSL + volcanicReliefWGSL + pointNoiseWGSL + studio + verticesWGSL });
-    const { messages } = await module.getCompilationInfo();
-    const errors = messages.filter(({ type }) => type === "error");
-    if (errors.length) throw new Error(errors.map(({ message }) => message).join("\n"));
-    this.pipeline = await d.createComputePipelineAsync({ layout: "auto",
-      compute: { module, entryPoint: "sample_studio_vertices" } });
+    this.pipelines = new Map();
+    const d = device;
     this.recipe = d.createBuffer({ size: 5 * 96 + 64 + 16 + 5 * 16 + 32,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
     this.permutations = d.createBuffer({ size: 5 * 512 * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
-    this.probeJob = d.createBuffer({ size: 32, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+    this.probeJob = d.createBuffer({ size: tileJobBytes, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
     this.probeOutput = d.createBuffer({ size: 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
     this.probeReadback = d.createBuffer({ size: 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
   }
 
-  setWorld(map, size, geology, seed, detail, divs, referenceSegments) {
+  prepare(custom) {
+    if (!this.pipelines.has(custom)) {
+      const compilation = this.compile(custom).catch(error => {
+        this.pipelines.delete(custom);
+        throw error;
+      });
+      this.pipelines.set(custom, compilation);
+    }
+    return this.pipelines.get(custom);
+  }
+
+  async compile(custom) {
+    const d = this.device;
+    const studio = studioWGSL.replace("@group(0) @binding(3)", "@group(1) @binding(3)");
+    const label = custom ? "Custom planet point sampling" : "Default planet point sampling";
+    const module = d.createShaderModule({ label, code: canyonBedsWGSL + studioWindWGSL +
+      volcanicReliefWGSL + pointNoiseWGSL + studio + tileJobsWGSL + (custom ? verticesWGSL : defaultVerticesWGSL) });
+    return d.createComputePipelineAsync({ label, layout: "auto",
+      compute: { module, entryPoint: "sample_studio_vertices" } });
+  }
+
+  setWorld(pipeline, map, size, geology, seed, detail, divs, referenceSegments) {
+    this.pipeline = pipeline;
     const d = this.device;
     const rangeWeight = rangeWeights[detail.range];
     const { sphereOffset, sphereOffset2, layers } =
@@ -107,17 +126,19 @@ export class StudioVertices {
   }
 
   probe(direction) {
+    const pipeline = this.pipeline;
+    const groups = this.probeGroups;
     const measure = async () => {
-      if (this.disposed) return undefined;
+      if (this.disposed || pipeline !== this.pipeline || groups !== this.probeGroups) return undefined;
       const d = this.device;
-      const job = new ArrayBuffer(32);
+      const job = new ArrayBuffer(tileJobBytes);
       new Float32Array(job).set(direction);
       new Uint32Array(job)[3] = 6;
       d.queue.writeBuffer(this.probeJob, 0, job);
       const encoder = d.createCommandEncoder();
       const pass = encoder.beginComputePass();
-      pass.setPipeline(this.pipeline);
-      this.probeGroups.forEach((group, index) => pass.setBindGroup(index, group));
+      pass.setPipeline(pipeline);
+      groups.forEach((group, index) => pass.setBindGroup(index, group));
       pass.dispatchWorkgroups(1);
       pass.end();
       encoder.copyBufferToBuffer(this.probeOutput, 0, this.probeReadback, 0, 4);

@@ -17,6 +17,8 @@ npm start
 
 Open the address printed by the server. Use the tabs to switch demos. The sphere has a CPU mode. GPU extraction and the worlds need WebGPU in a browser, served locally or over HTTPS.
 
+For Netlify, run `npm run build` and publish `site/`. The repository’s `netlify.toml` already configures both steps.
+
 ## Gallery
 
 [![Snow-covered mountains and inlets on a planet’s curved horizon](docs/gallery/alpine-coast.jpg)](docs/gallery/alpine-coast.jpg)
@@ -100,6 +102,8 @@ console.log(positions.length / 9, "triangles");
 Use `npm pack` and install the resulting tarball in your project. The [package guide](docs/PACKAGE.md) has ESM, Node CommonJS and plain browser imports, plus working examples for canvases, cameras, world settings and noise. For deployment, `npm run build` writes the static site to `site/`. Run `npm test` for the automated checks.
 
 ## Benchmarks
+
+[Planet LOD wireframes and flyover measurements](docs/benchmarks/planet-lod.md) compare patch rebuilds and near-to-mid detail at three triangle budgets.
 
 <details>
 <summary>Current demo captures and how to repeat them</summary>

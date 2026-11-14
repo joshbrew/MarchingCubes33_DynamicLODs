@@ -1,11 +1,12 @@
 import { initializeGPU, disposeGPUContext, renderSize } from "../api/gpu.js";
 import { relativeCamera } from "../api/camera.js";
 import { buildIndices, lines } from "../terrain/surface.js";
-import { cube, orbitDetailWeight, parentTileKey, selectPlanet } from "./lod.js";
+import { childTileKey, cube, orbitDetailWeight, parentTileKey, selectPlanet } from "./lod.js";
 import { PlanetTileCache } from "./tile-cache.js";
-import { guideSegments, StudioVertices } from "./studio-vertices.js";
+import { guideSegments, StudioVertices, tileJobBytes } from "./studio-vertices.js";
 import {
   radius,
+  dot,
   seed,
   studioElevationBounds,
   studioHeightScale,
@@ -26,7 +27,8 @@ import { studioClimate } from "../noise/studio-climate.js";
 import fieldWGSL from "./shaders/field.wgsl";
 import drainageWGSL from "./shaders/drainage.wgsl";
 import sceneWGSL from "./shaders/scene.wgsl";
-import patchesWGSL from "./shaders/patches.wgsl";
+import patchesShader from "./shaders/patches.wgsl";
+import tileJobsWGSL from "./shaders/tile-jobs.wgsl";
 import surfaceNoiseWGSL from "./shaders/surface-noise.wgsl";
 import orbitWGSL from "./shaders/orbit.wgsl";
 import renderWGSL from "./shaders/render.wgsl";
@@ -48,6 +50,7 @@ const defaultDeepWater = [.009, .038, .073, .0019];
 const featureDensity = (size) => size / radius;
 const atlasSegments = (size) => size < radius * .5 ? 1536 : undefined;
 const maximumGridVertices = 16_000_000;
+const patchesWGSL = tileJobsWGSL + patchesShader;
 const spareTileSlots = 64;
 const verticesPerTile = (divs) => (divs + 1) ** 2;
 const sampleStride = (sampling) => sampling === "procedural" ? 16 : 48;
@@ -113,7 +116,7 @@ export class PlanetRenderer {
     this.templates = new Map();
     this.rockSpans = [];
     this.terrainTriangles = 0;
-    this.stats = { gpuMs: null, planBuilds: 0 };
+    this.stats = { gpuMs: null, patchGpuMs: null, patchGpuTiles: 0, planBuilds: 0 };
     this.errors = [];
     this.lastSelect = -Infinity;
     this.dirty = true;
@@ -158,8 +161,9 @@ export class PlanetRenderer {
     });
     this.records = new ArrayBuffer(this.instances.size);
     const max = this.options.maxTiles;
-    this.tileJobRecords = new ArrayBuffer(max * 32);
-    this.tileJobBuffer = d.createBuffer({ size: max * 32, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+    this.tileJobRecords = new ArrayBuffer(max * tileJobBytes);
+    this.tileJobBuffer = d.createBuffer({ size: this.tileJobRecords.byteLength,
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
     this.allocateTileSamples();
     const layout = this.terrainLayout = d.createBindGroupLayout({
       entries: [
@@ -223,50 +227,61 @@ export class PlanetRenderer {
         },
       });
     const world = this.requestedWorld;
-    const baking = this.bakeWorld(world, !this.startupPreview);
+    const baking = this.bakeWorld(world);
     this.studioQueue = baking.then(() => {}, () => {});
     const preview = this.startupPreview;
-    const [map, sunBake, tileCompute, solid, sky, rockSolid, wire, rockWire] = await Promise.all([
+    const orbit = preview && this.makeRenderPipeline(d.createShaderModule({ label: "Initial planet orbit",
+      code: sceneWGSL + studioWGSL + patchesWGSL + orbitWGSL }), "orbit_vertex", "orbit_fragment");
+    const sky = this.makeRenderPipeline(d.createShaderModule({ label: "Planet atmosphere",
+      code: sceneWGSL + surfaceNoiseWGSL + skyWGSL }), "sky_vertex", "sky_fragment", { sky: true });
+    const terrainStartup = Promise.all([
       baking,
-      d.createComputePipelineAsync({
-        layout: "auto",
-        compute: {
-          module: d.createShaderModule({ code: studioWGSL + shadowWGSL }),
-          entryPoint: "bake_sun_visibility",
-        },
-      }),
+      !preview ? this.compileSunShadows() : undefined,
       !preview && world.terrainSampling === "cached" ? this.cachedTilePipeline() : undefined,
-      preview
-        ? this.makeRenderPipeline(d.createShaderModule({ label: "Initial planet orbit",
-          code: sceneWGSL + studioWGSL + patchesWGSL + orbitWGSL }), "orbit_vertex", "orbit_fragment")
-        : this.terrainPipeline(world.terrainSampling),
-      this.makeRenderPipeline(d.createShaderModule({ label: "Planet atmosphere",
-        code: sceneWGSL + surfaceNoiseWGSL + skyWGSL }), "sky_vertex", "sky_fragment", { sky: true }),
+      preview ? orbit : this.terrainPipeline(world.terrainSampling),
+      sky,
       !preview && this.options.landmarkPatches ? this.rockPipeline() : undefined,
       !preview ? this.terrainPipeline(world.terrainSampling, true) : undefined,
       !preview && this.options.landmarkPatches ? this.rockPipeline(true) : undefined,
+      !preview ? this.prepareStudioVertices(world) : undefined,
     ]);
-    Object.assign(this, { sunBake, tileCompute, solid, sky, rockSolid, wire, rockWire,
+    if (preview && world.terrainSampling === "procedural") {
+      // Give the first-view shaders a head start, then compile the point
+      // sampler while the erosion guide is still baking. Leave the full
+      // render pipeline until after the preview to limit compile contention.
+      this.startupVertices = Promise.all([orbit, sky]).then(() => {
+        if (!this.disposed) return this.prepareStudioVertices(world);
+      }).catch(() => undefined);
+    }
+    try {
+      this.options.onDeviceReady?.(this);
+    } catch (error) {
+      await terrainStartup.catch(() => {});
+      throw error;
+    }
+    const [map, sunBake, tileCompute, solid, atmosphere, rockSolid, wire, rockWire, vertices] = await terrainStartup;
+    Object.assign(this, { sunBake, tileCompute, solid, sky: atmosphere, rockSolid, wire, rockWire,
       wireMode: wire ? world.terrainSampling : undefined });
     this.uploadStudioMap(map, this.studioSeed);
     if (preview) this.startupMap = map;
     else {
-      if (world.terrainSampling === "procedural") this.uploadProceduralWorld(map, world);
+      if (vertices) this.uploadProceduralWorld(vertices, map, world);
       this.fitRockSpans();
     }
     this.uploadStyle();
     if (d.features.has("timestamp-query")) {
-      this.queries = d.createQuerySet({ type: "timestamp", count: 2 });
+      this.queries = d.createQuerySet({ type: "timestamp", count: 4 });
       this.resolve = d.createBuffer({
-        size: 16,
+        size: 32,
         usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC,
       });
       this.read = d.createBuffer({
-        size: 16,
+        size: 32,
         usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
       });
     }
     this.frameIndex = 0;
+    this.lastPatchSample = -Infinity;
     this.resize();
     return this;
   }
@@ -277,6 +292,15 @@ export class PlanetRenderer {
       compute: {
         module: d.createShaderModule({ label: "Cached planet patches", code: sceneWGSL + studioWGSL + patchesWGSL }),
         entryPoint: "bake_tile_vertices",
+      },
+    });
+  }
+  compileSunShadows() {
+    return this.device.createComputePipelineAsync({
+      layout: "auto",
+      compute: {
+        module: this.device.createShaderModule({ code: studioWGSL + shadowWGSL }),
+        entryPoint: "bake_sun_visibility",
       },
     });
   }
@@ -312,29 +336,38 @@ export class PlanetRenderer {
   async upgradeOrbit() {
     if (!this.startupPreview || this.disposed) return;
     const world = this.requestedWorld;
-    const [solid, rockSolid, tileCompute] = await Promise.all([
+    const [solid, rockSolid, tileCompute, vertices] = await Promise.all([
       this.terrainPipeline(world.terrainSampling),
       this.options.landmarkPatches ? this.rockPipeline() : undefined,
       world.terrainSampling === "cached" ? this.cachedTilePipeline() : undefined,
-      world.terrainSampling === "procedural" ? this.initializeStudioVertices() : undefined,
+      this.startupVertices?.then((pipeline) => {
+        if (!this.disposed) return pipeline ?? this.prepareStudioVertices(world);
+      }) ?? this.prepareStudioVertices(world),
     ]);
+    this.startupVertices = null;
     if (this.disposed) return;
     this.solid = solid;
     this.rockSolid = rockSolid;
     this.tileCompute = tileCompute;
     this.startupPreview = false;
     this.allocateTileSamples(false);
-    if (world.terrainSampling === "procedural") {
-      this.uploadProceduralWorld(this.startupMap, world);
-    }
+    if (vertices) this.uploadProceduralWorld(vertices, this.startupMap, world);
     this.startupMap = null;
     this.bundle = null;
     this.fitRockSpans();
     this.uploadStyle();
+    this.compileSunShadows().then((pipeline) => {
+      if (this.disposed) return;
+      this.sunBake = pipeline;
+      this.bindSunShadows(this.studioMap.values.byteLength);
+    }).catch((error) => {
+      if (!this.disposed) this.errors.push(error.message);
+    });
   }
-  initializeStudioVertices() {
+  prepareStudioVertices(world) {
+    if (world.terrainSampling !== "procedural") return undefined;
     this.studioVertices ??= new StudioVertices(this.device);
-    return this.studioVerticesCompilation ??= this.studioVertices.initialize();
+    return this.studioVertices.prepare(Boolean(world.detail.noiseMix));
   }
   get preset() {
     return this.profile.id;
@@ -381,34 +414,27 @@ export class PlanetRenderer {
     return map === this.studioMap && Number.isFinite(height) ? this.sampleSurface(direction, height) : null;
   }
 
-  async bakeWorld({ profile, seed, detail, radius: size, terrainSampling }, compileVertices = true) {
+  bakeWorld({ profile, seed, detail, radius: size, terrainSampling }) {
     const procedural = terrainSampling === "procedural";
     const segments = procedural
       ? (profile.cryoGlaciers || profile.craterDetail >= 1 ? 768 : guideSegments)
       : this.options.atlasSegments ?? atlasSegments(size);
-    const results = await Promise.allSettled([
-      bakeStudioMap(this.noiseBuilder, {
-        seed, erosion: true, geology: profile.geology, variation: detail.variation,
-        rangeWeight: rangeWeights[detail.range], landscape: detail.landscape, noiseMix: detail.noiseMix,
-        landscapeStrength: detail.landscapeStrength, featureDensity: featureDensity(size),
-        oceanCoverage: profile.dry ? 0 : profile.ocean?.coverage,
-        lunar: profile.lunar,
-        craterDetail: profile.craterDetail,
-        cryoGlaciers: profile.cryoGlaciers,
-        landmarkPatches: this.options.landmarkPatches,
-        segments,
-        proceduralGuide: procedural,
-      }),
-      procedural && compileVertices ? this.initializeStudioVertices() : undefined,
-    ]);
-    for (const result of results) {
-      if (result.status === "rejected") throw result.reason;
-    }
-    return results[0].value;
+    return bakeStudioMap(this.noiseBuilder, {
+      seed, erosion: true, geology: profile.geology, variation: detail.variation,
+      rangeWeight: rangeWeights[detail.range], landscape: detail.landscape, noiseMix: detail.noiseMix,
+      landscapeStrength: detail.landscapeStrength, featureDensity: featureDensity(size),
+      oceanCoverage: profile.dry ? 0 : profile.ocean?.coverage,
+      lunar: profile.lunar,
+      craterDetail: profile.craterDetail,
+      cryoGlaciers: profile.cryoGlaciers,
+      landmarkPatches: this.options.landmarkPatches,
+      segments,
+      proceduralGuide: procedural,
+    });
   }
 
-  uploadProceduralWorld(map, { radius, profile, seed, detail }) {
-    this.studioVertices.setWorld(map, radius, profile.geology, seed, detail, this.options.divs,
+  uploadProceduralWorld(pipeline, map, { radius, profile, seed, detail }) {
+    this.studioVertices.setWorld(pipeline, map, radius, profile.geology, seed, detail, this.options.divs,
       this.options.atlasSegments ?? atlasSegments(radius) ?? studioSegments);
     this.studioVertices.bindTiles(this.tileJobBuffer, this.baseTileBuffer);
   }
@@ -571,17 +597,8 @@ export class PlanetRenderer {
       this.shadowBytes = 0;
       previous?.destroy();
     }
-    if (this.shadowBytes !== map.values.byteLength) {
-      this.shadowBytes = map.values.byteLength;
-      this.sunBakeGroups = this.shadowParams.map((buffer, layer) => d.createBindGroup({
-        layout: this.sunBake.getBindGroupLayout(0),
-        entries: [
-          { binding: 0, resource: this.sunMap.createView({ dimension: "2d", baseArrayLayer: layer, arrayLayerCount: 1 }) },
-          { binding: 1, resource: { buffer } },
-          { binding: 3, resource: { buffer: this.studioBuffer, size: this.shadowBytes } },
-        ],
-      }));
-    }
+    if (this.sunBake && this.shadowBytes !== map.values.byteLength)
+      this.bindSunShadows(map.values.byteLength);
     this.device.queue.writeBuffer(this.studioBuffer, 0, map.values);
     this.device.queue.writeBuffer(this.studioBuffer, map.values.byteLength, coarse);
     this.device.queue.writeBuffer(this.studioBuffer, map.values.byteLength + coarse.byteLength, map.regions.values);
@@ -592,6 +609,17 @@ export class PlanetRenderer {
     if (deposits) this.device.queue.writeBuffer(this.studioBuffer,
       districtsAt + districtAtlasSide ** 2 * 8, deposits.values);
     this.setStudioSurface(map, studioSeed, relief);
+  }
+  bindSunShadows(heightBytes) {
+    this.shadowBytes = heightBytes;
+    this.sunBakeGroups = this.shadowParams.map((buffer, layer) => this.device.createBindGroup({
+      layout: this.sunBake.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: this.sunMap.createView({ dimension: "2d", baseArrayLayer: layer, arrayLayerCount: 1 }) },
+        { binding: 1, resource: { buffer } },
+        { binding: 3, resource: { buffer: this.studioBuffer, size: heightBytes } },
+      ],
+    }));
   }
   setStudioSurface(map, studioSeed, relief) {
     const sizeRelief = Math.min(1, Math.sqrt(this.radius / radius));
@@ -791,16 +819,18 @@ export class PlanetRenderer {
           nextDetail.noiseMix !== this.detail.noiseMix ||
           nextDetail.landscape !== this.detail.landscape ||
           (nextDetail.landscape !== "natural" && nextDetail.landscapeStrength !== this.detail.landscapeStrength)) {
-        const [baked, compiled] = await Promise.allSettled([
+        const [baked, compiled, vertices] = await Promise.allSettled([
           this.bakeWorld(world),
           samplingChanged ? Promise.all([
             this.terrainPipeline(nextSampling),
             nextSampling === "cached" ? this.cachedTilePipeline() : undefined,
             !this.options.progressiveStartup ? this.terrainPipeline(nextSampling, true) : undefined,
           ]) : undefined,
+          this.prepareStudioVertices(world),
         ]);
         if (baked.status === "rejected") throw baked.reason;
         if (compiled.status === "rejected") throw compiled.reason;
+        if (vertices.status === "rejected") throw vertices.reason;
         if (!current()) return;
         const map = baked.value;
         this.options.radius = nextRadius;
@@ -817,11 +847,10 @@ export class PlanetRenderer {
         if (samplingChanged && this.tileCompute && previousSamples === this.baseTileBuffer)
           this.bindTileCompute();
         this.uploadStudioMap(map, nextSeed, undefined, nextDetail.relief);
-        if (nextSampling === "procedural") this.uploadProceduralWorld(map, world);
+        if (vertices.value) this.uploadProceduralWorld(vertices.value, map, world);
         else if (this.studioVertices) {
           this.studioVertices.dispose();
           this.studioVertices = null;
-          this.studioVerticesCompilation = null;
         }
       } else if (nextDetail.relief !== previousDetail.relief) {
         this.setStudioSurface(before, nextSeed, nextDetail.relief);
@@ -932,10 +961,10 @@ export class PlanetRenderer {
     this.stats.selectionMs = performance.now() - start;
     this.stats.leaves = plan.leaves.size;
     const previous = this.state;
-    const sameTiles = previous?.length === plan.visible.length && plan.visible.every(
-      (tile, i) => tile.key === previous[i].key && tile.mask === previous[i].mask,
+    const sameTiles = previous?.length === plan.visible.length && previous.every(
+      (tile) => plan.leaves.get(tile.key)?.mask === tile.mask,
     );
-    this.refineNext = plan.deferred && !sameTiles;
+    this.refineNext = plan.deferred && plan.advanced;
     if (sameTiles) return;
     this.state = plan.visible;
     this.bundle = null;
@@ -945,19 +974,21 @@ export class PlanetRenderer {
       const { builds } = cached;
       const jf = new Float32Array(this.tileJobRecords), ju = new Uint32Array(this.tileJobRecords);
       const pendingKeys = new Set(builds.map(({ tile }) => tile.key));
+      // Read only from surviving slots whose contents are already on the GPU.
+      const sourceSlot = (key) => pendingKeys.has(key) ? 0 : (this.tileCache.slots.get(key) ?? -1) + 1;
       builds.forEach(({ tile, slot }, i) => {
-        const at = i * 8;
+        const at = i * (tileJobBytes / 4);
         jf[at] = tile.u;
         jf[at + 1] = tile.v;
         jf[at + 2] = tile.size;
         ju[at + 3] = tile.face;
         ju[at + 5] = slot;
-        const parent = parentTileKey(tile);
-        const parentSlot = pendingKeys.has(parent) ? undefined : this.tileCache.slots.get(parent);
-        ju[at + 6] = parentSlot === undefined ? 0 : parentSlot + 1;
+        ju[at + 6] = sourceSlot(parentTileKey(tile));
         ju[at + 7] = (tile.x & 1) | ((tile.y & 1) << 1);
+        for (let quadrant = 0; quadrant < 4; quadrant++)
+          ju[at + 8 + quadrant] = sourceSlot(childTileKey(tile, quadrant));
       });
-      this.device.queue.writeBuffer(this.tileJobBuffer, 0, this.tileJobRecords, 0, this.pendingBaseTiles * 32);
+      this.device.queue.writeBuffer(this.tileJobBuffer, 0, this.tileJobRecords, 0, builds.length * tileJobBytes);
     }
     const buckets = Array.from({ length: 16 }, () => []);
     for (const node of plan.visible) buckets[node.mask].push(node);
@@ -1018,17 +1049,18 @@ export class PlanetRenderer {
       Math.hypot(...camera.position) -
         this.options.radius -
         this.sampleSurface(unit(camera.position)).height;
-    const pose = [
-      ...camera.position,
-      ...camera.forward,
-      ...camera.up,
-      camera.pixelScale,
-      camera.far,
-      clearance,
-    ];
-    const turned =
-      this.pose &&
-      camera.forward.some((v, i) => Math.abs(v - this.pose[i + 3]) > 0.08);
+    const elapsed = now - this.lastSelect;
+    const pose = this.pose;
+    const projectionChanged = !pose || camera.pixelScale !== pose.pixelScale ||
+      camera.tanX !== pose.tanX;
+    const clipChanged = pose && (Math.abs(camera.near - pose.near) >= Math.max(1, pose.near * .04) ||
+      Math.abs(camera.far - pose.far) >= Math.max(1, pose.far * .01));
+    const rotation = pose
+      ? Math.max(1 - dot(camera.forward, pose.forward), 1 - dot(camera.up, pose.up))
+      : 0;
+    const moveThreshold = Math.max(1, Math.min(400, (this.stats.finest ?? 2) * 0.4));
+    const moved = pose && (Math.abs(clearance - pose.clearance) >= moveThreshold ||
+      camera.position.some((value, i) => Math.abs(value - pose.position[i]) >= moveThreshold));
     const procedural = this.usesProceduralTiles;
     if (wireframe && !this.startupPreview) {
       const sampling = this.terrainSampling;
@@ -1048,11 +1080,15 @@ export class PlanetRenderer {
     } else wireframe = false;
     if (
       (!this.refinementInFlight || this.state === null) &&
-      (this.dirty ||
-        turned ||
-        (now - this.lastSelect >= 95 && pose.some((v, i) => v !== this.pose[i])))
-    )
-      this.select({ ...camera, clearance }, now, pose);
+      (this.dirty || projectionChanged ||
+        (elapsed >= 50 && rotation >= 0.0024) ||
+        (elapsed >= 110 && (moved || clipChanged || rotation >= 0.00022)))
+    ) {
+      this.select({ ...camera, clearance }, now, {
+        position: [...camera.position], forward: [...camera.forward], up: [...camera.up],
+        pixelScale: camera.pixelScale, tanX: camera.tanX, near: camera.near, far: camera.far, clearance,
+      });
+    }
     const f = this.frame;
     f.set(relativeCamera(camera).viewProjection);
     f.set([...camera.position, this.options.radius], 16);
@@ -1075,6 +1111,7 @@ export class PlanetRenderer {
     // Bring in orbital shading before the flyover normals fade out.
     f[48] = this.options.streamingLod ? orbitDetailWeight(clearance, 60000, 100000) : 0;
     f[49] = this.options.minSpacing;
+    f[50] = Number(Boolean(this.sunBake));
     d.queue.writeBuffer(this.uniform, 0, f);
     const rocks = this.visibleRockSpans(camera, wireframe);
     this.stats.drawCalls = this.draws.length + 1 + rocks.length;
@@ -1108,22 +1145,32 @@ export class PlanetRenderer {
       this.bundleWire = wireframe;
     }
     const encoder = d.createCommandEncoder();
-    const buildingTiles = this.pendingBaseTiles > 0;
-    if (this.pendingBaseTiles) {
-      const bake = encoder.beginComputePass();
+    const patchCount = this.pendingBaseTiles;
+    const buildingTiles = patchCount > 0;
+    const canTime = this.queries && !this.timing;
+    const timeDraw = canTime && this.frameIndex++ % 20 === 0;
+    const timePatches = canTime && buildingTiles && start - this.lastPatchSample >= 100;
+    if (buildingTiles) {
+      if (timePatches) this.lastPatchSample = start;
+      const bake = encoder.beginComputePass(timePatches ? {
+        timestampWrites: {
+          querySet: this.queries,
+          beginningOfPassWriteIndex: 2,
+          endOfPassWriteIndex: 3,
+        },
+      } : undefined);
       const verticesPerPatch = (this.options.divs + 1) ** 2;
-      if (procedural) this.studioVertices.dispatch(bake, verticesPerPatch, this.pendingBaseTiles);
+      if (procedural) this.studioVertices.dispatch(bake, verticesPerPatch, patchCount);
       else {
         bake.setPipeline(this.tileCompute);
         bake.setBindGroup(0, this.tileComputeGroup);
-        bake.dispatchWorkgroups(Math.ceil(verticesPerPatch / 64), this.pendingBaseTiles);
+        bake.dispatchWorkgroups(Math.ceil(verticesPerPatch / 64), patchCount);
       }
       bake.end();
-      this.stats.baseTileBuilds = (this.stats.baseTileBuilds ?? 0) + this.pendingBaseTiles;
+      this.stats.baseTileBuilds = (this.stats.baseTileBuilds ?? 0) + patchCount;
       this.pendingBaseTiles = 0;
     }
-    if (!this.startupPreview) this.updateSunShadows(encoder, step, blend);
-    const timed = this.queries && !this.timing && this.frameIndex++ % 20 === 0;
+    if (this.sunBake) this.updateSunShadows(encoder, step, blend);
     const pass = encoder.beginRenderPass({
       colorAttachments: [
         {
@@ -1139,7 +1186,7 @@ export class PlanetRenderer {
         depthLoadOp: "clear",
         depthStoreOp: this.options.sampleDepth ? "store" : "discard",
       },
-      ...(timed
+      ...(timeDraw
         ? {
             timestampWrites: {
               querySet: this.queries,
@@ -1151,15 +1198,18 @@ export class PlanetRenderer {
     });
     pass.executeBundles([this.bundle, ...rocks.map((rock) => wireframe ? rock.wire : rock.solid)]);
     pass.end();
+    const timed = timeDraw || timePatches;
     if (timed) {
-      encoder.resolveQuerySet(this.queries, 0, 2, this.resolve, 0);
-      encoder.copyBufferToBuffer(this.resolve, 0, this.read, 0, 16);
+      const queryCount = timeDraw && timePatches ? 4 : 2;
+      encoder.resolveQuerySet(this.queries, timeDraw ? 0 : 2, queryCount, this.resolve, 0);
+      encoder.copyBufferToBuffer(this.resolve, 0, this.read, 0, queryCount * 8);
     }
     d.queue.submit([encoder.finish()]);
     if (this.startupPreview && !this.startupScheduled) {
       this.startupScheduled = true;
-      d.queue.onSubmittedWorkDone().then(() => this.finishStartup())
-        .catch((error) => { if (!this.disposed) this.errors.push(error.message); });
+      requestAnimationFrame(() => {
+        this.finishStartup().catch((error) => { if (!this.disposed) this.errors.push(error.message); });
+      });
     }
     if (this.options.streamingLod && !this.refinementInFlight && (buildingTiles || this.refineNext)) {
       this.refinementInFlight = true;
@@ -1176,7 +1226,12 @@ export class PlanetRenderer {
         .mapAsync(GPUMapMode.READ)
         .then(() => {
           const ticks = new BigUint64Array(this.read.getMappedRange());
-          this.stats.gpuMs = Number(ticks[1] - ticks[0]) / 1e6;
+          if (timeDraw) this.stats.gpuMs = Number(ticks[1] - ticks[0]) / 1e6;
+          if (timePatches) {
+            const index = timeDraw ? 2 : 0;
+            this.stats.patchGpuTiles = patchCount;
+            this.stats.patchGpuMs = Number(ticks[index + 1] - ticks[index]) / 1e6;
+          }
           this.read.unmap();
         })
         .catch((error) => {
@@ -1217,7 +1272,7 @@ export class PlanetRenderer {
       resource?.destroy();
     this.studioMap = null;
     this.startupMap = null;
-    Promise.allSettled([this.studioQueue, this.startupCompletion, this.studioVerticesCompilation]).then(() => {
+    Promise.allSettled([this.studioQueue, this.startupCompletion]).then(() => {
       this.noiseBuilder?.dispose();
       this.studioVertices?.dispose();
     });

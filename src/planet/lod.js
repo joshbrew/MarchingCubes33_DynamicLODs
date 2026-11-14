@@ -54,10 +54,14 @@ export function project(p) {
   ];
 }
 // Two 20-bit tile coordinates plus face/level fit exactly in a JS number.
+const maxTileLevel = 20;
 const key = (face, level, x, y) =>
   (face * 32 + level) * 1099511627776 + x * 1048576 + y;
 export const parentTileKey = (tile) =>
   tile.level > 0 ? key(tile.face, tile.level - 1, tile.x >> 1, tile.y >> 1) : null;
+export const childTileKey = (tile, quadrant) => tile.level < maxTileLevel
+  ? key(tile.face, tile.level + 1, tile.x * 2 + (quadrant & 1), tile.y * 2 + (quadrant >> 1))
+  : null;
 function tile(face, level, x, y) {
   const size = 2 / 2 ** level,
     u = x * size - 1,
@@ -74,7 +78,7 @@ function tile(face, level, x, y) {
     dir: unit(cube(face, u + size / 2, v + size / 2)),
   };
 }
-function neighbor(node, leaves, edge) {
+function neighbor(node, leaves, edge, split) {
   const { u, v, size, level } = node,
     count = 2 ** level;
   let face = node.face;
@@ -89,7 +93,12 @@ function neighbor(node, leaves, edge) {
     x = clamp(Math.floor(((px + 1) * count) / 2), 0, count - 1);
     y = clamp(Math.floor(((py + 1) * count) / 2), 0, count - 1);
   }
-  for (let l = level; l >= 0; l--, x >>= 1, y >>= 1) {
+  const sameLevel = key(face, level, x, y);
+  const peer = leaves.get(sameLevel);
+  if (peer || split?.has(sameLevel)) return peer;
+  for (let l = level - 1; l >= 0; l--) {
+    x >>= 1;
+    y >>= 1;
     const found = leaves.get(key(face, l, x, y));
     if (found) return found;
   }
@@ -167,7 +176,7 @@ export function selectPlanet(
   const deepest = clamp(
     Math.ceil(Math.log2((2 * radius) / (divs * minSpacing))),
     0,
-    20,
+    maxTileLevel,
   );
   const [low, high] = elevationBounds ?? [-elevationBound, elevationBound];
   const inner = radius + low,
@@ -177,8 +186,14 @@ export function selectPlanet(
   const horizon =
     Math.acos(clamp(inner / eyeLength, -1, 1)) + Math.acos(inner / outer);
   const margin = Math.min(5000, Math.max(64, height * 0.1));
-  const spreadDistance = Math.max(1800, height * .12);
-  const focalGain = .67;
+  const distanceFalloff = 1 / lodScale;
+  // Stretch the distance beyond the near field. A lateral multiplier can
+  // increase error faster than distance falls off and refine a ring at nadir.
+  const nearDistance = Math.hypot(height, Math.min(1200, Math.max(150, height * .55)));
+  const orbitBlend = smoothstep(20000, 100000, height);
+  const distanceFloor = nearDistance * (1 - orbitBlend);
+  const nearDistanceWeight = (1 - distanceFalloff) * (1 - orbitBlend);
+  const focalGain = .82;
   const orbitalGain = centerPriority
     ? (4 + 3 * smoothstep(300000, 500000, height)) * orbitDetailWeight(height, 100000, 220000)
     : 0;
@@ -197,6 +212,8 @@ export function selectPlanet(
     return {
       lateral: radius * chord,
       bound: midpoint * chord + halfRange,
+      capCos: 1 - chord * chord / 2,
+      capSin: chord * Math.sqrt(1 - chord * chord / 4),
       horizon: Math.cos(Math.min(Math.PI, horizon + 2 * Math.asin(chord / 2))),
       nearby: Math.min(90, radius * size * 0.65),
       error:
@@ -226,35 +243,36 @@ export function selectPlanet(
     );
     if (!node.visible && lateral >= m.nearby) return;
     const distance = Math.hypot(height, lateral);
-    const spread = clamp((lateral - 150) / spreadDistance, 0, 1);
-    let weight = 1 + (lodScale - 1) * spread;
+    const effectiveDistance = distance * distanceFalloff +
+      Math.min(distance, distanceFloor) * nearDistanceWeight;
+    let error = m.error / effectiveDistance;
     const wasFocal = previousFocal.has(node.key);
-    const wasDistance = previous.has(node.key) && !wasFocal;
-    const distanceThreshold = pixelError * (wasDistance ? .8 : 1);
-    const focalThreshold = pixelError * (wasFocal ? .8 : 1);
+    const wasSplit = previous.has(node.key);
+    const distanceThreshold = pixelError * (wasSplit && !wasFocal ? .76 : 1);
+    const focalThreshold = pixelError * (wasSplit ? .76 : 1);
     const canFocus = centerPriority && node.visible;
     if (sampleRelief && height < 60000 && node.visible && node.level >= 3) {
       // Ruggedness can increase the weight by at most 1 + 1.6.
-      const maxError = (m.error * (weight * (1 + 1.6))) / distance;
+      const maxError = error * (1 + 1.6);
       if (maxError <= distanceThreshold && (!canFocus || maxError * (1 + focalGain) <= focalThreshold))
         return;
       const [ground, variation] = sampleRelief(node);
       const rugged = clamp(variation / Math.max(1, m.lateral) - 0.16, 0, 1);
-      weight *= 1 + rugged * 1.6;
+      error *= 1 + rugged * 1.6;
       // The conservative globe bounds include mountains far outside this
-      // patch. Deprioritize tiles outside the view at their local elevation.
-      const viewBound = m.lateral * 1.1 + variation + Math.min(650, m.lateral);
+      // patch. Fade its refinement priority across the local frustum edge.
+      const viewBound = m.lateral * 1.1 + variation + Math.min(650, m.lateral) + margin;
+      const fadeWidth = Math.max(margin, viewBound * .5);
+      const surfaceRadius = radius + ground;
+      let outside = 0;
       for (let i = 0; i < sidePlanes; i++) {
-        if (
-          (radius + ground) * dot(planes[i], node.dir) + planes[i][3] <
-          -viewBound - margin
-        ) {
-          weight *= 0.42;
-          break;
-        }
+        const plane = planes[i];
+        const excess = -(surfaceRadius * dot(plane, node.dir) + plane[3]) - viewBound;
+        if (excess > outside) outside = excess;
+        if (outside >= fadeWidth) break;
       }
+      if (outside > 0) error *= 1 - .58 * Math.min(1, outside / fadeWidth);
     }
-    const error = (m.error * weight) / distance;
     const orbitalFocus = orbitalGain > 0 && lateral < nadirEnd ? orbitalGain : 0;
     let focus = 0;
     if (canFocus && ((orbitalFocus > 0 && error * (1 + orbitalFocus) > distanceThreshold) ||
@@ -275,12 +293,25 @@ export function selectPlanet(
       : 0;
     const distanceError = error * (1 + orbitalBonus);
     if (distanceError > distanceThreshold) {
-      heap.push({ node, score: distanceError * (node.visible ? 1.15 : 1) *
-        (centerPriority && wasDistance ? 1.10 : 1) });
+      // Keep near-field detail competitive when the triangle cap is tight.
+      const nearPriority = centerPriority && height < 60000 && lateral < 1750
+        ? 1 + .32 * (1 - smoothstep(750, 1750, lateral)) * (1 - orbitBlend)
+        : 1;
+      heap.push({ node, score: distanceError * nearPriority * (node.visible ? 1.15 : 1) *
+        (centerPriority && wasSplit ? 1.52 : 1) });
     } else if (focus > 0) {
       const focusedError = error * (1 + focalGain * focus);
       if (focus > 0 && focusedError > focalThreshold)
-        focalHeap.push({ node, score: focusedError });
+        focalHeap.push({ node, score: focusedError * (wasSplit ? 1.16 : 1) });
+    }
+  }
+  const required = new Set();
+  function addRequiredSplit(node) {
+    if (required.has(node)) return;
+    required.add(node);
+    for (let edge = 0; edge < 4; edge++) {
+      const adjacent = neighbor(node, leaves, edge, split);
+      if (adjacent && adjacent.level < node.level) addRequiredSplit(adjacent);
     }
   }
   for (let f = 0; f < 6; f++) add(tile(f, 0, 0, 0));
@@ -288,16 +319,8 @@ export function selectPlanet(
     const focal = !heap.items.length;
     const { node } = (focal ? focalHeap : heap).pop();
     if (!leaves.has(node.key)) continue;
-    const required = new Set();
-    function addSplit(n) {
-      if (required.has(n)) return;
-      required.add(n);
-      for (let edge = 0; edge < 4; edge++) {
-        const other = neighbor(n, leaves, edge);
-        if (other && other.level < n.level) addSplit(other);
-      }
-    }
-    addSplit(node);
+    required.clear();
+    addRequiredSplit(node);
     if (leaves.size + 3 * required.size > maxTiles) continue;
     if (remainingSplits < Infinity) {
       let newSplits = 0;
@@ -321,12 +344,42 @@ export function selectPlanet(
   const visible = [];
   for (const node of leaves.values()) {
     if (!node.visible) continue;
+    const { capCos, capSin, bound } = metrics[node.level];
+    // Treat relief as radial when testing draw visibility. A sphere around
+    // the tile adds the full elevation range sideways to every view plane.
+    // Keep a guard band for camera turns between renderer selections.
+    const viewMargin = margin + .09 * bound;
+    let turnMargin;
+    let inView = true;
+    for (let i = 0; i < sidePlanes; i++) {
+      const plane = planes[i];
+      const alignment = dot(plane, node.dir);
+      if (alignment >= capCos) continue;
+      const support = alignment * capCos + Math.sqrt(Math.max(0, 1 - alignment * alignment)) * capSin;
+      const outside = -(support * (support < 0 ? inner : outer) + plane[3]) - viewMargin;
+      if (outside <= 0) continue;
+      turnMargin ??= .09 * Math.hypot(
+        midpoint * node.dir[0] - eye[0],
+        midpoint * node.dir[1] - eye[1],
+        midpoint * node.dir[2] - eye[2],
+      );
+      if (outside > turnMargin) {
+        inView = false;
+        break;
+      }
+    }
+    if (!inView) {
+      node.visible = false;
+      continue;
+    }
     let mask = 0;
     for (let edge = 0; edge < 4; edge++) {
-      const adjacent = neighbor(node, leaves, edge);
+      const adjacent = neighbor(node, leaves, edge, split);
       if (adjacent && adjacent.level < node.level) mask |= 1 << edge;
     }
-    visible.push({ ...node, mask, spacing: (radius * node.size) / divs });
+    node.mask = mask;
+    node.spacing = (radius * node.size) / divs;
+    visible.push(node);
   }
-  return { leaves, visible, split, focalSplit, deferred };
+  return { leaves, visible, split, focalSplit, deferred, advanced: remainingSplits < splitBudget };
 }

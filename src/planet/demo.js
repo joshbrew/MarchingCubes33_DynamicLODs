@@ -381,7 +381,7 @@ const distance = (m) =>
     ? `${(m / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })} km`
     : `${m.toLocaleString(undefined, { maximumFractionDigits: 2 })} m`;
 
-export async function startDemo({ onFrame, onDispose, onTerrainReady, sampleDepth = false } = {}) {
+export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceReady, sampleDepth = false } = {}) {
   const $ = (id) => document.getElementById(id),
     canvas = $("planet"),
     status = $("status");
@@ -413,6 +413,7 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, sampleDept
     streamingLod: true,
     progressiveStartup: true,
     sampleDepth,
+    onDeviceReady,
   });
   await planet.configure({
     pixelError: $("detail").valueAsNumber,
@@ -953,6 +954,10 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, sampleDept
       $("grades").textContent = stats.grades;
       $("timing").textContent =
         `${stats.cpuMs.toFixed(1)} / ${stats.gpuMs?.toFixed(1) ?? "—"} ms`;
+      const patchTiming = $("patchTiming");
+      if (patchTiming) patchTiming.textContent = stats.patchGpuMs === null
+        ? "—"
+        : `${stats.patchGpuMs.toFixed(2)} ms / ${stats.patchGpuTiles}`;
       $("fps").textContent = document.hidden
         ? "Background"
         : Math.round(1000 / average);
