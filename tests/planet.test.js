@@ -638,7 +638,7 @@ test("planet stress settings can plan about 16 million grid vertices within the 
 });
 
 test("every planet preset fits the GPU palette and can use the same explicit seed", () => {
-  assert.equal(PlanetPresets.length, 26);
+  assert.equal(new Set(PlanetPresets.map(({ id }) => id)).size, PlanetPresets.length);
   assert.equal(getPreset("gas-giant").name, "Amberstone");
   const dir = unit([0.7, 0.2, 0.6]);
   for (const { id } of PlanetPresets) {

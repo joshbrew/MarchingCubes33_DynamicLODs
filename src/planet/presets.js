@@ -184,7 +184,7 @@ add(
   "Ceres",
   ceresColors,
   1013 * (palettes.length + 8),
-  { material: 4, craterDetail: 1.25 },
+  { material: 4, craterDetail: 1.45 },
 );
 add(
   "Ceres Crater Fields",

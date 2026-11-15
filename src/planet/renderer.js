@@ -1,4 +1,5 @@
 import { initializeGPU, disposeGPUContext, renderSize } from "../api/gpu.js";
+import { estimateGpuBytes, noiseGpuResources, ownedGpuResources, textureBytes } from "../api/gpu-memory.js";
 import { relativeCamera } from "../api/camera.js";
 import { aircraftVertexCount, createAircraft } from "./aircraft.js";
 import { buildIndices, lines } from "../terrain/surface.js";
@@ -53,6 +54,7 @@ const atlasSegments = (size) => size < radius * .5 ? 1536 : undefined;
 const maximumGridVertices = 16_000_000;
 const patchesWGSL = tileJobsWGSL + patchesShader;
 const spareTileSlots = 64;
+const patchTimeBudgetMs = 1.8;
 const verticesPerTile = (divs) => (divs + 1) ** 2;
 const sampleStride = (sampling) => sampling === "procedural" ? 16 : 48;
 const cacheSlots = (tiles) => tiles + Math.min(tiles, spareTileSlots);
@@ -119,6 +121,7 @@ export class PlanetRenderer {
     this.rockSpans = [];
     this.terrainTriangles = 0;
     this.stats = { gpuMs: null, patchGpuMs: null, patchGpuTiles: 0, planBuilds: 0 };
+    this.patchMsPerTile = undefined;
     this.errors = [];
     this.lastSelect = -Infinity;
     this.dirty = true;
@@ -593,6 +596,8 @@ export class PlanetRenderer {
   uploadStudioMap(map, studioSeed, coarse = coarsenStudioPlanetNoise(map), relief = this.detail.relief) {
     const d = this.device;
     this.tileCache.clear();
+    this.patchMsPerTile = undefined;
+    this.patchTimingGeneration = (this.patchTimingGeneration ?? 0) + 1;
     this.state = null;
     const deposits = map.glacialIce ?? map.impactMaterial ?? map.alluvium;
     const required = map.values.byteLength + coarse.byteLength + map.regions.values.byteLength +
@@ -948,12 +953,16 @@ export class PlanetRenderer {
   }
   select(camera, now, pose) {
     const start = performance.now();
-    if (this.reliefCache.size > Math.max(16000, this.tileBudget * 3)) this.reliefCache.clear();
     const streaming = this.options.streamingLod;
     // Keep the normal streaming batch at the default budget. Stress budgets
     // need larger batches to avoid repeatedly planning tens of thousands of
     // already-built patches just to add a handful of new ones.
     const batchScale = Math.min(12, Math.ceil(this.tileBudget / 4096));
+    const splitCap = (this.usesProceduralTiles ? 24 : 48) * batchScale;
+    // A split may introduce four new patches. Use actual bake timings to
+    // leave room for scene rendering when the local terrain is expensive.
+    const splitBudget = Math.min(splitCap, Math.max(8,
+      Math.floor(patchTimeBudgetMs / (4 * (this.patchMsPerTile ?? 0)))));
     const quality = streaming ? Math.min(1, Math.sqrt(2 / this.pixelError)) : 1;
     const plan = selectPlanet(
       camera,
@@ -962,7 +971,7 @@ export class PlanetRenderer {
         maxTiles: Math.max(24, Math.floor(this.tileBudget * quality)),
         centerPriority: streaming,
         previousFocal: this.focalSplit,
-        splitBudget: streaming ? (this.usesProceduralTiles ? 24 : 48) * batchScale : Infinity,
+        splitBudget: streaming ? splitBudget : Infinity,
         minSpacing: this.minGridSpacing,
         pixelError: this.lowPoly ? Math.max(4, this.pixelError) : this.pixelError,
         lodScale: this.lodScale,
@@ -971,6 +980,11 @@ export class PlanetRenderer {
       },
       this.split,
     );
+    const excess = this.reliefCache.size - Math.max(16000, this.tileBudget * 3);
+    if (excess > 0) {
+      const oldest = this.reliefCache.keys();
+      for (let i = 0; i < excess; i++) this.reliefCache.delete(oldest.next().value);
+    }
     this.split = plan.split;
     this.focalSplit = plan.focalSplit;
     this.pose = pose;
@@ -1247,6 +1261,7 @@ export class PlanetRenderer {
       }).finally(() => { this.refinementInFlight = false; });
     }
     if (timed) {
+      const generation = this.patchTimingGeneration;
       this.timing = true;
       this.read
         .mapAsync(GPUMapMode.READ)
@@ -1257,6 +1272,13 @@ export class PlanetRenderer {
             const index = timeDraw ? 2 : 0;
             this.stats.patchGpuTiles = patchCount;
             this.stats.patchGpuMs = Number(ticks[index + 1] - ticks[index]) / 1e6;
+            if (generation === this.patchTimingGeneration && patchCount >= 8 &&
+                this.stats.patchGpuMs > 0) {
+              const observed = this.stats.patchGpuMs / patchCount;
+              const previous = this.patchMsPerTile ?? observed;
+              const weight = observed > previous ? .5 : .15;
+              this.patchMsPerTile = previous + (observed - previous) * weight;
+            }
           }
           this.read.unmap();
         })
@@ -1269,6 +1291,19 @@ export class PlanetRenderer {
     }
     this.stats.cpuMs = performance.now() - start;
     return this.stats;
+  }
+  estimateGpuMemory() {
+    const colorBytes = textureBytes(this.format, this.canvas.width, this.canvas.height);
+    const depthBytes = estimateGpuBytes([this.depth]);
+    const totalBytes = colorBytes + estimateGpuBytes([
+      ...ownedGpuResources(this),
+      ...ownedGpuResources(this.studioVertices),
+      ...ownedGpuResources(this.aircraft),
+      ...noiseGpuResources(this.noiseBuilder),
+      ...Array.from(this.templates.values(), ownedGpuResources).flat(),
+      ...this.rockSpans.flatMap(ownedGpuResources),
+    ]);
+    return { totalBytes, colorBytes, depthBytes, patchBytes: this.baseTileBuffer.size };
   }
   dispose() {
     if (this.disposed) return;

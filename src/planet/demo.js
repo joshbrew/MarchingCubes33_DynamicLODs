@@ -384,11 +384,18 @@ const distance = (m) =>
     ? `${(m / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })} km`
     : `${m.toLocaleString(undefined, { maximumFractionDigits: 2 })} m`;
 
-export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceReady, onNavigationReady, sampleDepth = false } = {}) {
+const memorySize = (bytes) => `${(bytes / 1024 ** 2).toFixed(1)} MiB`;
+
+export async function startDemo({
+  onFrame, onDispose, onTerrainReady, onDeviceReady, onNavigationReady, sampleDepth = false, sampleAtmosphereMemory,
+} = {}) {
   const $ = (id) => document.getElementById(id),
     canvas = $("planet"),
     status = $("status");
   const panels = [$("controls"), $("performance")];
+  if (sampleAtmosphereMemory) {
+    for (const row of panels[1].querySelectorAll("[data-atmosphere-memory]")) row.hidden = false;
+  }
   const hideInterface = $("hideInterface"), showInterface = $("showInterface");
   function toggleInterface(hidden) {
     for (const panel of panels) panel.hidden = hidden;
@@ -1081,6 +1088,17 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
       $("fps").textContent = document.hidden
         ? "Background"
         : Math.round(1000 / average);
+      const memory = planet.estimateGpuMemory();
+      $("planetGpuMemory").textContent = memorySize(memory.totalBytes);
+      $("planetGpuMemory").title = `${memorySize(memory.patchBytes)} terrain patch data`;
+      $("planetFrameMemory").textContent = memorySize(memory.colorBytes + memory.depthBytes);
+      $("planetFrameMemory").title = `${canvas.width} × ${canvas.height}, ${memorySize(memory.colorBytes)} color + ${memorySize(memory.depthBytes)} depth`;
+      if (sampleAtmosphereMemory) {
+        const atmosphereMemory = sampleAtmosphereMemory();
+        $("atmosphereGpuMemory").textContent = memorySize(atmosphereMemory.totalBytes);
+        $("atmosphereFrameMemory").textContent = memorySize(atmosphereMemory.frameBytes);
+        $("atmosphereFrameMemory").title = atmosphereMemory.frameDetail;
+      }
       status.textContent =
         planet.errors.at(-1) ||
         bakeError ||

@@ -424,6 +424,14 @@
         <dd id="patchTiming">—</dd>
         <dt>FPS</dt>
         <dd id="fps">—</dd>
+        <dt title="Estimated live GPU buffers and textures, excluding driver and browser overhead">Planet GPU (est.)</dt>
+        <dd id="planetGpuMemory">—</dd>
+        <dt title="One color image and the depth texture, included in the planet estimate">Planet frame targets</dt>
+        <dd id="planetFrameMemory">—</dd>
+        <dt data-atmosphere-memory hidden title="Estimated live GPU buffers and textures, including incoming weather and retained renderers">Clouds + aurora GPU (est.)</dt>
+        <dd data-atmosphere-memory hidden id="atmosphereGpuMemory">—</dd>
+        <dt data-atmosphere-memory hidden title="Reusable output, history, depth and scratch targets, included in the atmosphere estimate">Atmosphere frame targets</dt>
+        <dd data-atmosphere-memory hidden id="atmosphereFrameMemory">—</dd>
       </dl>
     </aside>
   </body>

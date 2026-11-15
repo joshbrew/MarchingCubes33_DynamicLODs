@@ -78,8 +78,8 @@ export function impactHeight(x, y, height, event) {
     (u * Math.cos(event.high) + v * Math.sin(event.high));
   const bench = smooth(event.bench - 0.10, event.bench, distance) *
     (1 - smooth(event.bench + 0.08, event.bench + 0.18, distance));
-  const wall = smooth(0.66 - 0.09 * event.wear, 0.96, distance);
-  const crest = smooth(0.84 - 0.06 * event.wear, 1.0, distance) *
+  const wall = smooth(event.wallStart ?? (0.66 - 0.09 * event.wear), 0.96, distance);
+  const crest = smooth(event.rimStart ?? (0.84 - 0.06 * event.wear), 1.0, distance) *
     (1 - smooth(1.02, 1.24 + 0.10 * event.wear, distance));
   const rim = event.depth * event.rim * crest * (1 + 0.28 * fold + 0.11 * rib) * (1 - breakInRim);
 
@@ -174,14 +174,18 @@ export function bakePlanetImpacts(values, side, seed, variation, density = 1, lu
     const age = random(i, 6);
     const wear = basin ? mix(.38, .62, age) : small || medium ? mix(.12, .85, age) :
       mix(.86, .13, (i + age) / Math.max(1, count));
+    const prominent = detail === 1 && (medium || (!basin && !small));
     const depth = basin ? mix(.79, 1.15, size / .43) : shape.depth * mix(1.02, .63, wear) *
       (small ? mix(.12 + .065 * crowded, .51 + .15 * crowded, sizeRoll ** 1.8) + .22 * saturation
-        : medium ? mix(.42, .92, sizeRoll) + .22 * saturation
-        : mix(.31, .95, (size * craterDensity - .014) / .103));
+        : medium ? mix(.42, .92, sizeRoll) + .22 * saturation + (prominent ? .28 : 0)
+        : mix(.31, .95, (size * craterDensity - .014) / .103) + (prominent ? .23 : 0));
     const event = basin ? { ...shape, wear, depth, size: 1, stretch: mix(.90, .99, random(i, 7)), warp: .42 * shape.warp,
       breach: .18, rim: .38, rebound: random(i, 8) < .32 ? 3 : 0, reboundHeight: .28, flatFloor: true }
       : { ...shape, wear, depth, stretch: mix(.81, 1, random(i, 7)),
-        rim: medium ? Math.max(.49, shape.rim) : shape.rim,
+        rim: prominent ? mix(.42, .66, 1 - wear) : medium ? Math.max(.49, shape.rim) : shape.rim,
+        rimStart: prominent ? mix(.77, .69, wear) : undefined,
+        wallStart: prominent ? mix(.73, .56, wear) : undefined,
+        flatFloor: prominent && (sizeRoll + wear > 1.07),
         rebound: small && sizeRoll < .84 ? 0 : shape.rebound };
     const reach = Math.asin(1.53 * event.size * (1.021 + event.warp) * size);
     const coversPole = reach >= Math.min(latitude, Math.PI - latitude);

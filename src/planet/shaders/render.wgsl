@@ -145,18 +145,19 @@ fn satellite_color(palette:vec3<f32>,radial:vec3<f32>,surface:PlanetSurface,mode
       smoothstep(-.30,.26,.44*grain+.37*patches+.19*chips));
     return mix(mix(palette,rust,.91),mix(plain,flow,ice),max(.96*sheet,ice));
   }
-  let tone=smoothstep(-.17,.17,.77*district+.46*grain+.16*patches);
+  let displacement=studio_deposits(surface.uv);
+  let floor=smoothstep(.025,.24,-displacement);
+  let rim=smoothstep(.016,.13,displacement);
+  let tone=smoothstep(-.23,.23,.58*district+.45*grain+.22*patches);
   let wear=smoothstep(-.33,.27,.48*grain+.44*patches+.18*chips);
   let slate=mix(vec3<f32>(.034,.074,.155),vec3<f32>(.166,.269,.412),wear);
   let oxidized=mix(vec3<f32>(.20,.045,.029),vec3<f32>(.53,.179,.092),wear);
   let regolith=mix(slate,oxidized,tone);
-  let displacement=studio_deposits(surface.uv);
-  let floor=smoothstep(.03,.36,-displacement);
-  let rim=smoothstep(.022,.19,displacement);
   let saltNoise=planet_noise(radial*47.0,seed+49253u).value;
-  let salts=smoothstep(.22,.49,.78*saltNoise+.27*grain)*smoothstep(.14,.42,-displacement);
-  let rock=mix(palette,regolith,.97)*(1.0+.23*patches+.14*chips+.26*rim-.32*floor);
-  return mix(rock,vec3<f32>(.58,.56,.50),.60*salts);
+  let salts=smoothstep(.22,.49,.78*saltNoise+.27*grain)*floor;
+  let ejecta=mix(vec3<f32>(.24,.35,.48),vec3<f32>(.57,.31,.19),tone);
+  let rock=mix(palette,regolith,.94)*(1.0+.25*patches+.19*chips-.38*floor);
+  return mix(mix(rock,ejecta,.55*rim),vec3<f32>(.63,.60,.53),.65*salts);
 }
 fn frost_margin(dir:vec3<f32>,height:f32)->f32{
   let latitude=dot(dir,style.climate.xyz);

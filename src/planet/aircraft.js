@@ -25,6 +25,7 @@ export function createAircraft(device, format, frameUniform) {
     ],
   });
   return {
+    uniform,
     draw(pass, camera, bank) {
       // Keep the chase model in front of the near plane at orbital altitudes.
       // Scale it with chase distance to preserve its apparent size.
