@@ -8841,6 +8841,25 @@ fn sky_air_color(up:vec3<f32>,ray:vec3<f32>)->vec3<f32>{
   let dusk=frame.dusk.xyz*twilight*(.06+.48*sunward)*(.13+.87*horizon);
   return vec3<f32>(.002,.0035,.007)+blue*(.019+.98*daylight)+dusk;
 }
+fn sun_disk_color(elevation:f32,air:f32)->vec3<f32>{
+  let lowSun=mix(vec3<f32>(1.0,.31,.11),frame.dusk.xyz,.40);
+  let white=vec3<f32>(1.0,.91,.70);
+  return mix(white,mix(lowSun,white,smoothstep(-.04,.35,elevation)),clamp(air,0.0,1.0));
+}
+fn water_reflection(radial:vec3<f32>,normal:vec3<f32>,view:vec3<f32>,lit:vec3<f32>,
+  day:f32,visibility:f32,unresolvedRipples:f32)->vec3<f32>{
+  let facing=clamp(dot(normal,view),0.0,1.0);
+  let fresnel=.025+.72*pow(1.0-facing,5.0);
+  let sky=sky_air_color(radial,reflect(-view,normal))*.66;
+  let halfVector=view+sun();
+  let halfAngle=clamp(dot(normal,halfVector)*inverseSqrt(max(dot(halfVector,halfVector),1e-6)),0.0,1.0);
+  // Fold subpixel waves into the highlight as their individual normals fade.
+  let width=mix(.0024,.0082,unresolvedRipples);
+  let lobe=width/(width+1.0-halfAngle);
+  let glint=lobe*lobe*mix(.39,.28,unresolvedRipples)*(.72+.70*fresnel)*
+    visibility*smoothstep(-.006,.050,day);
+  return mix(lit,sky,fresnel)+glint*sun_disk_color(day,frame.air.w);
+}
 fn solar_light(day:f32, diffuse:f32, visibility:f32, ambient:f32)->vec3<f32>{
   let twilight=smoothstep(-.20,.24,day);
   let lit=smoothstep(-.008,.025,day);
@@ -9012,10 +9031,9 @@ fn orbit_sample(dir:vec3<f32>,radius:f32,side:i32,offset:i32,uv:vec2<f32>)->vec4
   var color=preset_color(v.terrain.x,1.0)*solar_light(day,max(0.0,dot(normal,sun())),1.0,.27);
   if(style.ocean.y>.5&&depth>0.0){
     let water=mix(style.shallowWater.xyz,style.deepWater.xyz,1.0-exp(-depth*style.deepWater.w));
-    let reflection=sky_air_color(radial,reflect(ray,radial))*.66;
-    let fresnel=.025+.72*pow(1.0-max(0.0,dot(radial,-ray)),5.0);
     let lit=water*solar_light(day,max(0.0,day),1.0,.30);
-    color=mix(color,mix(lit,reflection,fresnel),smoothstep(0.0,max(2.0,distance*frame.forward.w*.15),depth));
+    let reflected=water_reflection(radial,radial,-ray,lit,day,1.0,1.0);
+    color=mix(color,reflected,smoothstep(0.0,max(2.0,distance*frame.forward.w*.15),depth));
   }
   color=mix(color,sky_air_color(radial,-ray),terrain_haze(radial,-ray,distance));
   return vec4<f32>(pow(color,vec3<f32>(1.0/2.2)),1.0);
@@ -9187,24 +9205,20 @@ fn frost_margin(dir:vec3<f32>,height:f32)->f32{
 }
 
 fn ocean_color(radial:vec3<f32>,view:vec3<f32>,depth:f32,pixel:f32,bottom:vec3<f32>,shoal:f32,visibility:f32)->vec3<f32>{
+  let rippleWeight=1.0-smoothstep(2.0,5.0,pixel);
   var n=radial;
   if(pixel<5.0){
     let p=radial*frame.eye.w;
     let ripple=planet_noise(p/17.0,2501u).slope;
-    n=normalize(radial-.055*(ripple-radial*dot(ripple,radial))*(1.0-smoothstep(2.0,5.0,pixel)));
+    n=normalize(radial-.055*(ripple-radial*dot(ripple,radial))*rippleWeight);
   }
   let clarity=exp(-depth*style.shallowWater.w);
   let depthMix=1.0-exp(-depth*style.deepWater.w);
   let water=mix(mix(style.shallowWater.xyz,style.deepWater.xyz,depthMix),style.coastShoal.xyz,.43*shoal)+
     bottom*.29*clarity;
-  let facing=max(0.0,dot(n,view));
-  let fresnel=.025+.72*pow(1.0-facing,5.0);
-  let reflection=sky_air_color(radial,reflect(-view,n))*.66;
   let day=dot(radial,sun());
-  let glint=.30*pow(max(0.0,dot(n,normalize(view+sun()+vec3<f32>(1e-6)))),115.0)*
-    visibility*smoothstep(-.008,.09,day);
   let light=solar_light(day,max(0.0,dot(n,sun())),visibility,.30);
-  return mix(water*light,reflection,fresnel)+glint*mix(frame.dusk.xyz,vec3<f32>(1.0),smoothstep(0.0,.34,day));
+  return water_reflection(radial,n,view,water*light,day,visibility,1.0-rippleWeight);
 }
 @fragment fn planet_fragment(v:SurfaceVarying)->@location(0) vec4<f32> {
   let radial=normalize(v.radial);
@@ -9533,7 +9547,8 @@ fn ocean_color(radial:vec3<f32>,view:vec3<f32>,depth:f32,pixel:f32,bottom:vec3<f
   let ray=normalize(frame.forward.xyz+frame.right.xyz*v.uv.x*frame.right.w+
     frame.up.xyz*v.uv.y*frame.up.w);
   let eye=frame.eye.xyz; let r=frame.eye.w;
-  let altitude=max(0.0,length(eye)-r);
+  let eyeRadius=length(eye);
+  let altitude=max(0.0,eyeRadius-r);
   let air=exp(-altitude/18000.0)*frame.air.w;
   let up=normalize(eye);
   let day=dot(up,sun());
@@ -9549,11 +9564,12 @@ fn ocean_color(radial:vec3<f32>,view:vec3<f32>,depth:f32,pixel:f32,bottom:vec3<f
   result+=sky_air_color(limbUp,ray)*limb*frame.air.w;
   let sunAngle=length(ray-sun());
   let pixel=max(.0004,frame.forward.w*.65);
-  let disk=1.0-smoothstep(max(0.0,.013-pixel),.013+pixel,sunAngle);
-  let halo=exp(-sunAngle*18.0)*.24*air;
-  let sunColor=mix(mix(vec3<f32>(1.0,.31,.11),frame.dusk.xyz,.40),vec3<f32>(1.0,.91,.70),
-    mix(smoothstep(-.04,.35,day),1.0,1.0-clamp(air,0.0,1.0)));
-  result+=(disk*2.2+halo)*sunColor;
+  let groundToEye=r/max(eyeRadius,r);
+  let dip=sqrt(max(0.0,1.0-groundToEye*groundToEye));
+  let visible=smoothstep(-pixel,pixel,dot(up,ray)+dip);
+  let disk=(1.0-smoothstep(max(0.0,.013-pixel),.013+pixel,sunAngle))*visible;
+  let halo=exp(-sunAngle*18.0)*.24*air*smoothstep(-.09,.035,day+dip);
+  result+=(disk*2.2+halo)*sun_disk_color(day,air);
   return vec4<f32>(pow(clamp(result,vec3<f32>(0),vec3<f32>(1)),vec3<f32>(1.0/2.2)),1);
 }
 `;var Fo=`@group(0) @binding(0) var sunMap: texture_storage_2d<rgba8unorm,write>;

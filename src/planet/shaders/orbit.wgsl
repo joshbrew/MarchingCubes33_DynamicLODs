@@ -63,10 +63,9 @@ fn orbit_sample(dir:vec3<f32>,radius:f32,side:i32,offset:i32,uv:vec2<f32>)->vec4
   var color=preset_color(v.terrain.x,1.0)*solar_light(day,max(0.0,dot(normal,sun())),1.0,.27);
   if(style.ocean.y>.5&&depth>0.0){
     let water=mix(style.shallowWater.xyz,style.deepWater.xyz,1.0-exp(-depth*style.deepWater.w));
-    let reflection=sky_air_color(radial,reflect(ray,radial))*.66;
-    let fresnel=.025+.72*pow(1.0-max(0.0,dot(radial,-ray)),5.0);
     let lit=water*solar_light(day,max(0.0,day),1.0,.30);
-    color=mix(color,mix(lit,reflection,fresnel),smoothstep(0.0,max(2.0,distance*frame.forward.w*.15),depth));
+    let reflected=water_reflection(radial,radial,-ray,lit,day,1.0,1.0);
+    color=mix(color,reflected,smoothstep(0.0,max(2.0,distance*frame.forward.w*.15),depth));
   }
   color=mix(color,sky_air_color(radial,-ray),terrain_haze(radial,-ray,distance));
   return vec4<f32>(pow(color,vec3<f32>(1.0/2.2)),1.0);

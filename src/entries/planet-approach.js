@@ -1,7 +1,7 @@
 import page from "../../demo/planet.html";
 import { startDemo } from "../planet/demo.js";
 
-export { sunDirection } from "../planet/lighting.js";
+export { atmosphereColors, sunDirection } from "../planet/lighting.js";
 
 export async function mountPlanetApproach({ setup, ...options } = {}) {
   const parsed = new DOMParser().parseFromString(page, "text/html");

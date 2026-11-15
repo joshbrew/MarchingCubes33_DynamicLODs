@@ -165,24 +165,20 @@ fn frost_margin(dir:vec3<f32>,height:f32)->f32{
 }
 
 fn ocean_color(radial:vec3<f32>,view:vec3<f32>,depth:f32,pixel:f32,bottom:vec3<f32>,shoal:f32,visibility:f32)->vec3<f32>{
+  let rippleWeight=1.0-smoothstep(2.0,5.0,pixel);
   var n=radial;
   if(pixel<5.0){
     let p=radial*frame.eye.w;
     let ripple=planet_noise(p/17.0,2501u).slope;
-    n=normalize(radial-.055*(ripple-radial*dot(ripple,radial))*(1.0-smoothstep(2.0,5.0,pixel)));
+    n=normalize(radial-.055*(ripple-radial*dot(ripple,radial))*rippleWeight);
   }
   let clarity=exp(-depth*style.shallowWater.w);
   let depthMix=1.0-exp(-depth*style.deepWater.w);
   let water=mix(mix(style.shallowWater.xyz,style.deepWater.xyz,depthMix),style.coastShoal.xyz,.43*shoal)+
     bottom*.29*clarity;
-  let facing=max(0.0,dot(n,view));
-  let fresnel=.025+.72*pow(1.0-facing,5.0);
-  let reflection=sky_air_color(radial,reflect(-view,n))*.66;
   let day=dot(radial,sun());
-  let glint=.30*pow(max(0.0,dot(n,normalize(view+sun()+vec3<f32>(1e-6)))),115.0)*
-    visibility*smoothstep(-.008,.09,day);
   let light=solar_light(day,max(0.0,dot(n,sun())),visibility,.30);
-  return mix(water*light,reflection,fresnel)+glint*mix(frame.dusk.xyz,vec3<f32>(1.0),smoothstep(0.0,.34,day));
+  return water_reflection(radial,n,view,water*light,day,visibility,1.0-rippleWeight);
 }
 @fragment fn planet_fragment(v:SurfaceVarying)->@location(0) vec4<f32> {
   let radial=normalize(v.radial);

@@ -44,6 +44,25 @@ fn sky_air_color(up:vec3<f32>,ray:vec3<f32>)->vec3<f32>{
   let dusk=frame.dusk.xyz*twilight*(.06+.48*sunward)*(.13+.87*horizon);
   return vec3<f32>(.002,.0035,.007)+blue*(.019+.98*daylight)+dusk;
 }
+fn sun_disk_color(elevation:f32,air:f32)->vec3<f32>{
+  let lowSun=mix(vec3<f32>(1.0,.31,.11),frame.dusk.xyz,.40);
+  let white=vec3<f32>(1.0,.91,.70);
+  return mix(white,mix(lowSun,white,smoothstep(-.04,.35,elevation)),clamp(air,0.0,1.0));
+}
+fn water_reflection(radial:vec3<f32>,normal:vec3<f32>,view:vec3<f32>,lit:vec3<f32>,
+  day:f32,visibility:f32,unresolvedRipples:f32)->vec3<f32>{
+  let facing=clamp(dot(normal,view),0.0,1.0);
+  let fresnel=.025+.72*pow(1.0-facing,5.0);
+  let sky=sky_air_color(radial,reflect(-view,normal))*.66;
+  let halfVector=view+sun();
+  let halfAngle=clamp(dot(normal,halfVector)*inverseSqrt(max(dot(halfVector,halfVector),1e-6)),0.0,1.0);
+  // Fold subpixel waves into the highlight as their individual normals fade.
+  let width=mix(.0024,.0082,unresolvedRipples);
+  let lobe=width/(width+1.0-halfAngle);
+  let glint=lobe*lobe*mix(.39,.28,unresolvedRipples)*(.72+.70*fresnel)*
+    visibility*smoothstep(-.006,.050,day);
+  return mix(lit,sky,fresnel)+glint*sun_disk_color(day,frame.air.w);
+}
 fn solar_light(day:f32, diffuse:f32, visibility:f32, ambient:f32)->vec3<f32>{
   let twilight=smoothstep(-.20,.24,day);
   let lit=smoothstep(-.008,.025,day);

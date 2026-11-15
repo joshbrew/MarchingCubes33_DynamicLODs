@@ -7,7 +7,8 @@ struct SkyVertex { @builtin(position) clip:vec4<f32>, @location(0) uv:vec2<f32> 
   let ray=normalize(frame.forward.xyz+frame.right.xyz*v.uv.x*frame.right.w+
     frame.up.xyz*v.uv.y*frame.up.w);
   let eye=frame.eye.xyz; let r=frame.eye.w;
-  let altitude=max(0.0,length(eye)-r);
+  let eyeRadius=length(eye);
+  let altitude=max(0.0,eyeRadius-r);
   let air=exp(-altitude/18000.0)*frame.air.w;
   let up=normalize(eye);
   let day=dot(up,sun());
@@ -23,10 +24,11 @@ struct SkyVertex { @builtin(position) clip:vec4<f32>, @location(0) uv:vec2<f32> 
   result+=sky_air_color(limbUp,ray)*limb*frame.air.w;
   let sunAngle=length(ray-sun());
   let pixel=max(.0004,frame.forward.w*.65);
-  let disk=1.0-smoothstep(max(0.0,.013-pixel),.013+pixel,sunAngle);
-  let halo=exp(-sunAngle*18.0)*.24*air;
-  let sunColor=mix(mix(vec3<f32>(1.0,.31,.11),frame.dusk.xyz,.40),vec3<f32>(1.0,.91,.70),
-    mix(smoothstep(-.04,.35,day),1.0,1.0-clamp(air,0.0,1.0)));
-  result+=(disk*2.2+halo)*sunColor;
+  let groundToEye=r/max(eyeRadius,r);
+  let dip=sqrt(max(0.0,1.0-groundToEye*groundToEye));
+  let visible=smoothstep(-pixel,pixel,dot(up,ray)+dip);
+  let disk=(1.0-smoothstep(max(0.0,.013-pixel),.013+pixel,sunAngle))*visible;
+  let halo=exp(-sunAngle*18.0)*.24*air*smoothstep(-.09,.035,day+dip);
+  result+=(disk*2.2+halo)*sun_disk_color(day,air);
   return vec4<f32>(pow(clamp(result,vec3<f32>(0),vec3<f32>(1)),vec3<f32>(1.0/2.2)),1);
 }
