@@ -9261,16 +9261,32 @@ fn satellite_color(palette:vec3<f32>,radial:vec3<f32>,surface:PlanetSurface,mode
   let displacement=studio_deposits(surface.uv);
   let floor=smoothstep(.025,.24,-displacement);
   let rim=smoothstep(.016,.13,displacement);
-  let tone=smoothstep(-.23,.23,.58*district+.45*grain+.22*patches);
-  let wear=smoothstep(-.33,.27,.48*grain+.44*patches+.18*chips);
-  let slate=mix(vec3<f32>(.034,.074,.155),vec3<f32>(.166,.269,.412),wear);
-  let oxidized=mix(vec3<f32>(.20,.045,.029),vec3<f32>(.53,.179,.092),wear);
-  let regolith=mix(slate,oxidized,tone);
-  let saltNoise=planet_noise(radial*47.0,seed+49253u).value;
-  let salts=smoothstep(.22,.49,.78*saltNoise+.27*grain)*floor;
-  let ejecta=mix(vec3<f32>(.24,.35,.48),vec3<f32>(.57,.31,.19),tone);
-  let rock=mix(palette,regolith,.94)*(1.0+.25*patches+.19*chips-.38*floor);
-  return mix(mix(rock,ejecta,.55*rim),vec3<f32>(.63,.60,.53),.65*salts);
+  // Broad mineral districts carry the hue from orbit. Smaller fields grade
+  // between deposits and pick out lighter rims as the camera descends.
+  let province=planet_noise(radial*1.76+vec3<f32>(.37,-.61,.43),seed+31337u).value;
+  let tone=smoothstep(-.37,.37,.83*province+.68*district+.27*grain);
+  let wear=smoothstep(-.37,.38,.53*district+.58*grain+.37*patches+.13*chips);
+  let slate=mix(vec3<f32>(.039,.072,.15),vec3<f32>(.20,.34,.51),wear);
+  let violet=mix(vec3<f32>(.115,.080,.15),vec3<f32>(.36,.29,.40),wear);
+  let cool=mix(slate,violet,smoothstep(-.16,.25,province-.35*grain));
+  let iron=mix(vec3<f32>(.18,.049,.039),vec3<f32>(.55,.20,.10),wear);
+  let ochre=mix(vec3<f32>(.33,.18,.083),vec3<f32>(.72,.50,.25),wear);
+  let warm=mix(iron,ochre,smoothstep(-.14,.25,-province+.42*district+.18*surface.value));
+  let shale=mix(vec3<f32>(.14,.14,.18),vec3<f32>(.39,.31,.29),wear);
+  let neutral=.74*(1.0-smoothstep(.06,.30,abs(tone-.5)));
+  let regolith=mix(mix(cool,warm,tone),shale,neutral);
+  // Irregular deposits cross the regional colors and follow tilted elevations.
+  let strataLevel=.80*surface.value+.40*province+.22*district+.025*grain;
+  let beds=cos(8.4*strataLevel)+.38*cos(17.3*strataLevel+2.8*district);
+  let formation=smoothstep(-.22,.20,district-.58*province);
+  let shelf=smoothstep(.52,.80,beds)*mix(.20,.64,formation);
+  let seam=smoothstep(.01,.24,beds)*(1.0-smoothstep(.33,.62,beds));
+  let bedPigment=mix(vec3<f32>(.32,.36,.43),vec3<f32>(.65,.48,.30),tone)*mix(.69,1.19,wear);
+  let layered=mix(regolith,bedPigment,shelf)*(1.0-.24*seam*formation);
+  let salts=smoothstep(.20,.45,.75*patches+.31*grain+.24*wear)*floor;
+  let ejecta=mix(vec3<f32>(.29,.39,.53),vec3<f32>(.63,.40,.24),tone);
+  let rock=mix(palette,layered,.96)*(1.0+.20*patches+.15*chips-.32*floor);
+  return mix(mix(rock,ejecta,.61*rim),vec3<f32>(.69,.65,.55),.69*salts);
 }
 fn frost_margin(dir:vec3<f32>,height:f32)->f32{
   let latitude=dot(dir,style.climate.xyz);
@@ -9397,7 +9413,9 @@ fn ocean_color(radial:vec3<f32>,view:vec3<f32>,depth:f32,pixel:f32,bottom:vec3<f
   var visibility=1.0;
   if(day>-.008&&day<.94){visibility=shadow_visibility(material.uv);}
   let ambient=shade*clamp(1.0-material.shelter*nearDetail-.40*basin,.25,1.0);
-  let light=solar_light(day,diffuse,visibility,ambient);
+  let twilightFill=select(0.0,.065,satellite==4.0)*smoothstep(-.12,.035,day)*
+    (1.0-smoothstep(.045,.28,day));
+  let light=solar_light(day,diffuse,visibility,ambient)+twilightFill*vec3<f32>(1.0,.91,.87);
   let pigment=material.patina*nearDetail;
   var palette=preset_color(material.value+.16*pigment,nearDetail);
   if(satellite>0.0){palette=satellite_color(palette,radial,material,satellite,pixel);}
