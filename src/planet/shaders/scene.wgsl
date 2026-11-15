@@ -76,4 +76,11 @@ fn terrain_haze(up:vec3<f32>,ray:vec3<f32>,distance:f32)->f32{
   let air=exp(-max(0.0,length(frame.eye.xyz)-frame.eye.w)/44000.0)*frame.air.w;
   return .22*air*horizon*horizon*(1.0-exp(-distance/54000.0));
 }
+fn terrain_light_normal(relative:vec3<f32>,radial:vec3<f32>,smoothNormal:vec3<f32>)->vec3<f32>{
+  if(frame.surface.w<.5){return smoothNormal;}
+  let face=cross(dpdx(relative),dpdy(relative));
+  let area=dot(face,face);
+  let normal=select(radial,face*inverseSqrt(max(1e-10,area)),area>1e-10);
+  return select(-normal,normal,dot(normal,radial)>=0.0);
+}
 const studioReliefMeters=262144.0*.023;

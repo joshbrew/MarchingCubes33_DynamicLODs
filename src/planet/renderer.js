@@ -1,5 +1,6 @@
 import { initializeGPU, disposeGPUContext, renderSize } from "../api/gpu.js";
 import { relativeCamera } from "../api/camera.js";
+import { aircraftVertexCount, createAircraft } from "./aircraft.js";
 import { buildIndices, lines } from "../terrain/surface.js";
 import { childTileKey, cube, orbitDetailWeight, parentTileKey, selectPlanet } from "./lod.js";
 import { PlanetTileCache } from "./tile-cache.js";
@@ -100,6 +101,7 @@ export class PlanetRenderer {
       throw new RangeError("Tile budget must be between 24 and the allocated maximum.");
     this.reliefCache = new Map();
     this.profile = getPreset(options.preset);
+    this.lowPolyOverride = options.lowPoly;
     this.activeStudioSeed = worldSeed(
       options.studioSeed ?? this.options.studioSeed + this.profile.seedOffset,
     );
@@ -377,6 +379,14 @@ export class PlanetRenderer {
   }
   get radius() {
     return this.options.radius;
+  }
+  get lowPoly() {
+    return this.lowPolyOverride ?? this.profile.flatShaded;
+  }
+  get minGridSpacing() {
+    return this.lowPoly
+      ? Math.min(this.radius, Math.max(192, this.options.minSpacing))
+      : this.options.minSpacing;
   }
   get detailSeed() {
     return this.studioSeed + this.options.seed;
@@ -787,6 +797,11 @@ export class PlanetRenderer {
       if (!this.options.streamingLod) this.split.clear();
       this.dirty = true;
     }
+    if (Object.hasOwn(options, "lowPoly")) {
+      const wasLowPoly = this.lowPoly;
+      this.lowPolyOverride = options.lowPoly;
+      this.dirty ||= this.lowPoly !== wasLowPoly;
+    }
     if (preset === undefined && studioSeed === undefined && detail === undefined &&
         requestedRadius === undefined && terrainSampling === undefined)
       return Promise.resolve();
@@ -855,7 +870,9 @@ export class PlanetRenderer {
       } else if (nextDetail.relief !== previousDetail.relief) {
         this.setStudioSurface(before, nextSeed, nextDetail.relief);
       }
+      const wasLowPoly = this.lowPoly;
       this.profile = profile;
+      this.dirty ||= this.lowPoly !== wasLowPoly;
       this.detail = nextDetail;
       if (sizeChanged) this.split.clear();
       if (before !== this.studioMap || previousDetail !== nextDetail) this.fitRockSpans();
@@ -946,7 +963,8 @@ export class PlanetRenderer {
         centerPriority: streaming,
         previousFocal: this.focalSplit,
         splitBudget: streaming ? (this.usesProceduralTiles ? 24 : 48) * batchScale : Infinity,
-        pixelError: this.pixelError,
+        minSpacing: this.minGridSpacing,
+        pixelError: this.lowPoly ? Math.max(4, this.pixelError) : this.pixelError,
         lodScale: this.lodScale,
         elevationBounds: this.elevationBounds,
         sampleRelief: (node) => this.sampleTileRelief(node),
@@ -1039,7 +1057,7 @@ export class PlanetRenderer {
   render(
     camera,
     now = performance.now(),
-    { lodColors = false, wireframe = false, sunPhase = 0, atmosphere = "preset" } = {},
+    { lodColors = false, wireframe = false, sunPhase = 0, atmosphere = "preset", aircraftBank } = {},
   ) {
     const start = performance.now(),
       d = this.device;
@@ -1110,12 +1128,19 @@ export class PlanetRenderer {
     f.set([...dusk, step % 2], 44);
     // Bring in orbital shading before the flyover normals fade out.
     f[48] = this.options.streamingLod ? orbitDetailWeight(clearance, 60000, 100000) : 0;
-    f[49] = this.options.minSpacing;
+    f[49] = this.minGridSpacing;
     f[50] = Number(Boolean(this.sunBake));
+    f[51] = Number(this.lowPoly);
     d.queue.writeBuffer(this.uniform, 0, f);
     const rocks = this.visibleRockSpans(camera, wireframe);
     this.stats.drawCalls = this.draws.length + 1 + rocks.length;
     this.stats.triangles = this.terrainTriangles + rocks.reduce((sum, rock) => sum + rock.count / 3, 0);
+    const showAircraft = Number.isFinite(aircraftBank);
+    if (showAircraft) {
+      this.aircraft ??= createAircraft(d, this.format, this.uniform);
+      this.stats.drawCalls++;
+      this.stats.triangles += aircraftVertexCount / 3;
+    }
     if (!this.bundle || this.bundleWire !== wireframe) {
       const b = d.createRenderBundleEncoder({
         colorFormats: [this.format],
@@ -1197,6 +1222,7 @@ export class PlanetRenderer {
         : {}),
     });
     pass.executeBundles([this.bundle, ...rocks.map((rock) => wireframe ? rock.wire : rock.solid)]);
+    if (showAircraft) this.aircraft.draw(pass, camera, aircraftBank);
     pass.end();
     const timed = timeDraw || timePatches;
     if (timed) {
@@ -1247,6 +1273,7 @@ export class PlanetRenderer {
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
+    this.aircraft?.dispose();
     for (const t of this.templates.values()) {
       t.solid.destroy();
       t.wire?.destroy();

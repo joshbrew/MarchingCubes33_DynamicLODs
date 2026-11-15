@@ -32,7 +32,8 @@ export type PlanetPresetId =
   | "io"
   | "pluto"
   | "ceres"
-  | "ceres-crater-fields";
+  | "ceres-crater-fields"
+  | "storybook-glacier";
 export const PlanetPresets: ReadonlyArray<
   Readonly<{ id: PlanetPresetId; name: string; wet: boolean }>
 >;
@@ -82,6 +83,8 @@ export interface PlanetOptions extends GPUOptions {
   onDeviceReady?: (renderer: PlanetRenderer) => void;
   minSpacing?: number;
   preset?: PlanetPresetId;
+  /** Use a coarser mesh and flat terrain lighting. Defaults to the preset. */
+  lowPoly?: boolean;
   /** Include local landmark patches. Defaults to false. */
   landmarkPatches?: boolean;
   /** Base terrain sampling resolution. Defaults to 1000, or 1536 for smaller worlds. */
@@ -121,6 +124,7 @@ export class PlanetRenderer {
   readonly errors: string[];
   readonly terrainSampling: "cached" | "procedural";
   readonly preset: PlanetPresetId;
+  readonly lowPoly: boolean;
   readonly studioSeed: number;
   readonly radius: number;
   readonly oceanLevel: number | null;
@@ -134,6 +138,8 @@ export class PlanetRenderer {
     lodScale?: number;
     tileBudget?: number;
     preset?: PlanetPresetId;
+    /** Pass null to restore the preset's shading. */
+    lowPoly?: boolean | null;
     studioSeed?: number;
     radius?: number;
     detail?: Partial<PlanetNoiseDetail>;
@@ -150,6 +156,8 @@ export class PlanetRenderer {
     options?: {
       lodColors?: boolean;
       wireframe?: boolean;
+      /** Show the chase aircraft at this bank angle in radians. */
+      aircraftBank?: number;
       /** Sun orbit in turns. Defaults to a fixed angle at 0. */
       sunPhase?: number;
       atmosphere?: "preset" | "blue" | "amber" | "violet" | "teal" | "thin";

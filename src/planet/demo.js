@@ -10,6 +10,7 @@ import { studioDryness } from "../noise/studio-wind.js";
 import { sampleStudioAlluvium } from "../noise/studio-alluvium.js";
 import { studioMosaic } from "../noise/studio.js";
 import {
+  aircraftSpeed,
   cruiseElevation,
   minFlightClearance,
   moveOnSphere,
@@ -41,6 +42,8 @@ const regionalHeights = {
 const orbitClearance = 300000;
 const maximumCameraRadius = 1156000;
 const flightFov = Math.PI / 3;
+const aircraftClearance = 12;
+const aircraftPitchLimit = 30 * radians;
 
 function findVolcanicView(planet, sunlight) {
   const density = planet.studioMap.featureDensity;
@@ -381,7 +384,7 @@ const distance = (m) =>
     ? `${(m / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })} km`
     : `${m.toLocaleString(undefined, { maximumFractionDigits: 2 })} m`;
 
-export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceReady, sampleDepth = false } = {}) {
+export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceReady, onNavigationReady, sampleDepth = false } = {}) {
   const $ = (id) => document.getElementById(id),
     canvas = $("planet"),
     status = $("status");
@@ -398,6 +401,7 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
   const controls = [...$("controls").querySelectorAll("button,input,select")].filter(control => control !== hideInterface);
   for (const c of controls) c.disabled = true;
   const terrainSampling = $("terrainSampling");
+  const lowPoly = $("lowPoly");
   const triangleBudget = $("triangleBudget");
   const divs = 16;
   const trianglesPerPatch = 2 * divs ** 2;
@@ -419,6 +423,8 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
     pixelError: $("detail").valueAsNumber,
     lodScale: $("lodScale").valueAsNumber,
   });
+  lowPoly.checked = planet.lowPoly;
+  lowPoly.onchange = () => planet.configure({ lowPoly: lowPoly.checked });
   function triangleLimit(sampling) {
     const maxTiles = planet.maxTileBudget(sampling);
     const maxTriangles = (maxTiles + 1) * trianglesPerPatch - 1;
@@ -526,40 +532,83 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
   let probing = false, lastProbe = -Infinity;
   let landingRequest = 0;
   const keys = new Set();
+  const flightMode = $("flightMode");
+  const flightCruise = $("flightCruise");
+  const flightHelp = $("flightHelp");
+  const flightSpeed = $("flightSpeed");
+  let aircraft = null;
   function stop() {
     approach = null;
     $("approach").textContent = "Start approach";
   }
+  function setFlightMoving(moving) {
+    aircraft.moving = moving;
+    keys.clear();
+    if (!moving) targetElevation = elevation;
+    flightCruise.textContent = moving ? "Pause flight" : "Resume flight";
+    flightSpeed.textContent = moving ? "" : "Flight paused.";
+  }
+  function setFlightMode(enabled) {
+    aircraft = enabled ? { moving: false, turn: 0, tilt: 0, bank: 0, speed: aircraftSpeed(clearance, false) } : null;
+    flightMode.setAttribute("aria-pressed", String(enabled));
+    flightCruise.hidden = flightHelp.hidden = !enabled;
+    $("altitude").min = Math.log2(enabled ? aircraftClearance : minFlightClearance);
+    if (enabled) setFlightMoving(true);
+    else keys.clear();
+  }
+  function aircraftViewPitch() {
+    const horizonDip = Math.acos(radius / (radius + clearance));
+    return clamp(pitch - Math.max(5 * radians, horizonDip - 10 * radians), -Math.PI / 2, 1.1);
+  }
+  flightMode.onclick = () => {
+    if (baking) return;
+    landingRequest++;
+    stop();
+    if (aircraft) pitch = aircraftViewPitch();
+    setFlightMode(!aircraft);
+    if (aircraft) {
+      pitch = 0;
+      if (clearance < aircraftClearance) setAltitude(aircraftClearance);
+    }
+    canvas.focus();
+  };
+  flightCruise.onclick = () => {
+    setFlightMoving(!aircraft.moving);
+    canvas.focus();
+  };
   function altitudeUI() {
     $("altitude").value = Math.log2(clearance);
     $("altitudeValue").textContent = distance(clearance);
   }
   function setAltitude(value, ground = planet.sampleSurface(flight.direction).height) {
-    clearance = clamp(value, minFlightClearance, maximumClearance());
+    clearance = clamp(value, aircraft ? aircraftClearance : minFlightClearance, maximumClearance());
     targetElevation = elevation = ground + clearance;
     lookAhead = null;
     altitudeUI();
   }
-  async function orbit() {
+  async function orbit({ direction, altitude = orbitClearance, sunTurn } = {}) {
     const request = ++landingRequest;
     stop();
-    const orbitFrame = flight = surfaceFrame(orbitDirection);
+    setFlightMode(false);
+    const orbitFrame = flight = surfaceFrame(direction ? unit(direction) : orbitDirection);
     yaw = 0;
     pitch = -Math.PI / 2;
-    setAltitude(orbitClearance);
+    setAltitude(altitude);
+    if (sunTurn !== undefined) setSunPhase(sunTurn);
     try {
-      const sample = await readGround(orbitDirection);
+      const sample = await readGround(orbitFrame.direction);
       if (request !== landingRequest || flight !== orbitFrame || !sample) return;
       groundProbe = sample;
-      setAltitude(orbitClearance, sample.height);
+      setAltitude(altitude, sample.height);
     } catch (error) {
       if (request === landingRequest) bakeError = error.message;
     }
   }
-  $("orbit").onclick = orbit;
+  $("orbit").onclick = () => orbit();
   async function changeWorld(preset, studioSeed, size, sampling, resetSun = false, detail) {
     landingRequest++;
     stop();
+    if (aircraft?.moving) setFlightMoving(false);
     baking = true;
     bakeError = "";
     const worldControls = [presetSelect, $("random"), regionSelect, sizeSelect, terrainSampling, triangleBudget];
@@ -587,6 +636,7 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
       presetSelect.value = planet.preset;
       sizeSelect.value = String(planet.radius);
       terrainSampling.value = planet.terrainSampling;
+      lowPoly.checked = planet.lowPoly;
       syncBudgetLimit();
       for (const control of worldControls) control.disabled = false;
       terrainEditor.disabled = false;
@@ -608,6 +658,7 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
   async function landAt(height, pitchDegrees) {
     if (baking) return;
     stop();
+    if (aircraft?.moving) setFlightMoving(false);
     const request = ++landingRequest;
     const { dir, yaw: heading } = destination ??= findRegion("");
     let sample;
@@ -621,7 +672,7 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
     groundProbe = sample;
     flight = surfaceFrame(dir);
     yaw = heading;
-    pitch = pitchDegrees * radians;
+    pitch = aircraft ? 0 : pitchDegrees * radians;
     setAltitude(height, sample.height);
   }
   $("shore").onclick = () => landAt(600, -13);
@@ -647,6 +698,7 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
       stop();
       return;
     }
+    setFlightMode(false);
     destination ??= findRegion("");
     const route = surfaceRoute(surfaceFrame(orbitDirection), destination.dir);
     const end = route(1);
@@ -670,7 +722,7 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
     landingRequest++;
     stop();
     setAltitude(2 ** Number($("altitude").value));
-    pitch = (-7 - 83 * ease((Math.log2(clearance) - 7) / 10)) * radians;
+    if (!aircraft) pitch = (-7 - 83 * ease((Math.log2(clearance) - 7) / 10)) * radians;
   };
   $("detail").oninput = () => {
     planet.configure({ pixelError: Number($("detail").value) });
@@ -686,6 +738,19 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
   let sunPhase = 0;
   const sunCycle = $("sunCycle"), sunSlider = $("sunPhase"), sunAngle = $("sunPhaseValue");
   const atmosphere = $("atmosphere");
+  const animationButton = $("sceneAnimation");
+  let pauseStarted, lastAnimationTime;
+  let pausedDuration = 0;
+  animationButton.onclick = () => {
+    if (pauseStarted === undefined) {
+      pauseStarted = last ?? performance.now();
+      animationButton.textContent = "Resume animation";
+    } else {
+      pausedDuration += performance.now() - pauseStarted;
+      pauseStarted = undefined;
+      animationButton.textContent = "Pause animation";
+    }
+  };
   function setSunPhase(turn) {
     sunPhase = turn;
     sunSlider.value = Math.floor(turn * 360);
@@ -716,6 +781,10 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
   let pendingTerrain;
   async function applyTerrain(detail, look) {
     await changeWorld(look?.preset, look?.seed, look?.radius, look?.terrainSampling, false, detail);
+    if (typeof look?.lowPoly === "boolean") {
+      await planet.configure({ lowPoly: look.lowPoly });
+      lowPoly.checked = planet.lowPoly;
+    }
     syncNoiseControls();
   }
   const terrainEditor = mountTerrainNoiseEditor($("terrainMix"), planet, async noiseMix => {
@@ -726,6 +795,7 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
     read() {
       return {
         preset: planet.preset, seed: planet.studioSeed, radius: planet.radius, terrainSampling: planet.terrainSampling,
+        lowPoly: planet.lowPoly,
         ...pendingTerrain, detail: { ...(pendingTerrain?.detail ?? planet.detail), noiseMix: terrainEditor.read() },
       };
     },
@@ -787,6 +857,8 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
       button: e.button === 2 ? 2 : 1,
       x: e.clientX,
       y: e.clientY,
+      turn: 0,
+      tilt: 0,
     };
     canvas.setPointerCapture(e.pointerId);
     canvas.focus();
@@ -815,7 +887,10 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
       dy = e.clientY - drag.y;
     drag.x = e.clientX;
     drag.y = e.clientY;
-    if (drag.button === 2) {
+    if (aircraft) {
+      drag.turn = clamp(drag.turn + dx * 0.009, -1, 1);
+      drag.tilt = clamp(drag.tilt - dy * 0.009, -1, 1);
+    } else if (drag.button === 2) {
       yaw += dx * 0.003;
       pitch = clamp(pitch - dy * 0.003, -Math.PI / 2, 1.1);
     } else {
@@ -833,6 +908,7 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
     "ShiftLeft",
     "ShiftRight",
   ]);
+  const aircraftMovement = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyE", "KeyQ"]);
   function keyDown(e) {
     if (e.code === "KeyH" && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey &&
         !e.target.closest?.("input, select, textarea, [contenteditable]")) {
@@ -840,7 +916,13 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
       e.preventDefault();
       return;
     }
-    if (!movement.has(e.code) || document.activeElement !== canvas) return;
+    if (document.activeElement !== canvas) return;
+    if (aircraft && e.code === "Escape") {
+      setFlightMoving(false);
+      e.preventDefault();
+      return;
+    }
+    if (!movement.has(e.code) && !(aircraft && aircraftMovement.has(e.code))) return;
     stop();
     keys.add(e.code);
     e.preventDefault();
@@ -848,15 +930,44 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
   function keyUp(e) {
     keys.delete(e.code);
   }
-  const blur = () => keys.clear();
+  const blur = () => {
+    keys.clear();
+    drag = null;
+    if (aircraft?.moving) setFlightMoving(false);
+  };
   window.addEventListener("keydown", keyDown);
   window.addEventListener("keyup", keyUp);
   window.addEventListener("blur", blur);
+  function flyAircraft(dt) {
+    const turn = Number(keys.has("KeyD") || keys.has("ArrowRight")) -
+      Number(keys.has("KeyA") || keys.has("ArrowLeft"));
+    const tilt = Number(keys.has("KeyW") || keys.has("ArrowUp")) -
+      Number(keys.has("KeyS") || keys.has("ArrowDown"));
+    const climb = Number(keys.has("Space") || keys.has("KeyE")) - Number(keys.has("KeyC") || keys.has("KeyQ"));
+    const boost = keys.has("ShiftLeft") || keys.has("ShiftRight");
+    const response = -Math.expm1(-5 * dt);
+    aircraft.turn += (clamp(turn + (drag?.turn ?? 0), -1, 1) - aircraft.turn) * response;
+    aircraft.tilt += (clamp(tilt + (drag?.tilt ?? 0), -1, 1) - aircraft.tilt) * response;
+    aircraft.bank += (-aircraft.turn * 0.7 - aircraft.bank) * response;
+    aircraft.speed += (aircraftSpeed(clearance, boost) - aircraft.speed) * response;
+    yaw += aircraft.turn * 48 * radians * dt;
+    pitch = clamp(pitch + aircraft.tilt * 36 * radians * dt, -aircraftPitchLimit, aircraftPitchLimit);
+    const flightRadius = radius + elevation;
+    const forwardSpeed = aircraft.speed * Math.cos(pitch);
+    flight = moveOnSphere(flight, yaw, 0, forwardSpeed * dt, flightRadius);
+    if (clearance < 1500) {
+      lookAhead = moveOnSphere(flight, yaw, 0, clamp(forwardSpeed * 1.6, 20, 350), flightRadius).direction;
+    }
+    return aircraft.speed * (climb ? climb * 0.55 : Math.sin(pitch)) * dt;
+  }
   function draw(now) {
     const elapsed = last === undefined ? 16.7 : Math.max(0, now - last);
     const dt = Math.min(0.05, elapsed / 1000);
     last = now;
-    if (sunCycle.checked) sunPhase = (sunPhase + elapsed / solarPeriod) % 1;
+    const animationTime = Math.max(lastAnimationTime ?? 0, (pauseStarted ?? now) - pausedDuration);
+    const animationElapsed = animationTime - (lastAnimationTime ?? animationTime);
+    lastAnimationTime = animationTime;
+    if (sunCycle.checked) sunPhase = (sunPhase + animationElapsed / solarPeriod) % 1;
     average += 0.08 * (elapsed - average);
     let verticalMove = 0;
     let approachElevation;
@@ -869,7 +980,9 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
       yaw = approach.heading * ease(t / 0.7);
       pitch = (-90 + 83 * ease((t - 0.59) / 0.37)) * radians;
       if (t === 1) stop();
-    } else {
+    } else if (aircraft?.moving && !baking) {
+      verticalMove = flyAircraft(dt);
+    } else if (!aircraft) {
       const forward = Number(keys.has("KeyW")) - Number(keys.has("KeyS"));
       const right = Number(keys.has("KeyD")) - Number(keys.has("KeyA"));
       const speed =
@@ -881,8 +994,9 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
     }
     const dir = flight.direction;
     const [right, tangentForward] = viewAxes(flight, yaw);
+    const viewPitch = aircraft ? aircraftViewPitch() : pitch;
     const forward = dir.map(
-      (v, i) => v * Math.sin(pitch) + tangentForward[i] * Math.cos(pitch),
+      (v, i) => v * Math.sin(viewPitch) + tangentForward[i] * Math.cos(viewPitch),
     );
     const up = cross(right, forward);
     const approximateGround = planet.sampleSurface(dir).height;
@@ -903,11 +1017,15 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
     if (approachElevation !== undefined) {
       targetElevation = approachElevation;
       elevation = Math.max(targetElevation, ground + minFlightClearance);
-    } else if (verticalMove) {
+    } else if (verticalMove && !aircraft) {
       targetElevation = elevation = clamp(elevation + verticalMove, ground + minFlightClearance, ground + maximumClearance());
     } else {
       const ahead = lookAhead ? planet.sampleSurface(lookAhead).height : ground;
-      elevation = cruiseElevation(elevation, targetElevation, ground, ahead, dt);
+      if (aircraft && verticalMove) {
+        targetElevation = clamp(targetElevation + verticalMove, ground + aircraftClearance, ground + maximumClearance());
+      }
+      elevation = cruiseElevation(elevation, targetElevation, ground, ahead, dt,
+        aircraft ? aircraftClearance : minFlightClearance);
     }
     lookAhead = null;
     clearance = elevation - ground;
@@ -928,11 +1046,13 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
       wireframe: $("wire").checked,
       sunPhase,
       atmosphere: atmosphere.value,
+      aircraftBank: aircraft?.bank,
     });
-    onFrame?.(planet, camera, sunPhase);
+    onFrame?.(planet, camera, sunPhase, { paused: pauseStarted !== undefined, time: animationTime / 1000 });
     if (now - lastHUD >= 225) {
       lastHUD = now;
       altitudeUI();
+      if (aircraft?.moving) flightSpeed.textContent = `${distance(aircraft.speed)}/s`;
       if (sunCycle.checked) {
         sunSlider.value = Math.floor(sunPhase * 360);
         sunAngle.textContent = `${sunSlider.value}°`;
@@ -974,6 +1094,7 @@ export async function startDemo({ onFrame, onDispose, onTerrainReady, onDeviceRe
     }
     frame = requestAnimationFrame(draw);
   }
+  onNavigationReady?.({ orbit });
   frame = requestAnimationFrame(draw);
   window.addEventListener(
     "pagehide",

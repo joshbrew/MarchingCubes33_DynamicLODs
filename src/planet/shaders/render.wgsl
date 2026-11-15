@@ -276,7 +276,9 @@ fn ocean_color(radial:vec3<f32>,view:vec3<f32>,depth:f32,pixel:f32,bottom:vec3<f
     smoothstep(.047,.30,slopeCover-.11*material.patina+.12*mottling));
   let shade=mix(.24,.29,nearDetail)-.065*exposed;
   let basin=smoothstep(.018,.19,material.basin)*(1.0-smoothstep(17000.0,85000.0,distance));
-  let diffuse=max(0.0,dot(normal,sun()));
+  // Use the smooth slope for material masks and the triangle normal for light.
+  let lightNormal=terrain_light_normal(v.relative,radial,normal);
+  let diffuse=max(0.0,dot(lightNormal,sun()));
   let day=dot(radial,sun());
   var visibility=1.0;
   if(day>-.008&&day<.94){visibility=shadow_visibility(material.uv);}

@@ -2,12 +2,16 @@ import { clamp, cross, dot, unit } from "./field.js";
 
 export const minFlightClearance = 2;
 
-export function cruiseElevation(elevation, target, ground, ahead, dt) {
-  const floor = ground + minFlightClearance;
-  const desired = Math.max(floor, target, ahead + minFlightClearance);
+export function cruiseElevation(elevation, target, ground, ahead, dt, clearance = minFlightClearance) {
+  const floor = ground + clearance;
+  const desired = Math.max(floor, target, ahead + clearance);
   if (Math.abs(desired - elevation) < 0.01) return desired;
   const rate = desired > elevation ? 6 : 2;
   return Math.max(floor, elevation + (desired - elevation) * -Math.expm1(-rate * dt));
+}
+
+export function aircraftSpeed(clearance, boost) {
+  return Math.min(32000, 32 + Math.max(0, clearance) * 0.12) * (boost ? 3 : 1);
 }
 
 export function surfaceFrame(direction) {

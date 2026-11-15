@@ -48,9 +48,13 @@ For Netlify, run `npm run build` and publish `site/`. The repository’s `netlif
 
 Fly with **WASD**, **Space** up, **C** down, and **Shift** to go faster. Drag to look. In Planet Approach, left drag orbits, right drag looks around, and **H** hides the UI. **LOD colors** and **Wireframe** show where the mesh gets finer.
 
+In **Flight mode**, the plane flies forward and cruises faster at higher altitudes. Drag or use **WASD** to steer, hold **Shift** to boost, and press **Esc** or **Pause flight** to stop moving.
+
 Choose **Ceres Crater Fields** for overlapping impacts from orbit down to the surface, or **Pluto** for ice canyons with narrow tributaries.
 
 Planet **Mesh detail** defaults to **1.25 px**, **4× distant LOD**, and **800,000 triangles**. Lower pixel error keeps smaller features. Higher distant LOD keeps detail farther out. The triangle budget caps patch count and vertex-cache size. For stress testing, use **1 px**, **32×**, and up to **about 16 million grid vertices** (roughly 28.3 million triangles), subject to GPU and sampling-mode limits. The performance panel shows the grid vertices and triangles in the current view.
+
+**Low-poly terrain** gives any planet a coarser mesh and flat lighting while keeping its terrain recipe and palette. Storybook Glacier enables it by default.
 
 ## Terrain noise
 

@@ -71,6 +71,13 @@
         flex-wrap: wrap;
         margin: 12px 0;
       }
+      #flightHelp {
+        flex-basis: 100%;
+        margin: 0;
+      }
+      #flightMode[aria-pressed="true"] {
+        background: #2c5a7b;
+      }
       button,
       select {
         font: inherit;
@@ -191,6 +198,7 @@
         <h1>Planet approach</h1>
         <button id="hideInterface" type="button" aria-controls="controls performance" title="Hide the controls and performance panel (H)">Hide UI</button>
       </div>
+      <button id="sceneAnimation" type="button">Pause animation</button>
       <div class="row">
         <label for="preset">Planet preset</label>
         <select id="preset"></select>
@@ -245,7 +253,13 @@
         ><button id="orbit">Orbit</button>
         <button id="shore">Low flyover</button
         ><button id="surface">Near surface</button>
+        <button id="flightMode" aria-pressed="false">Flight mode</button>
+        <button id="flightCruise" hidden>Pause flight</button>
         <button id="random">Randomize planet</button>
+        <p id="flightHelp" class="hint" hidden>
+          Drag or use WASD to steer. Space/C to climb or descend, Shift to boost,
+          Esc to pause. <span id="flightSpeed"></span>
+        </p>
       </div>
       <div class="row">
         <label for="altitude"
@@ -287,6 +301,7 @@
       <div class="row">
         <label><input id="colors" type="checkbox" />LOD colors</label
         ><label><input id="wire" type="checkbox" />Wireframe</label>
+        <label title="Use a coarser mesh and flat lighting"><input id="lowPoly" type="checkbox" />Low-poly terrain</label>
       </div>
       </details>
       <details>

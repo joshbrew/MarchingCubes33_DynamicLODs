@@ -56,7 +56,8 @@ fn orbit_sample(dir:vec3<f32>,radius:f32,side:i32,offset:i32,uv:vec2<f32>)->vec4
   let distance=length(v.relative);
   let ray=v.relative/max(distance,.001);
   let gradient=v.terrain.yzw-radial*dot(radial,v.terrain.yzw);
-  let normal=normalize(radial-gradient*studioReliefMeters*style.world.x*.68);
+  let smoothNormal=normalize(radial-gradient*studioReliefMeters*style.world.x*.68);
+  let normal=terrain_light_normal(v.relative,radial,smoothNormal);
   let day=dot(radial,sun());
   let ground=v.terrain.x*studioReliefMeters*style.world.x;
   let depth=style.ocean.x-ground;

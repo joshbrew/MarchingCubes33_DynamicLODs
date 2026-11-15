@@ -19,6 +19,7 @@ const skies = {
   titan: [[.31, .43, .33], [.92, .56, .20], 1.18],
   airless: [[.27, .32, .44], [.69, .37, .22], .015],
   pluto: [[.28, .43, .70], [.65, .43, .25], .09],
+  storybook: [[.065, .47, .72], [.93, .33, .36], 1.06],
 };
 const presetSkies = {
   utahish: "amber", desert: "amber", volcanic: "amber", "mars-dawn": "amber",
@@ -28,6 +29,7 @@ const presetSkies = {
   "lunar-highlands": "thin", "basalt-mare": "thin",
   titan: "titan", io: "airless", pluto: "pluto", ceres: "airless",
   "ceres-crater-fields": "airless",
+  "storybook-glacier": "storybook",
 };
 
 export function atmosphereColors(preset, atmosphere) {

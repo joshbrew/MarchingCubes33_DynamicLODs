@@ -70,6 +70,7 @@ const catalog = new Map();
 const lunarPresets = new Set(["moon-dust", "lunar-highlands", "basalt-mare", "pluto", "ceres", "ceres-crater-fields"]);
 const terrainStyles = {
   lakeshore: "alpine",
+  "storybook-glacier": "alpine",
   ice: "alpine",
   ice2: "alpine",
   forest: "alpine",
@@ -90,7 +91,7 @@ const vegetatedCover = {
   utahish: .32, "coral-sea": .40, toxic: .52, "lavender-dusk": .26,
 };
 function add(name, colors, seedOffset, { id = name.toLowerCase().replaceAll(" ", "-"), ocean, dry = false,
-  material = 0, craterDetail = 0, cryoGlaciers = false } = {}) {
+  material = 0, craterDetail = 0, cryoGlaciers = false, flatShaded = false } = {}) {
   const stops = colors.split(" ").map((hex) => parseInt(hex, 16));
   catalog.set(id, {
     id,
@@ -105,6 +106,7 @@ function add(name, colors, seedOffset, { id = name.toLowerCase().replaceAll(" ",
     material,
     craterDetail,
     cryoGlaciers,
+    flatShaded,
   });
 }
 add(
@@ -189,6 +191,13 @@ add(
   ceresColors,
   1013 * (palettes.length + 8),
   { material: 4, craterDetail: 2 },
+);
+
+add(
+  "Storybook Glacier",
+  "34416e 456794 347f8e 67b3ac 8dc6bf a6c9df c1c9e7 dcd9eb f2f7f4",
+  1013 * (palettes.length + 9),
+  { dry: true, flatShaded: true },
 );
 
 export const PlanetPresets = Object.freeze(
