@@ -4,6 +4,8 @@ Turn a grid of numbers into a triangle mesh, or fly through terrain that adds de
 
 [Live demo](https://marchingcubeswebgpu.netlify.app/) · [Package guide](docs/PACKAGE.md) · [Noise Compute upstream](https://github.com/joshbrew/webgpu_noise_compute_textures)
 
+[Video demo](https://www.youtube.com/watch?v=E-Z3aR3EWck)
+
 **Contents** · [Quick start](#quick-start) · [Gallery](#gallery) · [Demos and settings](#demos-and-settings) · [Terrain noise](#terrain-noise) · [How it works](#how-it-works) · [Use in your project](#use-in-your-project) · [Benchmarks](#benchmarks)
 
 ## Quick start
